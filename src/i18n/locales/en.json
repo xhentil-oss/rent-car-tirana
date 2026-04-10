@@ -4,12 +4,13 @@
     "reviews": "Reviews",
     "about": "About Us",
     "contact": "Contact",
-    "phone": "+355 69 123 4567",
+    "phone": "+355 69 756 2951",
     "bookNow": "Book Now",
     "loginGoogle": "Sign in with Google",
     "myReservations": "My Reservations",
     "adminPanel": "Admin Panel",
     "logout": "Sign out",
+    "login": "Sign in",
     "user": "User"
   },
   "footer": {

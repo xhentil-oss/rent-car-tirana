@@ -179,6 +179,24 @@
     <priority>0.85</priority>
   </url>
 
+  <!-- ════ Blog ════ -->
+  <url>
+    <loc>https://rentcartiranaairport.com/blog</loc>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://rentcartiranaairport.com/blog" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rentcartiranaairport.com/en/blog" />
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://rentcartiranaairport.com/en/blog</loc>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://rentcartiranaairport.com/blog" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rentcartiranaairport.com/en/blog" />
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- ════ Legal ════ -->
   <url>
     <loc>https://rentcartiranaairport.com/termat-e-sherbimit</loc>

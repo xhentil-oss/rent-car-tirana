@@ -4,12 +4,13 @@
     "reviews": "Vlerësimet",
     "about": "Rreth Nesh",
     "contact": "Kontakti",
-    "phone": "+355 69 123 4567",
+    "phone": "+355 69 756 2951",
     "bookNow": "Rezervo Tani",
     "loginGoogle": "Kyçu me Google",
     "myReservations": "Rezervimet e Mia",
     "adminPanel": "Panel Admin",
     "logout": "Dil nga llogaria",
+    "login": "Hyr",
     "user": "Përdoruesi"
   },
   "footer": {
@@ -79,7 +80,7 @@
       "subtitle": "Rezervo makinën tënde në 3 hapa të thjeshtë",
       "steps": [
         { "title": "Zgjidh makinën", "desc": "Filtro sipas kategorisë, çmimit dhe disponueshmërisë. Krahasoni specifikat." },
-        { "title": "Konfirmo rezervimin", "desc": "Plotëso formularin, zglidh sigurimin dhe nënshkruaj kontratën dixhitale." },
+        { "title": "Konfirmo rezervimin", "desc": "Plotëso formularin, zgjidh sigurimin dhe nënshkruaj kontratën dixhitale." },
         { "title": "Merr çelësat", "desc": "Tërhiqe makinën nga aeroporti ose qendra e Tiranës. Pa pritje." }
       ],
       "cta": "Rezervo tani — është e shpejtë"
@@ -97,7 +98,7 @@
     "guarantees": [
       { "title": "Çmim i garantuar", "desc": "Nëse gjeni çmim më të lirë gjetkë, barazojmë atë çmim pa kushte." },
       { "title": "Pa kosto të fshehura", "desc": "Çmimi final përfshin gjithçka: taksën, sigurimin bazë dhe deliveryn." },
-      { "title": "Anulim falas", "desc": "Anulo falas deri 48 orë para tërhieves. Pa rrezik, pa gjoba." }
+      { "title": "Anulim falas", "desc": "Anulo falas deri 48 orë para marrjes. Pa rrezik, pa gjoba." }
     ],
     "reviews": {
       "title": "Çfarë thonë klientët tanë",
@@ -174,7 +175,7 @@
     "specs": {
       "transmission": "Transmetimi",
       "fuel": "Karburanti",
-      "seats": "Vendesh",
+      "seats": "Vende",
       "luggage": "Bagazhi",
       "category": "Kategoria",
       "insurance": "Sigurimi",
@@ -188,13 +189,13 @@
     "policy": {
       "age": { "title": "Kushtet e moshës", "text": "Moshë minimale 21 vjeç. Drejtuesit 21-25 vjeç mund të kenë tarifë shtesë të rinisë." },
       "license": { "title": "Patentë shoferi", "text": "Patenta duhet të ketë minimalisht 1 vit vlefshmëri. Pranohen patentat ndërkombëtare." },
-      "fuel": { "title": "Karburanti", "text": "Makina dorëzohet me bombol plot. Klientit i kërkohet ta kthejë me bombolen plot ose të paguajë tarifën e rikushtetimit." },
+      "fuel": { "title": "Karburanti", "text": "Makina dorëzohet me serbator plot. Klientit i kërkohet ta kthejë me serbatorin plot ose të paguajë tarifën e rifurnizimit." },
       "mileage": { "title": "Kilometrazhi", "text": "Kilometrazh i pakufizuar për rezervimet mbi 3 ditë. Mes 1-2 ditë aplikohet 300km/ditë." },
-      "cancellation": { "title": "Anulimi", "text": "Anulim falas deri 48 orë para momentit të marrjes. Pas kësaj periudhe aplikohet zbritje prej 30%." }
+      "cancellation": { "title": "Anulimi", "text": "Anulim falas deri 48 orë para momentit të marrjes. Pas kësaj periudhe aplikohet tarifë prej 30%." }
     },
     "about": {
       "title": "Rreth kësaj makine",
-      "text": "{{brand}} {{model}} ({{year}}) është një zgjedhje e shkëlqyer për qira në Tiranë dhe Shqipëri. Kategoria {{category}} me {{transmission}} dhe karburant {{fuel}} — e rehatshme për rrugë qyteti, autostradë dhe udhëtime ndër-qytetëse. Me {{seats}} vendesh dhe {{luggage}} valixhe hapësitë, i përshtatet grupeve dhe familjeve."
+      "text": "{{brand}} {{model}} ({{year}}) është një zgjedhje e shkëlqyer për qira në Tiranë dhe Shqipëri. Kategoria {{category}} me {{transmission}} dhe karburant {{fuel}} — e rehatshme për rrugë qyteti, autostradë dhe udhëtime ndër-qytetëse. Me {{seats}} vende dhe {{luggage}} valixhe hapësirë, i përshtatet grupeve dhe familjeve."
     },
     "reviews": {
       "title": "Vlerësimet e klientëve",
@@ -202,7 +203,7 @@
     },
     "support": {
       "question": "Keni pyetje rreth kësaj makine?",
-      "available": "Ekipi ynë është i disponibëll 24/7 për t'ju ndihmuar",
+      "available": "Ekipi ynë është i disponibël 24/7 për t'ju ndihmuar",
       "phone": "Telefon",
       "whatsapp": "WhatsApp"
     },

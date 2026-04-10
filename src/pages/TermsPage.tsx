@@ -90,7 +90,7 @@ Shkelja e këtyre kushteve mund të rezultojë në ndërprerje të menjëhershme
 
 1. Siguroni veten dhe pasagjerët
 2. Telefononi policinë dhe sigurohuni që të plotësohet raporti (Çertifikata e Aksidentit)
-3. Telefononi Rent Car Tirana menjëherë: +355 69 123 4567
+3. Telefononi Rent Car Tirana menjëherë: +355 69 756 2951
 4. Mos lëvizni mjetin pa leje policore nëse janë dëmtuar personat
 
 Klienti mban përgjegjësi financiare për dëmtimet deri në kufirin e tepricës (franchise) sipas planit të sigurimit të zgjedhur.`,

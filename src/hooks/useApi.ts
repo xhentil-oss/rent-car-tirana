@@ -26,6 +26,8 @@ const ENTITY_MAP: Record<string, string> = {
   ChatMessage: "/chat",
   Setting: "/settings",
   ReservationAvailability: "/reservations/availability",
+  BlogPost: "/blog",
+  BlogPostAdmin: "/blog/admin",
 };
 
 function getToken(): string | null {

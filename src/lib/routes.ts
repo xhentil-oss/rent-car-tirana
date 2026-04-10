@@ -19,6 +19,7 @@ const SQ_TO_EN: Record<string, string> = {
   "/kontakt":                   "/en/contact",
   "/termat-e-sherbimit":        "/en/terms",
   "/privatesie":                "/en/privacy",
+  "/blog":                      "/en/blog",
 };
 
 // Reverse: English path → Albanian path
@@ -30,6 +31,7 @@ for (const [sq, en] of Object.entries(SQ_TO_EN)) {
 // Dynamic prefix pairs: [sqPrefix, enPrefix]
 const DYNAMIC_PREFIXES: [string, string][] = [
   ["/makina/", "/en/car/"],
+  ["/blog/", "/en/blog/"],
 ];
 
 /** Detect language from pathname */

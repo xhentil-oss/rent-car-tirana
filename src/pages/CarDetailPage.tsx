@@ -749,14 +749,14 @@ export default function CarDetailPage() {
               </div>
               <div className="flex gap-2 shrink-0">
                 <a
-                  href="tel:+355691234567"
+                  href="tel:+355697562951"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-xs font-medium hover:bg-white/20 transition-all duration-200 no-underline"
                 >
                   <Phone size={14} weight="fill" />
                   {t("carDetail.support.phone")}
                 </a>
                 <a
-                  href="https://wa.me/355691234567"
+                  href="https://wa.me/355697562951"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-all duration-200 no-underline"
@@ -933,10 +933,10 @@ export default function CarDetailPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-neutral-800">{t("carDetail.support2.title")}</p>
-                  <p className="text-xs text-neutral-400 truncate">+355 69 123 4567</p>
+                  <p className="text-xs text-neutral-400 truncate">+355 69 756 2951</p>
                 </div>
                 <a
-                  href="tel:+355691234567"
+                  href="tel:+355697562951"
                   className="text-xs text-primary font-semibold hover:underline no-underline flex items-center gap-0.5 shrink-0"
                 >
                   <Phone size={13} weight="fill" />

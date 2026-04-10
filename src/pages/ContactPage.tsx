@@ -170,8 +170,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Telefon</p>
-                    <a href="tel:+355691234567" className="text-sm text-neutral-700 hover:text-primary transition-colors no-underline">
-                      +355 69 123 4567
+                    <a href="tel:+355697562951" className="text-sm text-neutral-700 hover:text-primary transition-colors no-underline">
+                      +355 69 756 2951
                     </a>
                   </div>
                 </li>
@@ -193,7 +193,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">WhatsApp</p>
                     <a
-                      href="https://wa.me/355691234567"
+                      href="https://wa.me/355697562951"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-green-600 hover:underline no-underline"

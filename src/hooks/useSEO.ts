@@ -138,7 +138,7 @@ export const buildLocalBusinessSchema = () => ({
   "name": "Rent Car Tirana",
   "description": "Shërbimi nr.1 i makinave me qira në Tiranë. Rezervo online, merr makinën nga qendra ose aeroporti.",
   "url": SITE_URL,
-  "telephone": "+355691234567",
+  "telephone": "+355697562951",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Ruga Myslym Shyri",
@@ -164,7 +164,8 @@ export const buildLocalBusinessSchema = () => ({
     "bestRating": "5"
   },
   "sameAs": [
-    "https://wa.me/355691234567"
+    "https://wa.me/355697562951",
+    "https://g.co/kgs/rentcartirana"
   ]
 });
 

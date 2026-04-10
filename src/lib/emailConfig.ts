@@ -25,7 +25,7 @@ export const EMAIL_CONFIG = {
 
   // Emri i biznesit për emailet
   COMPANY_NAME: "Rent Car Tirana",
-  COMPANY_PHONE: "+355 69 123 4567",
+  COMPANY_PHONE: "+355 69 756 2951",
   COMPANY_EMAIL: "info@rentcartiranaairport.com",
   COMPANY_WEBSITE: "https://rentcartiranaairport.com",
 };

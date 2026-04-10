@@ -475,7 +475,7 @@ export default function AdminReservations() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-neutral-600 mb-1 flex items-center gap-1"><Phone size={12} />Telefoni *</label>
-                        <input type="tel" value={newCustomerData.phone} onChange={(e) => setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))} placeholder="+355 69 123 4567" className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${newCustomerErrors.phone ? "border-error" : "border-border"}`} />
+                        <input type="tel" value={newCustomerData.phone} onChange={(e) => setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))} placeholder="+355 69 756 2951" className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${newCustomerErrors.phone ? "border-error" : "border-border"}`} />
                         {newCustomerErrors.phone && <p className="text-xs text-error mt-1">{newCustomerErrors.phone}</p>}
                       </div>
                       <div>

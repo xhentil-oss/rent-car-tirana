@@ -26,7 +26,7 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
     fields: [
       { key: "company_name", label: "Emri i kompanisë", placeholder: "Rent Car Tirana" },
       { key: "company_email", label: "Email kontakti", type: "email", placeholder: "info@rentcartiranaairport.com" },
-      { key: "company_phone", label: "Numri telefonit", placeholder: "+355 69 123 4567" },
+      { key: "company_phone", label: "Numri telefonit", placeholder: "+355 69 756 2951" },
       { key: "company_address", label: "Adresa", placeholder: "Rruga e Durrësit, Tiranë, Shqipëri" },
       { key: "company_website", label: "Website", placeholder: "https://rentcartiranaairport.com" },
       { key: "company_vat", label: "NIPT / VAT", placeholder: "L12345678A" },
@@ -69,7 +69,7 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
       { key: "social_facebook", label: "Facebook URL", placeholder: "https://facebook.com/rentcartirana" },
       { key: "social_instagram", label: "Instagram URL", placeholder: "https://instagram.com/rentcartirana" },
       { key: "social_tiktok", label: "TikTok URL", placeholder: "https://tiktok.com/@rentcartirana" },
-      { key: "social_whatsapp", label: "WhatsApp numri", placeholder: "+355691234567" },
+      { key: "social_whatsapp", label: "WhatsApp numri", placeholder: "+355697562951" },
     ],
   },
   {

@@ -193,6 +193,37 @@ const TABLES = [
 
   // ACTIVITY LOGS
   `CREATE TABLE IF NOT EXISTS activity_logs (
+
+  // BLOG POSTS
+  `CREATE TABLE IF NOT EXISTS blog_posts (
+    id              CHAR(36) NOT NULL,
+    title_sq        VARCHAR(255) NOT NULL,
+    title_en        VARCHAR(255),
+    slug            VARCHAR(255) UNIQUE NOT NULL,
+    excerpt_sq      TEXT,
+    excerpt_en      TEXT,
+    content_sq      LONGTEXT NOT NULL,
+    content_en      LONGTEXT,
+    cover_image     TEXT,
+    tags            VARCHAR(500),
+    status          ENUM('draft','published') DEFAULT 'draft',
+    published_at    DATETIME,
+    author_id       CHAR(36),
+    meta_title_sq   VARCHAR(255),
+    meta_title_en   VARCHAR(255),
+    meta_desc_sq    VARCHAR(500),
+    meta_desc_en    VARCHAR(500),
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_status (status),
+    INDEX idx_slug (slug),
+    INDEX idx_published (published_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+  // ACTIVITY LOGS
+  `CREATE TABLE IF NOT EXISTS activity_logs (
     id          CHAR(36) NOT NULL,
     user_id     CHAR(36),
     action      VARCHAR(30) NOT NULL,

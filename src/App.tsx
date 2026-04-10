@@ -22,6 +22,7 @@ import AdminPricingRules from "./admin/pages/AdminPricingRules";
 import AdminCarEdit from "./admin/pages/AdminCarEdit";
 import AdminMedia from "./admin/pages/AdminMedia";
 import AdminSettings from "./admin/pages/AdminSettings";
+import AdminBlog from "./admin/pages/AdminBlog";
 import ReviewsPage from "./pages/ReviewsPage";
 import MakinaQeraTirana from "./pages/seo/MakinaQeraTirana";
 import MakineAeroport from "./pages/seo/MakineAeroport";
@@ -34,6 +35,8 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ThankYouPage from "./pages/ThankYouPage";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 
 /* Route definition: [Albanian path, English path, Component] */
 const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
@@ -53,6 +56,8 @@ const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
   ["/kontakt",                   "/en/contact",               ContactPage],
   ["/termat-e-sherbimit",        "/en/terms",                 TermsPage],
   ["/privatesie",                "/en/privacy",               PrivacyPage],
+  ["/blog",                      "/en/blog",                  BlogPage],
+  ["/blog/:slug",                "/en/blog/:slug",            BlogPostPage],
 ];
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -99,6 +104,7 @@ export default function App() {
             <Route path="flota/:id" element={<AdminCarEdit />} />
             <Route path="media" element={<AdminMedia />} />
             <Route path="cilesimet" element={<AdminSettings />} />
+            <Route path="blog" element={<AdminBlog />} />
           </Route>
 
           {/* Fallback — Custom 404 */}

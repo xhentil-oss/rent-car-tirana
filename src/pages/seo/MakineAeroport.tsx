@@ -51,7 +51,7 @@ export default function MakineAeroport() {
             <LLink to="/rezervo?pickup=Aeroporti" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
               Rezervo nga Aeroporti <ArrowRight size={18} />
             </LLink>
-            <a href="tel:+355691234567" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white hover:bg-white/10 no-underline">
+            <a href="tel:+355697562951" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white hover:bg-white/10 no-underline">
               <Phone size={16} /> Na telefononi
             </a>
           </div>

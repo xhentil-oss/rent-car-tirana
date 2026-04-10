@@ -110,7 +110,7 @@ export default function HomePage() {
 
       {/* ── Floating WhatsApp Button ─────────────────────────────── */}
       <a
-        href="https://wa.me/355691234567?text=Përshëndetje!%20Dëshiroj%20të%20rezervoj%20një%20makinë."
+        href="https://wa.me/355697562951?text=Përshëndetje!%20Dëshiroj%20të%20rezervoj%20një%20makinë."
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Kontaktoni ne WhatsApp"
@@ -519,7 +519,7 @@ export default function HomePage() {
           <p className="text-blue-100 mb-8">{t("home.cta.subtitle")}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href={`https://wa.me/355691234567?text=${t("home.cta.whatsappMsg")}`}
+              href={`https://wa.me/355697562951?text=${t("home.cta.whatsappMsg")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-success text-success-foreground hover:opacity-90 transition-opacity duration-200 no-underline"
@@ -528,7 +528,7 @@ export default function HomePage() {
               {t("home.cta.whatsapp")}
             </a>
             <a
-              href="tel:+355691234567"
+              href="tel:+355697562951"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-white text-primary hover:bg-secondary transition-colors duration-200 no-underline"
             >
               <Phone size={18} weight="regular" />

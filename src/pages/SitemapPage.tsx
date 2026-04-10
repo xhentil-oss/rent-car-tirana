@@ -23,6 +23,7 @@ const STATIC_PAGES = [
   { path: "/rezervo", label: "Rezervo tani", priority: "0.8", changefreq: "monthly", section: "Kryesore" },
   { path: "/vleresime", label: "Vlerësimet", priority: "0.7", changefreq: "weekly", section: "Kryesore" },
   { path: "/llogaria", label: "Llogaria ime", priority: "0.4", changefreq: "monthly", section: "Kryesore" },
+  { path: "/blog", label: "Blog", priority: "0.8", changefreq: "weekly", section: "Kryesore" },
   { path: "/makina-me-qira-tirane", label: "Makina me qira Tiranë", priority: "0.95", changefreq: "weekly", section: "SEO" },
   { path: "/makine-me-qira-aeroport", label: "Makinë me qira Aeroport", priority: "0.9", changefreq: "monthly", section: "SEO" },
   { path: "/makina-suv-me-qira", label: "Makina SUV me qira", priority: "0.85", changefreq: "monthly", section: "SEO" },

@@ -67,6 +67,7 @@ app.use('/api/users',         apiLimiter,  require('./routes/users'));
 app.use('/api/activity-logs', apiLimiter,  require('./routes/activityLogs'));
 app.use('/api/chat',          apiLimiter,  require('./routes/chat'));
 app.use('/api/settings',      apiLimiter,  require('./routes/settings'));
+app.use('/api/blog',          apiLimiter,  require('./routes/blog'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
