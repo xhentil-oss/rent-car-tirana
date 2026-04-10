@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import LLink from "../components/LLink";
 import { ArrowLeft, Shield, FileText } from "@phosphor-icons/react";
 import { useSEO } from "../hooks/useSEO";
 
@@ -112,9 +112,9 @@ Nëse ndonjë dispozitë e këtyre kushteve çmohet e paligjshme ose e pazbatues
       {/* Hero */}
       <div className="bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 text-white py-16 px-6">
         <div className="max-w-3xl mx-auto">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline mb-6 transition-colors">
+          <LLink to="/" className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline mb-6 transition-colors">
             <ArrowLeft size={16} /> Kthehu në faqen kryesore
-          </Link>
+          </LLink>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
               <FileText size={22} className="text-primary" weight="fill" />
@@ -183,19 +183,19 @@ Nëse ndonjë dispozitë e këtyre kushteve çmohet e paligjshme ose e pazbatues
               legal@rentcartiranaairport.com
             </a>{" "}
             ose vizitoni faqen tonë të{" "}
-            <Link to="/kontakt" className="text-primary hover:underline no-underline">
+            <LLink to="/kontakt" className="text-primary hover:underline no-underline">
               kontaktit
-            </Link>.
+            </LLink>.
           </p>
         </div>
 
         <div className="mt-6 flex items-center gap-4">
-          <Link to="/privatesie" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
+          <LLink to="/privatesie" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
             → Politika e Privatësisë
-          </Link>
-          <Link to="/kontakt" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
+          </LLink>
+          <LLink to="/kontakt" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
             → Na Kontaktoni
-          </Link>
+          </LLink>
         </div>
       </div>
     </div>

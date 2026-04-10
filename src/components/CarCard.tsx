@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "./LLink";
 import { Users, Briefcase, GasPump, Gear, Star, Fire } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { Car } from "../data/mockData";
@@ -25,7 +25,7 @@ export default function CarCard({ car, className = "" }: CarCardProps) {
     <article
       className={`bg-white rounded-lg border border-border overflow-hidden card-hover ${className}`}
     >
-      <Link to={`/makina/${car.slug}`} className="block relative overflow-hidden" style={{ height: "200px" }} tabIndex={-1}>
+      <LLink to={`/makina/${car.slug}`} className="block relative overflow-hidden" style={{ height: "200px" }} tabIndex={-1}>
         <img
           src={car.image}
           alt={`${car.brand} ${car.model} ${car.year} me qira Tiranë — ${car.category}, ${car.transmission}`}
@@ -53,19 +53,18 @@ export default function CarCard({ car, className = "" }: CarCardProps) {
               {t("carCard.luxury")}
             </span>
           </div>
-        )}
-      </Link>
+        )}n      </LLink>
 
       <div className="p-6">
         <div className="mb-3">
           <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
             {car.category}
           </span>
-          <Link to={`/makina/${car.slug}`} className="block no-underline group">
+          <LLink to={`/makina/${car.slug}`} className="block no-underline group">
             <h3 className="text-lg font-medium text-neutral-900 mt-0.5 group-hover:text-primary transition-colors duration-200">
               {car.brand} {car.model}
             </h3>
-          </Link>
+          </LLink>
           <span className="text-xs text-neutral-500">{car.year}</span>
         </div>
 
@@ -113,20 +112,20 @@ export default function CarCard({ car, className = "" }: CarCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link
+            <LLink
               to={`/makina/${car.slug}`}
               className="inline-flex items-center justify-center px-3 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors duration-200 no-underline"
               aria-label={`${t("carCard.details")} ${car.brand} ${car.model}`}
             >
               {t("carCard.details")}
-            </Link>
-            <Link
+            </LLink>
+            <LLink
               to={`/rezervo?car=${car.id}`}
               className={`inline-flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 no-underline ${car.status !== "Në dispozicion" ? "opacity-45 pointer-events-none" : ""}`}
               aria-label={`${t("carCard.book")} ${car.brand} ${car.model}`}
             >
               {t("carCard.book")}
-            </Link>
+            </LLink>
           </div>
         </div>
       </div>

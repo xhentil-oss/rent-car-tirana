@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import LLink from "../components/LLink";
 import {
   CalendarBlank,
   Car,
@@ -120,13 +120,13 @@ export default function MyAccountPage() {
         </div>
         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
           {isAdmin && (
-            <Link
+            <LLink
               to="/admin"
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/5 transition-colors no-underline"
             >
               <ShieldCheck size={13} weight="fill" />
               {t("account.adminPanel")}
-            </Link>
+            </LLink>
           )}
           <button
             onClick={() => logout()}
@@ -163,13 +163,13 @@ export default function MyAccountPage() {
         <div className="bg-white rounded-2xl border border-border p-10 text-center">
           <CalendarBlank size={40} className="mx-auto text-neutral-300 mb-3" />
           <p className="text-neutral-500 text-sm">{t("account.noReservations")}</p>
-          <Link
+          <LLink
             to="/flota"
             className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-primary text-white text-sm font-medium rounded-lg no-underline hover:opacity-90 transition-opacity"
           >
             <Car size={16} weight="fill" />
             {t("account.viewFleet")}
-          </Link>
+          </LLink>
         </div>
       ) : (
         <div>

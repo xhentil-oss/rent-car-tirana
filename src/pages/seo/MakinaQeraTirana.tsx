@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "../../components/LLink";
 import { MapPin, CheckCircle, ArrowRight, Clock, ShieldCheck, CurrencyDollar, Star } from "@phosphor-icons/react";
 import { useQuery } from "../../hooks/useApi";
 import CarCard from "../../components/CarCard";
@@ -43,12 +43,12 @@ export default function MakinaQeraTirana() {
             Shërbimi nr.1 i makinave me qira në Tiranë. Rezervo online, merr makinën nga qendra ose aeroporti, çmime transparente.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
+            <LLink to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
               Rezervo Tani — Falas <ArrowRight size={18} />
-            </Link>
-            <Link to="/flota" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
+            </LLink>
+            <LLink to="/flota" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
               Shiko Flotën
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -89,9 +89,9 @@ export default function MakinaQeraTirana() {
             {(cars ?? []).map((car) => <CarCard key={car.id} car={car} />)}
           </div>
           <div className="text-center mt-8">
-            <Link to="/flota" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-medium hover:opacity-90 transition-opacity no-underline">
+            <LLink to="/flota" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-medium hover:opacity-90 transition-opacity no-underline">
               Shiko të gjitha makinat <ArrowRight size={16} />
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -118,9 +118,9 @@ export default function MakinaQeraTirana() {
       <section className="py-12 px-6 bg-gradient-primary text-white text-center">
         <h2 className="text-2xl font-bold mb-3">Gati për të rezervuar?</h2>
         <p className="text-blue-100 mb-6">Rezervo online tani dhe merr makinën kur të duash</p>
-        <Link to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline">
+        <LLink to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline">
           Rezervo Falas Tani <ArrowRight size={18} />
-        </Link>
+        </LLink>
       </section>
 
       <Footer />

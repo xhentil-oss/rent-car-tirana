@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLocale } from "../hooks/useLocale";
 import { CheckCircle, Car, CalendarBlank, MapPin, ArrowRight } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import Footer from "../components/Footer";
@@ -11,6 +12,7 @@ export default function ThankYouPage() {
   const [countdown, setCountdown] = useState(15);
 
   const state = (location.state as Record<string, string>) || {};
+  const { localePath } = useLocale();
   const reservationId = state.rid || "";
   const customerName = state.name || "";
   const carName = state.car || "";
@@ -24,7 +26,7 @@ export default function ThankYouPage() {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          navigate("/llogaria");
+          navigate(localePath("/llogaria"));
           return 0;
         }
         return c - 1;
@@ -104,14 +106,14 @@ export default function ThankYouPage() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => navigate("/llogaria")}
+              onClick={() => navigate(localePath("/llogaria"))}
               className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
             >
               {t("thankyou.myAccount", "Paneli im")}
               <ArrowRight size={16} weight="bold" />
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate(localePath("/"))}
               className="flex-1 inline-flex items-center justify-center px-5 py-3 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
             >
               {t("thankyou.backHome", "Kthehu në kryefaqe")}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "../../components/LLink";
 import { AirplaneTilt, MapPin, Clock, CheckCircle, ArrowRight, Phone } from "@phosphor-icons/react";
 import Footer from "../../components/Footer";
 import { useSEO, buildFAQSchema, buildBreadcrumbSchema } from "../../hooks/useSEO";
@@ -48,9 +48,9 @@ export default function MakineAeroport() {
             Shërbim tërhieje dhe kthimi 24/7 direkt në Aeroportin Ndërkombëtar Nënë Tereza. Pa pritje, pa stres.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/rezervo?pickup=Aeroporti" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
+            <LLink to="/rezervo?pickup=Aeroporti" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
               Rezervo nga Aeroporti <ArrowRight size={18} />
-            </Link>
+            </LLink>
             <a href="tel:+355691234567" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white hover:bg-white/10 no-underline">
               <Phone size={16} /> Na telefononi
             </a>
@@ -122,9 +122,9 @@ export default function MakineAeroport() {
       <section className="py-12 px-6 bg-gradient-primary text-white text-center">
         <h2 className="text-2xl font-bold mb-3">Fluturoni drejt Tiranës?</h2>
         <p className="text-blue-100 mb-6">Rezervoni makinën suaj tani dhe ne do ju presim me çelësat gati</p>
-        <Link to="/rezervo?pickup=Aeroporti" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
+        <LLink to="/rezervo?pickup=Aeroporti" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
           Rezervo tani <ArrowRight size={18} />
-        </Link>
+        </LLink>
       </section>
 
       <Footer />

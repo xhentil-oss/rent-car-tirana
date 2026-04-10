@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import LLink from "../components/LLink";
 import { ArrowLeft, Lock, Eye, Database, Bell, Trash } from "@phosphor-icons/react";
 import { useSEO } from "../hooks/useSEO";
 
@@ -155,9 +155,9 @@ Vazhdimi i përdorimit të shërbimeve tona pas ndryshimeve nënkupton pranimin 
       {/* Hero */}
       <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white py-16 px-6">
         <div className="max-w-3xl mx-auto">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline mb-6 transition-colors">
+          <LLink to="/" className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white no-underline mb-6 transition-colors">
             <ArrowLeft size={16} /> Kthehu në faqen kryesore
-          </Link>
+          </LLink>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
               <Lock size={22} className="text-blue-400" weight="fill" />
@@ -249,12 +249,12 @@ Vazhdimi i përdorimit të shërbimeve tona pas ndryshimeve nënkupton pranimin 
         </div>
 
         <div className="mt-6 flex items-center gap-4">
-          <Link to="/termat-e-sherbimit" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
+          <LLink to="/termat-e-sherbimit" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
             → Kushtet e Shërbimit
-          </Link>
-          <Link to="/kontakt" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
+          </LLink>
+          <LLink to="/kontakt" className="text-sm text-neutral-500 hover:text-primary no-underline transition-colors">
             → Na Kontaktoni
-          </Link>
+          </LLink>
         </div>
       </div>
     </div>

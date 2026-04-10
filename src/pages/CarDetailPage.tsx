@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import LLink from "../components/LLink";
+import { useLocale } from "../hooks/useLocale";
 import { useTranslation } from "react-i18next";
 import { useSEO, buildCarProductSchema, buildBreadcrumbSchema } from "../hooks/useSEO";
 import {
@@ -144,6 +146,7 @@ export default function CarDetailPage() {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { localePath } = useLocale();
   const { data: allCars, isPending } = useQuery("Car");
   const { data: allReservations } = useQuery("Reservation");
   const { data: dbReviews } = useQuery("Review", { where: { approved: true }, orderBy: { createdAt: "desc" }, limit: 6 });
@@ -225,9 +228,9 @@ export default function CarDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-medium text-neutral-900 mb-4">{t("carDetail.notFound")}</h1>
-          <Link to="/flota" className="text-primary no-underline hover:underline">
+          <LLink to="/flota" className="text-primary no-underline hover:underline">
             {t("carDetail.backToFleet")}
-          </Link>
+          </LLink>
         </div>
       </div>
     );
@@ -310,7 +313,7 @@ export default function CarDetailPage() {
       >
         <button
           onClick={() =>
-            navigate(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}`)
+            navigate(localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}`))
           }
           className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-primary text-white font-bold text-sm shadow-2xl shadow-primary/40 hover:opacity-90 active:scale-[0.97] transition-all duration-200 cursor-pointer"
         >
@@ -409,13 +412,13 @@ export default function CarDetailPage() {
           className="absolute top-6 left-6 transition-all duration-500"
           style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(-12px)" }}
         >
-          <Link
+          <LLink
             to="/flota"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-all duration-200 no-underline"
           >
             <ArrowLeft size={15} weight="bold" />
             {t("carDetail.back")}
-          </Link>
+          </LLink>
         </div>
 
         {/* Status pill top-right */}
@@ -895,7 +898,7 @@ export default function CarDetailPage() {
                   <button
                     onClick={() =>
                       navigate(
-                        `/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}`,
+                        localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}`),
                       )
                     }
                     disabled={!available || (!!startDate && !!endDate && dateConflict)}
@@ -967,13 +970,13 @@ export default function CarDetailPage() {
                 <h2 className="text-2xl font-semibold text-neutral-900">{t("carDetail.related.title")}</h2>
                 <p className="text-sm text-neutral-500 mt-1">{t("carDetail.related.subtitle", { category: car.category })}</p>
               </div>
-              <Link
+              <LLink
                 to="/flota"
                 className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-primary no-underline hover:gap-2.5 transition-all duration-200"
               >
                 {t("carDetail.related.viewAll")}
                 <ArrowRight size={15} weight="bold" />
-              </Link>
+              </LLink>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedCars.map((c, i) => (

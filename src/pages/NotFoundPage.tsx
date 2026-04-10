@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import LLink from "../components/LLink";
+import { useLocale } from "../hooks/useLocale";
 import { useQuery } from "../hooks/useApi";
 import {
   ArrowLeft,
@@ -15,6 +17,7 @@ import Header from "../components/Header";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+  const { localePath } = useLocale();
   const { data: featuredCars } = useQuery("Car", {
     where: { featured: true, status: "Disponueshëm" },
     limit: 3,
@@ -25,7 +28,7 @@ export default function NotFoundPage() {
   // Auto-redirect countdown
   useEffect(() => {
     if (count <= 0) {
-      navigate("/");
+      navigate(localePath("/"));
       return;
     }
     const t = setTimeout(() => setCount((c) => c - 1), 1000);
@@ -72,21 +75,21 @@ export default function NotFoundPage() {
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
-          <Link
+          <LLink
             to="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-primary text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all duration-200 no-underline shadow-btn-primary"
           >
             <House size={18} weight="fill" />
             Kryefaqja
-          </Link>
-          <Link
+          </LLink>
+          <LLink
             to="/flota"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border text-neutral-700 font-semibold text-sm hover:bg-neutral-50 hover:border-primary/40 active:scale-[0.98] transition-all duration-200 no-underline"
           >
             <Car size={18} weight="duotone" className="text-primary" />
             Shiko makinat
             <ArrowRight size={15} weight="bold" className="text-primary" />
-          </Link>
+          </LLink>
           <button
             onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border text-neutral-700 font-semibold text-sm hover:bg-neutral-50 active:scale-[0.98] transition-all duration-200 cursor-pointer"
@@ -107,7 +110,7 @@ export default function NotFoundPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {featuredCars.map((car) => (
-                <Link
+                <LLink
                   key={car.id}
                   to={`/makina/${car.slug}`}
                   className="group bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 no-underline"
@@ -129,17 +132,17 @@ export default function NotFoundPage() {
                     <span className="text-xs text-neutral-500">{car.category} · {car.year}</span>
                     <span className="text-sm font-bold text-primary">€{car.pricePerDay}/ditë</span>
                   </div>
-                </Link>
+                </LLink>
               ))}
             </div>
             <div className="mt-5">
-              <Link
+              <LLink
                 to="/flota"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary no-underline hover:gap-2.5 transition-all duration-200"
               >
                 Shiko të gjithë flotën
                 <ArrowRight size={14} weight="bold" />
-              </Link>
+              </LLink>
             </div>
           </div>
         )}

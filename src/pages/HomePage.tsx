@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import LLink from "../components/LLink";
+import { useLocale } from "../hooks/useLocale";
 import { useTranslation } from "react-i18next";
 import { useSEO, buildLocalBusinessSchema, buildFAQSchema } from "../hooks/useSEO";
 import {
@@ -71,6 +73,7 @@ export default function HomePage() {
   });
 
   const navigate = useNavigate();
+  const { localePath } = useLocale();
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -99,7 +102,7 @@ export default function HomePage() {
     if (dropoff) params.set("dropoff", dropoff);
     if (startDate) params.set("start", startDate);
     if (endDate) params.set("end", endDate);
-    navigate(`/flota?${params.toString()}`);
+    navigate(localePath(`/flota?${params.toString()}`));
   };
 
   return (
@@ -288,10 +291,10 @@ export default function HomePage() {
               </h2>
               <p className="text-neutral-500 mt-1">{t("home.featuredCars.subtitle")}</p>
             </div>
-            <Link to="/flota" className="hidden md:flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors duration-200 no-underline">
+            <LLink to="/flota" className="hidden md:flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors duration-200 no-underline">
               {t("home.featuredCars.viewAll")}
               <ArrowRight size={16} weight="regular" />
-            </Link>
+            </LLink>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -303,10 +306,10 @@ export default function HomePage() {
           </div>
 
           <div className="mt-6 md:hidden text-center">
-            <Link to="/flota" className="inline-flex items-center gap-2 text-sm font-medium text-primary no-underline">
+            <LLink to="/flota" className="inline-flex items-center gap-2 text-sm font-medium text-primary no-underline">
               {t("home.featuredCars.viewAll")}
               <ArrowRight size={16} weight="regular" />
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -324,7 +327,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {categories.map((cat) => (
-              <Link
+              <LLink
                 key={cat.key}
                 to={`/flota?kategoria=${cat.dbName}`}
                 className="bg-white rounded-lg p-6 text-center border border-border hover:-translate-y-1 transition-all duration-300 no-underline group"
@@ -336,7 +339,7 @@ export default function HomePage() {
                   {t(`home.categories.${cat.key}.name`)}
                 </h3>
                 <p className="text-xs text-neutral-500">{t(`home.categories.${cat.key}.desc`)}</p>
-              </Link>
+              </LLink>
             ))}
           </div>
         </div>
@@ -370,10 +373,10 @@ export default function HomePage() {
             })}
           </div>
           <div className="text-center mt-8">
-            <Link to="/flota" className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity no-underline">
+            <LLink to="/flota" className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity no-underline">
               <Lightning size={16} weight="fill" />
               {t("home.howItWorks.cta")}
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>

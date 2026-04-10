@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "../../components/LLink";
 import { ArrowRight, CheckCircle, Gear, Path, Star } from "@phosphor-icons/react";
 import { useQuery } from "../../hooks/useApi";
 import CarCard from "../../components/CarCard";
@@ -48,12 +48,12 @@ export default function MakinaAutomatike() {
             Drejtoni pa stres në Tiranë dhe Shqipëri. Transmision automatik DSG dhe CVT — komoditet maksimal në çdo situatë trafiku.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/flota?transmision=Automatike" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
+            <LLink to="/flota?transmision=Automatike" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
               Shiko të gjitha automatike <ArrowRight size={18} />
-            </Link>
-            <Link to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
+            </LLink>
+            <LLink to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
               Rezervo tani
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -113,7 +113,7 @@ export default function MakinaAutomatike() {
               {cars.map((car) => <CarCard key={car.id} car={car} />)}
             </div>
             {cars.length === 0 && (
-              <p className="text-neutral-400 text-center py-10">Shiko <Link to="/flota?transmision=Automatike" className="text-primary">flotën tonë</Link> për të gjitha makinat automatike disponueshme.</p>
+              <p className="text-neutral-400 text-center py-10">Shiko <LLink to="/flota?transmision=Automatike" className="text-primary">flotën tonë</LLink> për të gjitha makinat automatike disponueshme.</p>
             )}
           </div>
         </section>
@@ -141,9 +141,9 @@ export default function MakinaAutomatike() {
       <section className="py-12 px-6 bg-gradient-primary text-white text-center">
         <h2 className="text-2xl font-bold mb-3">Drejtoni pa stres sot</h2>
         <p className="text-blue-100 mb-6">Rezervo makinën automatike tënde online tani</p>
-        <Link to="/flota?transmision=Automatike" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
+        <LLink to="/flota?transmision=Automatike" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
           Shiko Automatike <ArrowRight size={18} />
-        </Link>
+        </LLink>
       </section>
 
       <Footer />

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useLocale } from "../hooks/useLocale";
 import { useTranslation } from "react-i18next";
 import {
   MapPin,
@@ -141,6 +142,7 @@ export default function BookingPage() {
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { localePath } = useLocale();
   const { data: allCars } = useQuery("Car");
   const { data: allReservations } = useQuery("ReservationAvailability");
   const carId = searchParams.get("car");
@@ -351,7 +353,7 @@ export default function BookingPage() {
       });
       setSubmitted(true);
       // Redirect to thank-you page with booking summary via state (no PII in URL)
-      navigate('/faleminderit', {
+      navigate(localePath('/faleminderit'), {
         state: {
           rid: reservation.id,
           name: `${form.firstName.trim()} ${form.lastName.trim()}`,
@@ -389,7 +391,7 @@ export default function BookingPage() {
           <h1 className="text-xl font-semibold text-neutral-900 mb-2">Nuk u zgjodh asnjë makinë</h1>
           <p className="text-sm text-neutral-500 mb-6">Ju lutemi zgjidhni një makinë nga flota jonë për të vazhduar me rezervimin.</p>
           <button
-            onClick={() => navigate("/flota")}
+            onClick={() => navigate(localePath("/flota"))}
             className="px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
           >
             Shiko flotën
@@ -419,7 +421,7 @@ export default function BookingPage() {
           <h1 className="text-xl font-semibold text-neutral-900 mb-2">Makina nuk u gjet</h1>
           <p className="text-sm text-neutral-500 mb-6">Makina me këtë ID nuk ekziston ose nuk është më e disponueshme.</p>
           <button
-            onClick={() => navigate("/flota")}
+            onClick={() => navigate(localePath("/flota"))}
             className="px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
           >
             Shiko flotën

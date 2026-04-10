@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import LLink from "../components/LLink";
 import {
   MapPin,
   Phone,
@@ -257,12 +257,12 @@ export default function ContactPage() {
               <p className="text-sm opacity-85 mb-4">
                 Gati të nisësh? Shiko flotën tonë dhe rezervo menjëherë.
               </p>
-              <Link
+              <LLink
                 to="/flota"
                 className="inline-flex items-center gap-2 bg-white text-primary text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-neutral-100 transition-colors no-underline"
               >
                 Shiko flotën →
-              </Link>
+              </LLink>
             </div>
           </div>
 
@@ -291,12 +291,12 @@ export default function ContactPage() {
                     >
                       Dërgo sërisht
                     </button>
-                    <Link
+                    <LLink
                       to="/"
                       className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors no-underline"
                     >
                       Shko në kryefaqe
-                    </Link>
+                    </LLink>
                   </div>
                 </div>
               ) : (

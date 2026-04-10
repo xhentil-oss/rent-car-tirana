@@ -1,5 +1,6 @@
 import React from "react";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LocaleProvider } from "./hooks/useLocale";
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
@@ -34,6 +35,26 @@ import PrivacyPage from "./pages/PrivacyPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ThankYouPage from "./pages/ThankYouPage";
 
+/* Route definition: [Albanian path, English path, Component] */
+const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
+  ["/",                          "/en",                       HomePage],
+  ["/flota",                     "/en/fleet",                 FleetPage],
+  ["/makina/:slug",              "/en/car/:slug",             CarDetailPage],
+  ["/rezervo",                   "/en/book",                  BookingPage],
+  ["/faleminderit",              "/en/thank-you",             ThankYouPage],
+  ["/llogaria",                  "/en/my-account",            MyAccountPage],
+  ["/vleresime",                 "/en/reviews",               ReviewsPage],
+  ["/makina-me-qira-tirane",     "/en/car-rental-tirana",     MakinaQeraTirana],
+  ["/makine-me-qira-aeroport",   "/en/airport-car-rental",    MakineAeroport],
+  ["/makina-suv-me-qira",        "/en/suv-car-rental",        MakinaSUV],
+  ["/makina-automatike-me-qira", "/en/automatic-car-rental",  MakinaAutomatike],
+  ["/makina-luksoze-me-qira",    "/en/luxury-car-rental",     MakinaLuksoze],
+  ["/sitemap",                   "/en/sitemap",               SitemapPage],
+  ["/kontakt",                   "/en/contact",               ContactPage],
+  ["/termat-e-sherbimit",        "/en/terms",                 TermsPage],
+  ["/privatesie",                "/en/privacy",               PrivacyPage],
+];
+
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -51,159 +72,39 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <HashRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/"
-          element={
-            <PublicLayout>
-              <HomePage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/flota"
-          element={
-            <PublicLayout>
-              <FleetPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makina/:slug"
-          element={
-            <PublicLayout>
-              <CarDetailPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/rezervo"
-          element={
-            <PublicLayout>
-              <BookingPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/faleminderit"
-          element={
-            <PublicLayout>
-              <ThankYouPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/llogaria"
-          element={
-            <PublicLayout>
-              <MyAccountPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/vleresime"
-          element={
-            <PublicLayout>
-              <ReviewsPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makina-me-qira-tirane"
-          element={
-            <PublicLayout>
-              <MakinaQeraTirana />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makine-me-qira-aeroport"
-          element={
-            <PublicLayout>
-              <MakineAeroport />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makina-suv-me-qira"
-          element={
-            <PublicLayout>
-              <MakinaSUV />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makina-automatike-me-qira"
-          element={
-            <PublicLayout>
-              <MakinaAutomatike />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/makina-luksoze-me-qira"
-          element={
-            <PublicLayout>
-              <MakinaLuksoze />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/sitemap"
-          element={
-            <PublicLayout>
-              <SitemapPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/kontakt"
-          element={
-            <PublicLayout>
-              <ContactPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/termat-e-sherbimit"
-          element={
-            <PublicLayout>
-              <TermsPage />
-            </PublicLayout>
-          }
-        />
-        <Route
-          path="/privatesie"
-          element={
-            <PublicLayout>
-              <PrivacyPage />
-            </PublicLayout>
-          }
-        />
+    <BrowserRouter>
+      <LocaleProvider>
+        <Routes>
+          {/* Public Routes — Albanian (default) + English */}
+          {PUBLIC_ROUTES.map(([sq, en, Component]) => (
+            <React.Fragment key={sq}>
+              <Route path={sq} element={<PublicLayout><Component /></PublicLayout>} />
+              <Route path={en} element={<PublicLayout><Component /></PublicLayout>} />
+            </React.Fragment>
+          ))}
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="flota" element={<AdminCars />} />
-          <Route path="klientet" element={<AdminCustomers />} />
-          <Route path="rezervime" element={<AdminReservations />} />
-          <Route path="kalendar" element={<AdminCalendar />} />
-          <Route path="financa" element={<AdminFinance />} />
-          <Route path="raporte" element={<AdminReports />} />
-          <Route path="perdoruesit" element={<AdminUsers />} />
-          <Route path="fleet" element={<AdminFleetManagement />} />
-          <Route path="vleresimet" element={<AdminReviews />} />
-          <Route path="ofertat" element={<AdminPricingRules />} />
-          <Route path="flota/:id" element={<AdminCarEdit />} />
-          <Route path="media" element={<AdminMedia />} />
-          <Route path="cilesimet" element={<AdminSettings />} />
-        </Route>
+          {/* Admin Routes (no language prefix) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="flota" element={<AdminCars />} />
+            <Route path="klientet" element={<AdminCustomers />} />
+            <Route path="rezervime" element={<AdminReservations />} />
+            <Route path="kalendar" element={<AdminCalendar />} />
+            <Route path="financa" element={<AdminFinance />} />
+            <Route path="raporte" element={<AdminReports />} />
+            <Route path="perdoruesit" element={<AdminUsers />} />
+            <Route path="fleet" element={<AdminFleetManagement />} />
+            <Route path="vleresimet" element={<AdminReviews />} />
+            <Route path="ofertat" element={<AdminPricingRules />} />
+            <Route path="flota/:id" element={<AdminCarEdit />} />
+            <Route path="media" element={<AdminMedia />} />
+            <Route path="cilesimet" element={<AdminSettings />} />
+          </Route>
 
-        {/* Fallback — Custom 404 */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </HashRouter>
+          {/* Fallback — Custom 404 */}
+          <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
+        </Routes>
+      </LocaleProvider>
+    </BrowserRouter>
   );
 }

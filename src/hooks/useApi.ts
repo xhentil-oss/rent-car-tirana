@@ -215,7 +215,7 @@ export function useAuth() {
   const login = useCallback(async (email?: string, password?: string) => {
     if (!email || !password) {
       // Redirect to admin login or show prompt
-      window.location.hash = "#/admin";
+      window.location.href = "/admin";
       return;
     }
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -242,7 +242,7 @@ export function useAuth() {
     localStorage.removeItem("rct_user");
     setUser(null);
     setIsAnonymous(true);
-    window.location.hash = "#/";
+    window.location.href = "/";
   }, []);
 
   return { user, isPending, isAnonymous, login, logout };

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import LLink from "../components/LLink";
 import { useQuery } from "../hooks/useApi";
 import { useSEO } from "../hooks/useSEO";
 import {
@@ -224,12 +224,12 @@ export default function SitemapPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <CheckCircle size={14} weight="fill" className="text-green-500 shrink-0" />
-                              <Link
+                              <LLink
                                 to={page.path}
                                 className="text-sm font-medium text-neutral-800 hover:text-primary transition-colors no-underline"
                               >
                                 {page.label}
-                              </Link>
+                              </LLink>
                             </div>
                           </td>
                           <td className="px-4 py-3 hidden md:table-cell">
@@ -252,13 +252,13 @@ export default function SitemapPage() {
                             </span>
                           </td>
                           <td className="px-3 py-3">
-                            <Link
+                            <LLink
                               to={page.path}
                               className="text-neutral-300 hover:text-primary transition-colors"
                               title="Hap faqen"
                             >
                               <ArrowSquareOut size={14} weight="regular" />
-                            </Link>
+                            </LLink>
                           </td>
                         </tr>
                       ))}

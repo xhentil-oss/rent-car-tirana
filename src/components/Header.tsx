@@ -15,17 +15,18 @@ import {
 } from "@phosphor-icons/react";
 import { useAuth, useLazyQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
+import { useLocale } from "../hooks/useLocale";
+import LLink from "./LLink";
 
 function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-  const current = i18n.language?.startsWith("en") ? "en" : "sq";
+  const { lang, switchLang } = useLocale();
 
   return (
     <div className="flex items-center gap-0.5 bg-secondary rounded-md border border-border overflow-hidden">
       <button
-        onClick={() => i18n.changeLanguage("sq")}
+        onClick={() => switchLang("sq")}
         className={`px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-          current === "sq"
+          lang === "sq"
             ? "bg-primary text-white"
             : "text-neutral-500 hover:text-neutral-800"
         }`}
@@ -34,9 +35,9 @@ function LanguageSwitcher() {
         🇦🇱 AL
       </button>
       <button
-        onClick={() => i18n.changeLanguage("en")}
+        onClick={() => switchLang("en")}
         className={`px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-          current === "en"
+          lang === "en"
             ? "bg-primary text-white"
             : "text-neutral-500 hover:text-neutral-800"
         }`}
@@ -154,6 +155,8 @@ function UserMenu() {
     );
   }
 
+  const { localePath } = useLocale();
+
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : user?.email?.[0]?.toUpperCase() ?? "U";
@@ -190,7 +193,7 @@ function UserMenu() {
 
           <div className="py-1">
             <button
-              onClick={() => { navigate("/llogaria"); setOpen(false); }}
+              onClick={() => { navigate(localePath("/llogaria")); setOpen(false); }}
               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-neutral-700 hover:bg-secondary hover:text-primary transition-colors duration-200 cursor-pointer bg-transparent border-0 text-left"
             >
               <CalendarBlank size={16} weight="regular" className="text-neutral-400" />
@@ -227,6 +230,7 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
   const { user, isAnonymous, login, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { localePath } = useLocale();
 
   if (isAnonymous) {
     return (
@@ -254,7 +258,7 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <button
-        onClick={() => { navigate("/llogaria"); onClose(); }}
+        onClick={() => { navigate(localePath("/llogaria")); onClose(); }}
         className="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-neutral-700 hover:bg-secondary transition-colors duration-200 cursor-pointer bg-transparent border-0 text-left w-full"
       >
         <CalendarBlank size={16} weight="regular" className="text-neutral-400" />
@@ -276,6 +280,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { localePath } = useLocale();
 
   const navLinks = [
     { label: t("header.fleet"), href: "/flota" },
@@ -293,26 +298,20 @@ export default function Header() {
 
   const handleNavClick = (link: typeof navLinks[number]) => {
     if (link.anchor) {
-      const hashPath = location.hash.replace(/^#/, "") || "/";
-      if (hashPath === "/" || hashPath === "") {
-        // Already on home page — just scroll
+      const homePath = localePath("/");
+      if (location.pathname === homePath || location.pathname === "/") {
         scrollToAnchor(link.anchor);
       } else {
-        // Navigate to home first, then scroll after render
-        navigate("/");
+        navigate(homePath);
         setTimeout(() => scrollToAnchor(link.anchor), 300);
       }
     }
   };
 
   const isActive = (href: string) => {
-    // HashRouter: location.pathname is always "/" — use location.hash instead.
-    // location.hash looks like "#/flota" or "#/vleresime" or "#/#rreth-nesh"
-    const hashPath = location.hash.replace(/^#/, "") || "/";
-    if (href === "/") return hashPath === "/" || hashPath === "";
-    const hrefPath = href.split("#")[0];
-    if (!hrefPath || hrefPath === "/") return false;
-    return hashPath.startsWith(hrefPath);
+    const localHref = localePath(href);
+    if (href === "/") return location.pathname === "/" || location.pathname === "/en";
+    return location.pathname.startsWith(localHref);
   };
 
   return (
@@ -322,7 +321,7 @@ export default function Header() {
     >
       <div className="max-w-[1440px] mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
-        <Link
+        <LLink
           to="/"
           className="flex items-center gap-2 no-underline"
           aria-label="Rent Car Tirana - Kryefaqja"
@@ -333,7 +332,7 @@ export default function Header() {
           <span className="font-semibold text-lg text-neutral-900 leading-tight">
             Rent Car <span className="text-primary">Tirana</span>
           </span>
-        </Link>
+        </LLink>
 
         {/* Desktop Nav */}
         <nav
@@ -352,7 +351,7 @@ export default function Header() {
                 {link.label}
               </button>
             ) : (
-              <Link
+              <LLink
                 key={link.href}
                 to={link.href}
                 className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer ${
@@ -362,7 +361,7 @@ export default function Header() {
                 }`}
               >
                 {link.label}
-              </Link>
+              </LLink>
             )
           )}
         </nav>
@@ -380,12 +379,12 @@ export default function Header() {
           <LanguageSwitcher />
           <UserMenu />
 
-          <Link
+          <LLink
             to="/rezervo"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 no-underline"
           >
             {t("header.bookNow")}
-          </Link>
+          </LLink>
         </div>
 
         {/* Mobile hamburger */}
@@ -419,7 +418,7 @@ export default function Header() {
                   {link.label}
                 </button>
               ) : (
-                <Link
+                <LLink
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
@@ -430,7 +429,7 @@ export default function Header() {
                   }`}
                 >
                   {link.label}
-                </Link>
+                </LLink>
               )
             )}
             <div className="pt-3 border-t border-border mt-2 flex flex-col gap-2">
@@ -445,13 +444,13 @@ export default function Header() {
                 <LanguageSwitcher />
               </div>
               <MobileUserMenu onClose={() => setMobileOpen(false)} />
-              <Link
+              <LLink
                 to="/rezervo"
                 onClick={() => setMobileOpen(false)}
                 className="inline-flex items-center justify-center px-5 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground no-underline text-center"
               >
                 {t("header.bookNow")}
-              </Link>
+              </LLink>
             </div>
           </nav>
         </div>

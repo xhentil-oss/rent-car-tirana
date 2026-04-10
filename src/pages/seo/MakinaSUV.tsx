@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "../../components/LLink";
 import { ArrowRight, CheckCircle, Mountains, Users, Briefcase } from "@phosphor-icons/react";
 import { useQuery } from "../../hooks/useApi";
 import CarCard from "../../components/CarCard";
@@ -48,12 +48,12 @@ export default function MakinaSUV() {
             Zbulo terrenet e Shqipërisë me SUV-t tanë modernë. Nga qyteti te malet dhe bregdeti — fuqi dhe komoditet në çdo rrugë.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/flota?kategoria=SUV" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
+            <LLink to="/flota?kategoria=SUV" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 transition-colors no-underline text-base">
               Shiko SUV-t disponueshëm <ArrowRight size={18} />
-            </Link>
-            <Link to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
+            </LLink>
+            <LLink to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/40 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
               Rezervo tani
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -141,9 +141,9 @@ export default function MakinaSUV() {
       <section className="py-12 px-6 bg-gradient-primary text-white text-center">
         <h2 className="text-2xl font-bold mb-3">Gati për aventurën tjetër?</h2>
         <p className="text-blue-100 mb-6">Rezervo SUV-n tënd online — disponueshëm 24/7</p>
-        <Link to="/flota?kategoria=SUV" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
+        <LLink to="/flota?kategoria=SUV" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-white text-primary font-semibold hover:bg-blue-50 no-underline">
           Shiko SUV-t <ArrowRight size={18} />
-        </Link>
+        </LLink>
       </section>
 
       <Footer />

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import LLink from "./LLink";
 import { useTranslation } from "react-i18next";
 import { Car, FacebookLogo, InstagramLogo, MapPin, Phone, EnvelopeSimple } from "@phosphor-icons/react";
 
@@ -11,12 +11,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center gap-2 no-underline mb-4">
+            <LLink to="/" className="flex items-center gap-2 no-underline mb-4">
               <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center shrink-0">
                 <Car size={20} weight="fill" className="text-white" />
               </div>
               <span className="font-semibold text-lg text-white">Rent Car <span className="text-accent">Tirana</span></span>
-            </Link>
+            </LLink>
             <p className="text-neutral-400 text-sm leading-relaxed mb-4">
               {t("footer.tagline")}
             </p>
@@ -43,7 +43,7 @@ export default function Footer() {
                 { label: "Kontakt", to: "/kontakt" },
               ].map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-neutral-400 hover:text-white transition-colors no-underline">{l.label}</Link>
+                  <LLink to={l.to} className="text-sm text-neutral-400 hover:text-white transition-colors no-underline">{l.label}</LLink>
                 </li>
               ))}
             </ul>
@@ -61,7 +61,7 @@ export default function Footer() {
                 { label: t("footer.seo.automatic"), to: "/flota?transmetimi=Automatike" },
               ].map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-neutral-400 hover:text-white transition-colors no-underline">{l.label}</Link>
+                  <LLink to={l.to} className="text-sm text-neutral-400 hover:text-white transition-colors no-underline">{l.label}</LLink>
                 </li>
               ))}
             </ul>
@@ -114,8 +114,8 @@ export default function Footer() {
         <div className="border-t border-neutral-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-neutral-500">© {new Date().getFullYear()} Rent Car Tirana. {t("footer.rights")}</p>
           <div className="flex gap-4">
-            <Link to="/privatesie" className="text-xs text-neutral-500 hover:text-neutral-300 no-underline">{t("footer.privacy")}</Link>
-            <Link to="/termat-e-sherbimit" className="text-xs text-neutral-500 hover:text-neutral-300 no-underline">{t("footer.terms")}</Link>
+            <LLink to="/privatesie" className="text-xs text-neutral-500 hover:text-neutral-300 no-underline">{t("footer.privacy")}</LLink>
+            <LLink to="/termat-e-sherbimit" className="text-xs text-neutral-500 hover:text-neutral-300 no-underline">{t("footer.terms")}</LLink>
           </div>
         </div>
       </div>

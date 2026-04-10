@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getAlternatePath, detectLang } from "../lib/routes";
 
 interface SEOProps {
   title: string;
@@ -33,6 +34,18 @@ function setLink(rel: string, href: string) {
   if (!el) {
     el = document.createElement("link");
     el.setAttribute("rel", rel);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("href", href);
+}
+
+function setHreflang(lang: string, href: string) {
+  const selector = `link[rel="alternate"][hreflang="${lang}"]`;
+  let el = document.querySelector(selector) as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", "alternate");
+    el.setAttribute("hreflang", lang);
     document.head.appendChild(el);
   }
   el.setAttribute("href", href);
@@ -75,8 +88,16 @@ export function useSEO({
     setMeta("robots", "index, follow");
 
     // Canonical
-    const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : `${SITE_URL}${window.location.pathname}`;
+    const pathname = window.location.pathname;
+    const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : `${SITE_URL}${pathname}`;
     setLink("canonical", canonicalUrl);
+
+    // Hreflang alternate links
+    const lang = detectLang(pathname);
+    const alt = getAlternatePath(pathname, lang);
+    setHreflang("sq", `${SITE_URL}${alt.sq}`);
+    setHreflang("en", `${SITE_URL}${alt.en}`);
+    setHreflang("x-default", `${SITE_URL}${alt.sq}`);
 
     // Open Graph
     setMeta("og:title", `${title} | ${SITE_NAME}`, true);
@@ -88,7 +109,8 @@ export function useSEO({
     if (ogImageAlt) setMeta("og:image:alt", ogImageAlt, true);
     setMeta("og:url", canonicalUrl, true);
     setMeta("og:site_name", SITE_NAME, true);
-    setMeta("og:locale", "sq_AL", true);
+    setMeta("og:locale", lang === "en" ? "en_US" : "sq_AL", true);
+    setMeta("og:locale:alternate", lang === "en" ? "sq_AL" : "en_US", true);
 
     // Twitter Card
     setMeta("twitter:card", "summary_large_image");
@@ -103,7 +125,6 @@ export function useSEO({
     }
 
     return () => {
-      // Cleanup structured data on unmount to avoid stale schemas
       const el = document.getElementById("structured-data-dynamic");
       if (el) el.remove();
     };

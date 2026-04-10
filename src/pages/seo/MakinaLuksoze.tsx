@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import LLink from "../../components/LLink";
 import { ArrowRight, CheckCircle, Crown, Diamond, Star } from "@phosphor-icons/react";
 import { useQuery } from "../../hooks/useApi";
 import CarCard from "../../components/CarCard";
@@ -50,12 +50,12 @@ export default function MakinaLuksoze() {
             Eksperienca e drejtimit premium në Tiranë. Makinat tona luksoze të bëjnë çdo udhëtim të paharrueshëm — dasma, evente korporative apo thjesht komoditet.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/flota?kategoria=Luksoze" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-amber-400 text-neutral-900 font-semibold hover:bg-amber-300 transition-colors no-underline text-base">
+            <LLink to="/flota?kategoria=Luksoze" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-amber-400 text-neutral-900 font-semibold hover:bg-amber-300 transition-colors no-underline text-base">
               Shiko Flotën Luksoze <ArrowRight size={18} />
-            </Link>
-            <Link to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
+            </LLink>
+            <LLink to="/rezervo" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white font-medium hover:bg-white/10 transition-colors no-underline text-base">
               Rezervo tani
-            </Link>
+            </LLink>
           </div>
         </div>
       </section>
@@ -146,9 +146,9 @@ export default function MakinaLuksoze() {
           <Crown size={36} weight="fill" className="text-amber-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-3">Rezervoni eksperiencën tuaj premium</h2>
           <p className="text-neutral-400 mb-6">Makinat luksoze tona — disponueshme 24/7 për çdo okacion special</p>
-          <Link to="/flota?kategoria=Luksoze" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-amber-400 text-neutral-900 font-semibold hover:bg-amber-300 no-underline">
+          <LLink to="/flota?kategoria=Luksoze" className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-amber-400 text-neutral-900 font-semibold hover:bg-amber-300 no-underline">
             Shiko Luksoze <ArrowRight size={18} />
-          </Link>
+          </LLink>
         </div>
       </section>
 
