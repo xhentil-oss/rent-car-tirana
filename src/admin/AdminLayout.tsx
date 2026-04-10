@@ -36,6 +36,64 @@ const navItems = [
   { label: "Përdoruesit", href: "/admin/perdoruesit", icon: UserGear, group: "system" },
 ];
 
+function AdminLoginForm({ login }: { login: (email: string, password: string) => Promise<any> }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || "Email ose fjalëkalimi i gabuar");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-screen items-center justify-center bg-background px-6">
+      <div className="bg-white rounded-xl border border-border p-10 max-w-sm w-full shadow-md">
+        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <ShieldCheck size={28} weight="duotone" className="text-primary" />
+        </div>
+        <h1 className="text-xl font-semibold text-neutral-900 mb-2 text-center">Paneli Admin</h1>
+        <p className="text-sm text-neutral-500 mb-6 text-center">Kyçuni për të aksesuar panelin e administrimit.</p>
+        {error && <p className="text-sm text-error bg-red-50 rounded-md px-3 py-2 mb-4 text-center">{error}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+          />
+          <input
+            type="password"
+            placeholder="Fjalëkalimi"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0 mt-1"
+          >
+            {loading ? "Duke u kyçur..." : "Kyçu"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -54,31 +112,9 @@ export default function AdminLayout() {
     );
   }
 
-  // Not logged in → redirect to login
+  // Not logged in → show login form
   if (isAnonymous) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background px-6">
-        <div className="bg-white rounded-xl border border-border p-10 max-w-sm w-full text-center shadow-md">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck size={28} weight="duotone" className="text-primary" />
-          </div>
-          <h1 className="text-xl font-semibold text-neutral-900 mb-2">Kërkohet hyrja</h1>
-          <p className="text-sm text-neutral-500 mb-6">Ju duhet të kyçeni për të aksesuar panelin e administrimit.</p>
-          <button
-            onClick={() => login()}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-neutral-300 text-neutral-700 rounded-md text-sm font-medium hover:bg-neutral-50 transition-colors cursor-pointer shadow-sm"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-            </svg>
-            Kyçu me Google
-          </button>
-        </div>
-      </div>
-    );
+    return <AdminLoginForm login={login} />;
   }
 
   const isActive = (href: string) => {

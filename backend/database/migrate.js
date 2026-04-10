@@ -56,7 +56,7 @@ const TABLES = [
     luggage         TINYINT NOT NULL DEFAULT 2,
     price_per_day   DECIMAL(10,2) NOT NULL,
     status          VARCHAR(30) NOT NULL DEFAULT 'Available',
-    image           VARCHAR(512),
+    image           TEXT,
     slug            VARCHAR(255) UNIQUE NOT NULL,
     featured        TINYINT(1) DEFAULT 0,
     created_by      CHAR(36),
