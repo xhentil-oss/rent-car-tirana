@@ -44,13 +44,6 @@ interface LateFee {
 
 const VAT_RATE = 0.2;
 
-const staticLateFees: LateFee[] = [
-  { id: "lf1", reservationId: "r2", customerName: "Besnik Shehu", carName: "BMW X5", scheduledReturn: "2024-07-10", actualReturn: "2024-07-12", daysLate: 2, dailyRate: 95, feeAmount: 190, paid: true },
-  { id: "lf2", reservationId: "r9", customerName: "Anila Basha", carName: "Ford Focus", scheduledReturn: "2024-07-18", actualReturn: "2024-07-20", daysLate: 2, dailyRate: 30, feeAmount: 60, paid: false },
-  { id: "lf3", reservationId: "r4", customerName: "Genti Leka", carName: "Mercedes E-Class", scheduledReturn: "2024-07-15", actualReturn: "2024-07-17", daysLate: 2, dailyRate: 120, feeAmount: 240, paid: true },
-  { id: "lf4", reservationId: "r1", customerName: "Artan Hoxha", carName: "Toyota Corolla", scheduledReturn: "2024-07-05", actualReturn: "2024-07-08", daysLate: 3, dailyRate: 45, feeAmount: 135, paid: false },
-  { id: "lf5", reservationId: "r7", customerName: "Ilir Prifti", carName: "Audi A6", scheduledReturn: "2024-07-28", actualReturn: "2024-07-29", daysLate: 1, dailyRate: 110, feeAmount: 110, paid: false },
-];
 
 function fmt(n: number) {
   return n.toLocaleString("sq-AL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -102,7 +95,7 @@ export default function AdminFinance() {
   const [selectedInvoice, setSelectedInvoice] = useState<LocalInvoice | null>(null);
   const [showNewInvoice, setShowNewInvoice] = useState(false);
   const [reportGroup, setReportGroup] = useState<"month" | "car" | "category">("month");
-  const [localLateFees, setLocalLateFees] = useState<LateFee[]>(staticLateFees);
+  const [paidFeeIds, setPaidFeeIds] = useState<Set<string>>(new Set());
   const [depositFilter, setDepositFilter] = useState<string>("Të gjitha");
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -134,13 +127,46 @@ export default function AdminFinance() {
   const [localInvoices, setLocalInvoices] = useState<LocalInvoice[]>([]);
   const allInvoices = useMemo(() => [...invoices, ...localInvoices], [invoices, localInvoices]);
 
+  // Compute late fees dynamically: reservations where endDate is in the past and status is Active or Confirmed
+  const dynamicLateFees = useMemo<LateFee[]>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return (reservations ?? [])
+      .filter(r => {
+        if (r.status === "Cancelled" || r.status === "Completed") return false;
+        const end = new Date(r.endDate);
+        end.setHours(0, 0, 0, 0);
+        return end < today;
+      })
+      .map(r => {
+        const end = new Date(r.endDate);
+        end.setHours(0, 0, 0, 0);
+        const daysLate = Math.max(1, Math.ceil((today.getTime() - end.getTime()) / (1000 * 60 * 60 * 24)));
+        const customer = (sdkCustomers ?? []).find(c => c.id === r.customerId);
+        const car = (sdkCars ?? []).find(c => c.id === r.carId);
+        const dailyRate = car?.pricePerDay ?? 0;
+        return {
+          id: `lf-${r.id}`,
+          reservationId: r.id,
+          customerName: customer?.name ?? customer?.firstName ?? r.customerId.slice(0, 8),
+          carName: car ? `${car.brand} ${car.model}` : r.carId.slice(0, 8),
+          scheduledReturn: new Date(r.endDate).toLocaleDateString("sq-AL"),
+          actualReturn: today.toLocaleDateString("sq-AL"),
+          daysLate,
+          dailyRate,
+          feeAmount: daysLate * dailyRate,
+          paid: paidFeeIds.has(`lf-${r.id}`),
+        };
+      });
+  }, [reservations, sdkCustomers, sdkCars, paidFeeIds]);
+
   const totalRevenue = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + b.total, 0), [allInvoices]);
   const totalVat = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + b.vatAmount, 0), [allInvoices]);
   const pendingAmount = useMemo(() => allInvoices.filter(i => i.status === "Pa paguar").reduce((a, b) => a + b.total, 0), [allInvoices]);
   const overdueAmount = useMemo(() => allInvoices.filter(i => i.status === "Vonuar").reduce((a, b) => a + b.total, 0), [allInvoices]);
   const heldDeposits = useMemo(() => (sdkDeposits ?? []).filter(d => d.status === "Mbajtur").reduce((a, b) => a + b.amount, 0), [sdkDeposits]);
-  const lateFeeTotal = useMemo(() => localLateFees.reduce((a, b) => a + b.feeAmount, 0), [localLateFees]);
-  const lateFeeUnpaid = useMemo(() => localLateFees.filter(l => !l.paid).reduce((a, b) => a + b.feeAmount, 0), [localLateFees]);
+  const lateFeeTotal = useMemo(() => dynamicLateFees.reduce((a, b) => a + b.feeAmount, 0), [dynamicLateFees]);
+  const lateFeeUnpaid = useMemo(() => dynamicLateFees.filter(l => !l.paid).reduce((a, b) => a + b.feeAmount, 0), [dynamicLateFees]);
 
   const filteredInvoices = useMemo(() => {
     return allInvoices.filter(inv => {
@@ -173,7 +199,7 @@ export default function AdminFinance() {
   const tabs: { id: Tab; label: string; count?: number }[] = [
     { id: "invoice", label: "Faturat", count: allInvoices.length },
     { id: "deposits", label: "Depozitat", count: (sdkDeposits ?? []).length },
-    { id: "latefees", label: "Vonesa", count: localLateFees.filter(l => !l.paid).length },
+    { id: "latefees", label: "Vonesa", count: dynamicLateFees.filter(l => !l.paid).length },
     { id: "reports", label: "Raportet" },
     { id: "vat", label: "TVSH / Taksa" },
   ];
@@ -193,7 +219,7 @@ export default function AdminFinance() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<CurrencyDollar size={20} weight="bold" className="text-success" />} label="Të ardhura totale" value={`€${fmt(totalRevenue)}`} sub={`TVSH: €${fmt(totalVat)}`} color="bg-success/10" trend={{ pct: 12, positive: true }} />
         <StatCard icon={<Receipt size={20} weight="bold" className="text-warning" />} label="Pa paguar" value={`€${fmt(pendingAmount)}`} sub={`${allInvoices.filter(i => i.status === "Pa paguar").length} fatura`} color="bg-warning/10" />
-        <StatCard icon={<Warning size={20} weight="bold" className="text-error" />} label="Vonuar / Gjoba" value={`€${fmt(overdueAmount + lateFeeUnpaid)}`} sub={`${allInvoices.filter(i => i.status === "Vonuar").length} fatura + ${localLateFees.filter(l => !l.paid).length} vonesa`} color="bg-error/10" />
+          <StatCard icon={<Warning size={20} weight="bold" className="text-error" />} label="Vonuar / Gjoba" value={`€${fmt(overdueAmount + lateFeeUnpaid)}`} sub={`${allInvoices.filter(i => i.status === "Vonuar").length} fatura + ${dynamicLateFees.filter(l => !l.paid).length} vonesa`} color="bg-error/10" />
         <StatCard icon={<Coins size={20} weight="bold" className="text-primary" />} label="Depozita mbajtura" value={`€${fmt(heldDeposits)}`} sub={`${(sdkDeposits ?? []).filter(d => d.status === "Mbajtur").length} aktive`} color="bg-primary/10" />
       </div>
 
@@ -313,7 +339,7 @@ export default function AdminFinance() {
             </div>
             <div className="rounded-xl border border-success/20 bg-success/5 p-4">
               <p className="text-xs font-semibold text-success/70 uppercase tracking-wide">Paguar</p>
-              <p className="text-xl font-bold text-success mt-1">€{fmt(localLateFees.filter(l => l.paid).reduce((a, b) => a + b.feeAmount, 0))}</p>
+              <p className="text-xl font-bold text-success mt-1">€{fmt(dynamicLateFees.filter(l => l.paid).reduce((a, b) => a + b.feeAmount, 0))}</p>
             </div>
             <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
               <p className="text-xs font-semibold text-warning/70 uppercase tracking-wide">Pa paguar</p>
@@ -334,14 +360,22 @@ export default function AdminFinance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {localLateFees.map(lf => (
+                  {dynamicLateFees.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-12 text-neutral-400 text-sm">Nuk ka vonesa aktive — të gjitha rezervimet janë brenda afatit</td></tr>
+                  ) : dynamicLateFees.map(lf => (
                     <tr key={lf.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-neutral-800">{lf.customerName}</td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-neutral-800">{lf.customerName}</p>
+                        <p className="text-xs text-neutral-400 mt-0.5">Kthim: {lf.scheduledReturn}</p>
+                      </td>
                       <td className="px-4 py-3 text-neutral-600 hidden md:table-cell">{lf.carName}</td>
                       <td className="px-4 py-3 text-center"><span className="bg-error/10 text-error font-bold text-xs px-2 py-0.5 rounded-full border border-error/20">+{lf.daysLate}d</span></td>
-                      <td className="px-4 py-3 text-right font-semibold text-error">€{fmt(lf.feeAmount)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="font-semibold text-error">€{fmt(lf.feeAmount)}</p>
+                        <p className="text-xs text-neutral-400">€{fmt(lf.dailyRate)}/ditë</p>
+                      </td>
                       <td className="px-4 py-3 text-center">{lf.paid ? <CheckCircle size={18} weight="fill" className="text-success mx-auto" /> : <XCircle size={18} weight="fill" className="text-error mx-auto" />}</td>
-                      <td className="px-4 py-3 text-right">{!lf.paid && <button onClick={() => setLocalLateFees(prev => prev.map(l => l.id === lf.id ? {...l, paid: true} : l))} className="text-xs text-success border border-success/30 bg-success/5 px-2 py-1 rounded-lg hover:bg-success/10 cursor-pointer font-medium transition-colors">Shëno paguar</button>}</td>
+                      <td className="px-4 py-3 text-right">{!lf.paid && <button onClick={() => setPaidFeeIds(prev => new Set([...prev, lf.id]))} className="text-xs text-success border border-success/30 bg-success/5 px-2 py-1 rounded-lg hover:bg-success/10 cursor-pointer font-medium transition-colors">Shëno paguar</button>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -359,7 +393,7 @@ export default function AdminFinance() {
               { label: "Bruto total", value: `€${fmt(totalRevenue)}` },
               { label: "Neto (pa TVSH)", value: `€${fmt(totalRevenue - totalVat)}` },
               { label: "TVSH 20%", value: `€${fmt(totalVat)}` },
-              { label: "Gjoba vonesa", value: `€${fmt(lateFeeTotal)}` },
+              { label: "Gjoba vonesa (aktive)", value: `€${fmt(lateFeeTotal)}` },
             ].map(k => (
               <div key={k.label} className="bg-neutral-50 rounded-xl border border-border p-4">
                 <p className="text-xs text-neutral-400">{k.label}</p>

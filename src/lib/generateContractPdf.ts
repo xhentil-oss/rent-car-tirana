@@ -123,7 +123,7 @@ export function downloadContractPdf(data: ContractData): void {
     <div class="logo-block">
       <div class="company-name">🚗 RentCar Albania</div>
       <div class="company-subtitle">Shërbim qiraje automjetesh · Tiranë, Shqipëri</div>
-      <div class="company-subtitle" style="margin-top:4px;">Tel: +355 69 000 0000 · info@rentcar.al</div>
+      <div class="company-subtitle" style="margin-top:4px;">Tel: +355 69 000 0000 · info@rentcartiranaairport.com</div>
     </div>
     <div class="contract-meta">
       <div class="contract-title">KONTRATË QIRAJE</div>

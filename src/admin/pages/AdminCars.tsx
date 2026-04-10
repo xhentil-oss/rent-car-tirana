@@ -29,6 +29,13 @@ type CarDraftForm = {
   featured: boolean;
 };
 
+type FormErrors = {
+  brand?: string;
+  model?: string;
+  year?: string;
+  pricePerDay?: string;
+};
+
 const emptyForm: CarDraftForm = {
   brand: "", model: "", year: "", pricePerDay: "", category: "Ekonomike",
   status: "Në dispozicion", transmission: "Automatike", fuel: "Benzinë",
@@ -302,6 +309,7 @@ export default function AdminCars() {
   const [editingCarId, setEditingCarId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [form, setForm] = useState<CarDraftForm>(emptyForm);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const filtered = (cars ?? []).filter((c) => {
     if (filterStatus && c.status !== filterStatus) return false;
@@ -309,7 +317,7 @@ export default function AdminCars() {
     return true;
   });
 
-  const openAdd = () => { setEditingCarId(null); setForm(emptyForm); setDrawerOpen(true); };
+  const openAdd = () => { setEditingCarId(null); setForm(emptyForm); setFormErrors({}); setDrawerOpen(true); };
   const openEdit = (car: any) => {
     setEditingCarId(car.id);
     setForm({
@@ -319,10 +327,29 @@ export default function AdminCars() {
       seats: String(car.seats), luggage: String(car.luggage),
       image: car.image, slug: car.slug, featured: car.featured,
     });
+    setFormErrors({});
     setDrawerOpen(true);
   };
 
   const handleSave = async () => {
+    // ── Validation ────────────────────────────────────────────
+    const errors: FormErrors = {};
+    if (!form.brand.trim()) errors.brand = "Marka është e detyrueshme";
+    if (!form.model.trim()) errors.model = "Modeli është i detyrueshëm";
+    const yearNum = Number(form.year);
+    if (!form.year.trim() || isNaN(yearNum) || yearNum < 1990 || yearNum > new Date().getFullYear() + 2) {
+      errors.year = `Viti duhet të jetë midis 1990 dhe ${new Date().getFullYear() + 2}`;
+    }
+    const priceNum = Number(form.pricePerDay);
+    if (!form.pricePerDay.trim() || isNaN(priceNum) || priceNum <= 0) {
+      errors.pricePerDay = "Çmimi duhet të jetë një numër pozitiv";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
     const draft = {
       brand: form.brand, model: form.model, year: Number(form.year),
       pricePerDay: Number(form.pricePerDay), category: form.category,
@@ -419,10 +446,10 @@ export default function AdminCars() {
                       <button onClick={() => handleFeature(car)} className={`p-1.5 rounded transition-colors duration-200 cursor-pointer ${car.featured ? "text-accent bg-accent/10" : "text-neutral-400 hover:text-accent hover:bg-accent/10"}`} aria-label={car.featured ? "Hiq nga të zgjedhurat" : "Shto te të zgjedhurat"}>
                         <Star size={16} weight={car.featured ? "fill" : "regular"} />
                       </button>
-                      <button onClick={() => navigate(`/admin/flota/${car.id}`)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary transition-colors duration-200 cursor-pointer" aria-label={`Ndrysho ${car.brand} ${car.model}`}>
+                      <button onClick={() => openEdit(car)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary transition-colors duration-200 cursor-pointer" aria-label={`Ndrysho ${car.brand} ${car.model}`}>
                         <PencilSimple size={16} weight="regular" />
                       </button>
-                      <button onClick={() => navigate(`/admin/flota/${car.id}`)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary transition-colors duration-200 cursor-pointer" aria-label={`Detaje ${car.brand} ${car.model}`}>
+                      <button onClick={() => navigate(`/admin/flota/${car.id}`)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary transition-colors duration-200 cursor-pointer" aria-label={`Detajet e plota të ${car.brand} ${car.model}`}>
                         <ArrowSquareOut size={16} weight="regular" />
                       </button>
                       <button onClick={() => setDeleteConfirm(car.id)} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 transition-colors duration-200 cursor-pointer" aria-label={`Fshi ${car.brand} ${car.model}`}>
@@ -464,12 +491,32 @@ export default function AdminCars() {
                 { id: "model", label: "Modeli", key: "model" as keyof CarDraftForm },
                 { id: "year", label: "Viti", key: "year" as keyof CarDraftForm },
                 { id: "price", label: "Çmimi/ditë (€)", key: "pricePerDay" as keyof CarDraftForm },
-              ].map((field) => (
-                <div key={field.id}>
-                  <label htmlFor={`drawer-${field.id}`} className="block text-sm font-medium text-neutral-700 mb-1.5">{field.label}</label>
-                  <input id={`drawer-${field.id}`} type="text" value={form[field.key] as string} onChange={(e) => setForm(prev => ({...prev, [field.key]: e.target.value}))} className="w-full px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary" />
-                </div>
-              ))}
+              ].map((field) => {
+                const errKey = field.key as keyof FormErrors;
+                const errMsg = formErrors[errKey];
+                return (
+                  <div key={field.id}>
+                    <label htmlFor={`drawer-${field.id}`} className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      {field.label} <span className="text-error">*</span>
+                    </label>
+                    <input
+                      id={`drawer-${field.id}`}
+                      type="text"
+                      value={form[field.key] as string}
+                      onChange={(e) => {
+                        setForm(prev => ({...prev, [field.key]: e.target.value}));
+                        if (formErrors[errKey]) setFormErrors(prev => ({...prev, [errKey]: undefined}));
+                      }}
+                      className={`w-full px-3 py-2.5 rounded-md border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 transition-colors ${
+                        errMsg ? "border-error focus:ring-error/30 focus:border-error" : "border-border focus:ring-primary/40 focus:border-primary"
+                      }`}
+                    />
+                    {errMsg && (
+                      <p className="mt-1 text-xs text-error font-medium">{errMsg}</p>
+                    )}
+                  </div>
+                );
+              })}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="drawer-seats" className="block text-sm font-medium text-neutral-700 mb-1.5">Vendesh</label>

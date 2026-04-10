@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /llogaria
 
-Sitemap: https://rentcartirana.al/sitemap.xml
+Sitemap: https://rentcartiranaairport.com/sitemap.xml

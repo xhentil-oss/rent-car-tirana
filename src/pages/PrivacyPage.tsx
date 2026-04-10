@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       title: "1. Kontrolluesi i të Dhënave",
       content: `Rent Car Tirana, me adresë Rruga e Kavajës, Tiranë, Shqipëri, është kontrollues i të dhënave personale sipas Ligjit Nr. 9887 "Për Mbrojtjen e të Dhënave Personale" dhe Rregullores (BE) 2016/679 (GDPR).
 
-Mund të na kontaktoni për çdo pyetje mbi privatësinë në: privacy@rentcartirana.al`,
+Mund të na kontaktoni për çdo pyetje mbi privatësinë në: privacy@rentcartiranaairport.com`,
     },
     {
       title: "2. Të Dhënat që Mbledhim",
@@ -110,7 +110,7 @@ Pas skadimit të periudhës, të dhënat fshihen ose anonim izohen automatikisht
 📦 Portabilitetit: Të merrni të dhënat tuaja në format të lexueshëm mashinë
 ❌ Kundërshtimit: Të kundërshtoni procesimin për marketing direkt
 
-Për të ushtruar këto të drejta, dërgoni email tek: privacy@rentcartirana.al
+Për të ushtruar këto të drejta, dërgoni email tek: privacy@rentcartiranaairport.com
 
 Do t'ju përgjigjemi brenda 30 ditëve. Nëse jeni të pakënaqur me përgjigjen, mund të ankoheni tek Komisioneri për të Drejtën e Informimit dhe Mbrojtjen e të Dhënave (KDIM): www.idp.al`,
     },
@@ -238,8 +238,8 @@ Vazhdimi i përdorimit të shërbimeve tona pas ndryshimeve nënkupton pranimin 
         <div className="mt-12 p-5 bg-blue-50 border border-blue-200 rounded-xl">
           <p className="text-sm text-neutral-700">
             <strong>Kontakt DPO (Data Protection Officer):</strong>{" "}
-            <a href="mailto:privacy@rentcartirana.al" className="text-blue-600 hover:underline no-underline">
-              privacy@rentcartirana.al
+            <a href="mailto:privacy@rentcartiranaairport.com" className="text-blue-600 hover:underline no-underline">
+              privacy@rentcartiranaairport.com
             </a>
             {" "}— Ankesa tek KDIM:{" "}
             <a href="https://www.idp.al" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline no-underline">

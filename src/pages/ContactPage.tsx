@@ -181,8 +181,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Email</p>
-                    <a href="mailto:info@rentcartirana.al" className="text-sm text-neutral-700 hover:text-primary transition-colors no-underline">
-                      info@rentcartirana.al
+                <a href="mailto:info@rentcartiranaairport.com" className="text-sm text-neutral-700 hover:text-primary transition-colors no-underline">
+                info@rentcartiranaairport.com
                     </a>
                   </div>
                 </li>

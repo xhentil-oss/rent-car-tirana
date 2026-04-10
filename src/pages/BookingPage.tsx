@@ -144,7 +144,7 @@ export default function BookingPage() {
   const { data: allCars } = useQuery("Car");
   const { data: allReservations } = useQuery("Reservation");
   const carId = searchParams.get("car");
-  const car = (allCars ?? []).find((c) => c.id === carId) ?? (allCars ?? [])[0];
+  const car = carId ? (allCars ?? []).find((c) => c.id === carId) : undefined;
 
   const [form, setForm] = useState<BookingForm>({
     pickup: searchParams.get("pickup") || "",
@@ -367,14 +367,58 @@ export default function BookingPage() {
     }));
   };
 
-  if (submitted || !car) {
-    if (!car && !submitted) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-neutral-500">{t("booking.loading")}</p>
+  // No carId in URL → show clear error immediately (don't wait for data)
+  if (!carId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-6">
+        <div className="bg-white rounded-xl border border-border p-10 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4">
+            <WarningCircle size={28} weight="regular" className="text-error" />
+          </div>
+          <h1 className="text-xl font-semibold text-neutral-900 mb-2">Nuk u zgjodh asnjë makinë</h1>
+          <p className="text-sm text-neutral-500 mb-6">Ju lutemi zgjidhni një makinë nga flota jonë për të vazhduar me rezervimin.</p>
+          <button
+            onClick={() => navigate("/flota")}
+            className="px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Shiko flotën
+          </button>
         </div>
-      );
-    }
+      </div>
+    );
+  }
+
+  // carId present but cars still loading
+  if (carId && !car && (allCars === undefined)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-neutral-500">{t("booking.loading")}</p>
+      </div>
+    );
+  }
+
+  // carId present but not found in DB
+  if (carId && !car && allCars !== undefined) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-6">
+        <div className="bg-white rounded-xl border border-border p-10 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4">
+            <WarningCircle size={28} weight="regular" className="text-error" />
+          </div>
+          <h1 className="text-xl font-semibold text-neutral-900 mb-2">Makina nuk u gjet</h1>
+          <p className="text-sm text-neutral-500 mb-6">Makina me këtë ID nuk ekziston ose nuk është më e disponueshme.</p>
+          <button
+            onClick={() => navigate("/flota")}
+            className="px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Shiko flotën
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <div className="bg-white rounded-xl border border-border p-12 max-w-md w-full text-center">

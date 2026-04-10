@@ -24,17 +24,31 @@ This file powers chat suggestion chips. Keep it focused and actionable.
 </instructions>
 
 
+<!-- 🔴 KRITIKE — Bugs që prishin funksionalitetin -->
+
+<todo id="bug-validation-cars">
+🔴 [Bug #1] AdminCars — Validim i fushave të detyrueshme mungon
+handleSave() nuk kontrollon brand/model/year/pricePerDay — mund të krijohet makinë bosh në DB
+</todo>
+
+
+
+
+<todo id="bug-customer-name-fallback">
+🔴 [Bug #5] AdminReservations — getCustomerName() kthyen ID-në kur emri është string bosh
+c?.name ?? customerId: nëse name është "", shfaqet ID-ja e papërpunuar
+</todo>
+
+<!-- 🟡 TË MESME — UX / data issues -->
+
+
+
+<!-- 🚀 Features -->
+
 <todo id="pricing-rule-apply-count">
 Rrit usageCount kur zbatohet një rregull
 Kur një PricingRule zbatohet gjatë rezervimit, update usageCount++ në DB për statistika të sakta
 </todo>
-
-<todo id="gps-integration">
-Integro GPS tracking me API real
-Fleet Mgmt GPS tab është placeholder — lidhe me Trackimo ose Teltonika API për gjurmim live
-</todo>
-
-
 
 <todo id="whatsapp-integration">
 Integro WhatsApp për konfirmime automatike
@@ -46,7 +60,7 @@ Shto Payment Status në Reservations
 Pending Payment, Paid, Partial - për menaxhim financiar më të mirë
 </todo>
 
-<todo id="multi-language">
-Shto mbështetje shumëgjuhëshe
-Shqip + English toggle për klientë ndërkombëtarë që vizitojnë Tiranën
+<todo id="gps-integration">
+Integro GPS tracking me API real
+Fleet Mgmt GPS tab është placeholder — lidhe me Trackimo ose Teltonika API për gjurmim live
 </todo>

@@ -18,6 +18,54 @@ You MUST maintain this file to track your work across messages. This is NON-NEGO
 </instructions>
 
 <changelog>
+## 2026-04-10 - Domain update: rentcartirana.it → rentcartiranaairport.com across all files
+- Updated: useSEO.ts (SITE_URL), emailConfig.ts (emails+website), generateContractPdf.ts
+- Updated: sitemap.xml (all 23 URLs), robots.txt, SitemapPage BASE_URL + display text
+- Updated: ContactPage, TermsPage, PrivacyPage emails + i18n sq.json/en.json footer email
+- Emails: info@, legal@, privacy@ → @rentcartiranaairport.com
+
+## 2026-04-10 - Domain update: rentcartirana.al → rentcartirana.it across all files (superseded)
+- Updated: useSEO.ts (SITE_URL), emailConfig.ts (COMPANY_EMAIL/WEBSITE), generateContractPdf.ts
+- Updated: sitemap.xml (all 13 URLs + lastmod), robots.txt, SitemapPage BASE_URL
+- Updated: ContactPage, TermsPage, PrivacyPage emails + i18n sq.json/en.json footer email
+
+## 2026-04-10 - Cleanup __ANIMA_DBG__ log in AdminCars + verified fixes #11 #12 #13 active
+## 2026-04-10 - Fix #11 #12 #13 — Header active links, AdminCars buttons split, AdminReservations payment column
+- Header isActive(): HashRouter gives location.hash not pathname — now reads `location.hash.replace(/^#/, "")` for correct active state
+- AdminCars: PencilSimple now calls `openEdit(car)` (drawer), ArrowSquareOut navigates to `/admin/flota/:id` (full edit page)
+- AdminReservations: Payment column now shows status-based badge (Paguar/Në proces/Konfirmuar/Në pritje/Anuluar) instead of "—"
+
+## 2026-04-10 - Fix Bug #7 — CarDetailPage availability filter language mismatch
+- `isDateRangeConflict()` filtered with `r.status !== "Anuluar"` but DB stores `"Cancelled"` in English
+- Fixed: `"Anuluar"` → `"Cancelled"` — cancelled reservations now correctly excluded from conflict checks
+- File: `src/pages/CarDetailPage.tsx`
+
+## 2026-04-10 - Fix Bug #6 — AdminFinance late fees now computed from real reservations
+- Removed `staticLateFees` hardcoded array entirely
+- `dynamicLateFees` useMemo: filters reservations where `endDate < today` AND status ≠ Cancelled/Completed
+- `daysLate = today − endDate`, `feeAmount = daysLate × car.pricePerDay` from DB
+- `paidFeeIds` Set (local state) tracks which fees are marked paid — UI updates immediately
+- Empty state message shown when no active late reservations exist
+
+## 2026-04-10 - Fix Bug #4 — BookingPage infinite loading without carId
+- Removed `?? allCars[0]` fallback that masked the missing carId silently
+- Added 3 distinct states: no `carId` → error + redirect, `carId` present but loading, `carId` not found in DB
+- Each error state shows a clear Albanian message + "Shiko flotën" CTA button
+
+## 2026-04-10 - Fix Bug #3 — Lightbox Close button called setGalleryOpen(true) instead of false
+- `CarDetailPage.tsx`: butoni "Close" brenda lightbox kishte `setGalleryOpen(true)` — lightbox nuk mbyllej kurrë
+- Zëvendësuar me buton X të dukshëm që thërret `setGalleryOpen(false)` dhe `e.stopPropagation()`
+
+## 2026-04-10 - Fix Bug #2 — Customer entity missing fields (isBlacklisted, scoringTier, corporateContractId)
+## 2026-04-10 - Fix Bug #3 — Lightbox Close button called setGalleryOpen(true) instead of false
+- `CarDetailPage.tsx`: butoni "Close" brenda lightbox kishte `setGalleryOpen(true)` — lightbox nuk mbyllej kurrë
+- Zëvendësuar me buton X të dukshëm që thërret `setGalleryOpen(false)` dhe `e.stopPropagation()`
+
+## 2026-04-10 - Fix Bug #2 — Customer entity missing fields (isBlacklisted, scoringTier, corporateContractId)
+- `isBlacklisted`, `scoringTier`, `corporateContractId` nuk ekzistonin në skemën `Customer` → `handleToggleBlacklist()` dhe `handleTierChange()` dështonin silently
+- Shtuar 3 fusha opsionale në `CustomerDraft` me `backend_database_patch_entities`
+- Kodi i `AdminCustomers.tsx` ishte tashmë i saktë — fix kërkon vetëm ndryshim skeme, jo kod
+
 ## 2026-04-10 - Fix logActivity missing UUID in activity_logs INSERT
 - `logActivity()` in `backend/middleware/auth.js` did INSERT without `id` column — MySQL error since CHAR(36) has no DEFAULT
 - Added `const { v4: uuidv4 } = require('uuid')` import + `uuidv4()` as first value in INSERT

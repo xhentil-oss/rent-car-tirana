@@ -15,7 +15,7 @@ interface SEOProps {
 
 const SITE_NAME = "Rent Car Tirana";
 const DEFAULT_OG_IMAGE = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png";
-const SITE_URL = "https://rentcartirana.al";
+const SITE_URL = "https://rentcartiranaairport.com";
 
 function setMeta(name: string, content: string, property = false) {
   const attr = property ? "property" : "name";

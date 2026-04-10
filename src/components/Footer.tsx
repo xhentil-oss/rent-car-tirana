@@ -81,7 +81,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <EnvelopeSimple size={16} className="text-neutral-400 shrink-0" />
-                <a href="mailto:info@rentcartirana.al" className="text-sm text-neutral-400 hover:text-white no-underline">{t("footer.email")}</a>
+                <a href="mailto:info@rentcartiranaairport.com" className="text-sm text-neutral-400 hover:text-white no-underline">{t("footer.email")}</a>
               </li>
             </ul>
           </div>

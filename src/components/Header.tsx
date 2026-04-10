@@ -241,11 +241,13 @@ export default function Header() {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/") return location.pathname === "/";
-    return (
-      location.pathname.startsWith(href.split("#")[0]) &&
-      href.split("#")[0] !== "/"
-    );
+    // HashRouter: location.pathname is always "/" — use location.hash instead.
+    // location.hash looks like "#/flota" or "#/vleresime" or "#/#rreth-nesh"
+    const hashPath = location.hash.replace(/^#/, "") || "/";
+    if (href === "/") return hashPath === "/" || hashPath === "";
+    const hrefPath = href.split("#")[0];
+    if (!hrefPath || hrefPath === "/") return false;
+    return hashPath.startsWith(hrefPath);
   };
 
   return (

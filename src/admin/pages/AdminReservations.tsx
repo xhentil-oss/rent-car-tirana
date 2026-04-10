@@ -275,7 +275,8 @@ export default function AdminReservations() {
 
   const getCustomerName = (customerId: string) => {
     const c = (customers ?? []).find(c => c.id === customerId);
-    return c?.name ?? customerId;
+    const name = c?.name?.trim() || `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim();
+    return name || customerId;
   };
 
   const getCarName = (carId: string) => {
@@ -361,7 +362,27 @@ export default function AdminReservations() {
                   <td className="px-4 py-3 text-sm font-medium text-neutral-800">€{res.totalPrice}</td>
                   <td className="px-4 py-3"><StatusBadge status={res.status} /></td>
                   <td className="px-4 py-3">
-                    <span className="text-xs text-neutral-400">—</span>
+                    {res.status === "Completed" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
+                        Paguar
+                      </span>
+                    ) : res.status === "Cancelled" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-400 border border-neutral-200">
+                        Anuluar
+                      </span>
+                    ) : res.status === "Active" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                        Në proces
+                      </span>
+                    ) : res.status === "Confirmed" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        Konfirmuar
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                        Në pritje
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

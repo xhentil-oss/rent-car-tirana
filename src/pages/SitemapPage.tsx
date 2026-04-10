@@ -14,7 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import Footer from "../components/Footer";
 
-const BASE_URL = "https://rentcartirana.al";
+const BASE_URL = "https://rentcartiranaairport.com";
 const TODAY = new Date().toISOString().split("T")[0];
 
 const STATIC_PAGES = [
@@ -123,7 +123,7 @@ export default function SitemapPage() {
                 Harta e Faqes
               </h1>
               <p className="text-neutral-400 text-sm leading-relaxed max-w-lg">
-                Lista e plotë e të gjitha URL-ve të <strong className="text-white">rentcartirana.al</strong>.
+                Lista e plotë e të gjitha URL-ve të <strong className="text-white">rentcartiranaairport.com</strong>.
                 Makinat ngarkohen automatikisht nga databaza — çdo makinë e re shfaqet këtu menjëherë.
               </p>
             </div>

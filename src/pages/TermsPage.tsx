@@ -179,8 +179,8 @@ Nëse ndonjë dispozitë e këtyre kushteve çmohet e paligjshme ose e pazbatues
         <div className="mt-12 p-5 bg-primary/5 border border-primary/20 rounded-xl">
           <p className="text-sm text-neutral-700">
             <strong>Pyetje rreth këtyre kushteve?</strong> Kontaktoni departamentin tonë ligjor në{" "}
-            <a href="mailto:legal@rentcartirana.al" className="text-primary hover:underline no-underline">
-              legal@rentcartirana.al
+            <a href="mailto:legal@rentcartiranaairport.com" className="text-primary hover:underline no-underline">
+              legal@rentcartiranaairport.com
             </a>{" "}
             ose vizitoni faqen tonë të{" "}
             <Link to="/kontakt" className="text-primary hover:underline no-underline">

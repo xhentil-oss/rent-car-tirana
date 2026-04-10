@@ -253,7 +253,7 @@ export default function CarDetailPage() {
     const reqStart = new Date(startDate).getTime();
     const reqEnd = new Date(endDate).getTime();
     const activeReservations = (allReservations ?? []).filter(
-      (r) => r.carId === car.id && r.status !== "Anuluar" && r.status !== "Completed"
+      (r) => r.carId === car.id && r.status !== "Cancelled" && r.status !== "Completed"
     );
     return activeReservations.some((r) => {
       const rStart = new Date(r.startDate).getTime();
@@ -328,11 +328,10 @@ export default function CarDetailPage() {
         >
           {/* Close */}
           <button
-            onClick={() => setGalleryOpen(true)}
-            className="md:hidden absolute top-[52px] right-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm border border-white/25 text-white text-[11px] font-medium hover:bg-black/70 transition cursor-pointer"
-            style={{ opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.3s" }}
+            onClick={(e) => { e.stopPropagation(); setGalleryOpen(false); }}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
           >
-            📷 Galeri
+            <X size={18} weight="bold" />
           </button>
 
           {/* Inner layout: [prev] [image] [next + thumbnails-column] */}
