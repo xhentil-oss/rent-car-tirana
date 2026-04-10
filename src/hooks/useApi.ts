@@ -45,7 +45,7 @@ function buildQuery(filters?: Record<string, unknown>): string {
 
 // ─── useQuery ──────────────────────────────────────────────────
 export function useQuery(entity: string, filters?: Record<string, unknown>) {
-  const [data, setData] = useState<any[] | null>(null);
+  const [data, setData] = useState<any[] | undefined>(undefined);
   const [isPending, setIsPending] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
