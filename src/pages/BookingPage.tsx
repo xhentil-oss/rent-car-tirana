@@ -142,7 +142,7 @@ export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { data: allCars } = useQuery("Car");
-  const { data: allReservations } = useQuery("Reservation");
+  const { data: allReservations } = useQuery("ReservationAvailability");
   const carId = searchParams.get("car");
   const car = carId ? (allCars ?? []).find((c) => c.id === carId) : undefined;
 

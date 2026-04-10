@@ -22,6 +22,7 @@ const ENTITY_MAP: Record<string, string> = {
   FuelLog: "/fleet/fuel",
   DamageReport: "/fleet/damage",
   ChatMessage: "/chat",
+  ReservationAvailability: "/reservations/availability",
 };
 
 function getToken(): string | null {

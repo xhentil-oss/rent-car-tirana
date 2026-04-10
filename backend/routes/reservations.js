@@ -14,6 +14,16 @@ const fmt = (r) => ({
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
+// Public: minimal availability data (only active bookings, only carId + dates)
+router.get('/availability', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT car_id, start_date, end_date, status FROM reservations WHERE status IN ('Pending','Confirmed','Active')"
+    );
+    res.json(rows.map(r => ({ carId: r.car_id, startDate: r.start_date, endDate: r.end_date, status: r.status })));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/', authenticate, async (req, res) => {
   try {
     const { status, carId, customerId, limit = 200, offset = 0 } = req.query;
