@@ -9,7 +9,7 @@ const TABLES = [
     email       VARCHAR(255) UNIQUE NOT NULL,
     password    VARCHAR(255) NOT NULL,
     name        VARCHAR(255) NOT NULL,
-    role        ENUM('admin','manager','staff','accountant') DEFAULT 'staff',
+    role        ENUM('admin','manager','staff','accountant','customer') DEFAULT 'staff',
     is_active   TINYINT(1) DEFAULT 1,
     two_factor_enabled TINYINT(1) DEFAULT 0,
     permissions TEXT DEFAULT '',
