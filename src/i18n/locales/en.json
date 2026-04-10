@@ -1,0 +1,384 @@
+{
+  "header": {
+    "fleet": "Fleet",
+    "reviews": "Reviews",
+    "about": "About Us",
+    "contact": "Contact",
+    "phone": "+355 69 123 4567",
+    "bookNow": "Book Now",
+    "loginGoogle": "Sign in with Google",
+    "myReservations": "My Reservations",
+    "adminPanel": "Admin Panel",
+    "logout": "Sign out",
+    "user": "User"
+  },
+  "footer": {
+    "tagline": "Tirana's #1 car rental service. Modern fleet, transparent pricing, 24/7 service.",
+    "navigation": "Navigation",
+    "services": "Services",
+    "contactTitle": "Contact",
+    "nav": {
+      "fleet": "Our Fleet",
+      "book": "Book now",
+      "reviews": "Reviews",
+      "account": "My Account",
+      "sitemap": "Sitemap"
+    },
+    "seo": {
+      "tirana": "Car Rental Tirana",
+      "airport": "Airport Car Rental",
+      "suv": "SUV Rental",
+      "luxury": "Luxury Cars",
+      "automatic": "Automatic Cars"
+    },
+    "address": "Rruga e Kavajës, Tirana, Albania",
+    "email": "info@rentcartirana.al",
+    "accepts": "We accept:",
+    "trustRating": "based on 500+ reviews",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved."
+  },
+  "home": {
+    "promoBanner": "<strong>Last Minute:</strong> Book within 24 hours and get <strong>-10% off</strong> with code",
+    "hero": {
+      "title": "Car Rental in Tirana.",
+      "titleHighlight": "Book in just a few steps.",
+      "subtitle": "Pick up your car at the airport or city center. Clear prices, instant booking.",
+      "pickupFrom": "Pick up from",
+      "returnTo": "Return to",
+      "selectPlace": "Select location",
+      "centerTirana": "Tirana Center",
+      "airport": "Mother Teresa Airport",
+      "departureDate": "Pick-up date",
+      "returnDate": "Return date",
+      "searchBtn": "Search cars"
+    },
+    "trustStats": {
+      "clients": "Happy customers",
+      "rating": "Average rating",
+      "support": "Support available",
+      "locations": "Locations (TIA + Tirana)"
+    },
+    "featuredCars": {
+      "title": "Featured Cars",
+      "subtitle": "The most requested models by our customers",
+      "viewAll": "View all"
+    },
+    "categories": {
+      "title": "Our Categories",
+      "subtitle": "Find the right car for every need",
+      "ekonomike": { "name": "Economy", "desc": "Ideal for city driving, low fuel consumption" },
+      "suv": { "name": "SUV", "desc": "Spacious, handles all terrains" },
+      "luksoze": { "name": "Luxury", "desc": "Elegance and maximum comfort" },
+      "familjare": { "name": "Family", "desc": "Perfect for families and groups" },
+      "automatike": { "name": "Automatic", "desc": "Easy driving, modern technology" }
+    },
+    "howItWorks": {
+      "title": "How does it work?",
+      "subtitle": "Book your car in 3 simple steps",
+      "steps": [
+        { "title": "Choose your car", "desc": "Filter by category, price and availability. Compare specifications." },
+        { "title": "Confirm booking", "desc": "Fill in the form, choose insurance and sign the digital contract." },
+        { "title": "Get your keys", "desc": "Pick up your car from the airport or Tirana center. No waiting." }
+      ],
+      "cta": "Book now — it's quick"
+    },
+    "whyUs": {
+      "title": "Why choose Rent Car Tirana?",
+      "subtitle": "We offer the best car rental service in Tirana. With our modern fleet and 24/7 service, your journey starts with confidence.",
+      "items": [
+        { "title": "Clear pricing", "desc": "No hidden fees. The price you see is the final price." },
+        { "title": "24/7 support", "desc": "We are always available for any of your needs." },
+        { "title": "Insurance included", "desc": "All cars come with full insurance included." },
+        { "title": "Flexibility", "desc": "Pick up and return the car wherever you need." }
+      ]
+    },
+    "guarantees": [
+      { "title": "Price guarantee", "desc": "If you find a lower price elsewhere, we match it unconditionally." },
+      { "title": "No hidden fees", "desc": "The final price includes everything: tax, basic insurance and delivery." },
+      { "title": "Free cancellation", "desc": "Cancel free up to 48 hours before pickup. No risk, no penalties." }
+    ],
+    "reviews": {
+      "title": "What our customers say",
+      "subtitle": "Over 500 happy customers every year"
+    },
+    "faq": {
+      "items": [
+        { "question": "How does booking work?", "answer": "Choose your car, fill in the booking form with dates and your information, and confirm. You will receive a confirmation email immediately." },
+        { "question": "What documents are required?", "answer": "You need a valid driver's license (minimum 1 year), identity card or passport, and a credit/debit card for the deposit." },
+        { "question": "Can I pick up the car from the airport?", "answer": "Yes! We offer pickup and return directly at Mother Teresa International Airport at no extra cost." },
+        { "question": "What happens if the car breaks down?", "answer": "We have 24/7 assistance service. We will immediately send you help or a replacement car at no extra cost." },
+        { "question": "Can I cancel my booking?", "answer": "Yes, you can cancel free of charge up to 24 hours before the pickup date. After that, a cancellation fee applies." }
+      ]
+    },
+    "cta": {
+      "title": "Have questions? Contact us!",
+      "subtitle": "We are available 24/7 to help you",
+      "whatsapp": "WhatsApp",
+      "whatsappMsg": "Hello!%20I%20want%20to%20book%20a%20car.",
+      "contactUs": "Contact us"
+    }
+  },
+  "fleet": {
+    "title": "Our Fleet",
+    "subtitle": "Choose the right car from {{count}} available models",
+    "filterLabel": "Filter:",
+    "maxPrice": "Max price: €{{price}}/day",
+    "sort": {
+      "label": "Sort: Default",
+      "default": "Sort: Default",
+      "price_asc": "Price: low → high",
+      "price_desc": "Price: high → low",
+      "name_asc": "Name: A → Z"
+    },
+    "clearFilters": "Clear filters",
+    "carsFound": "{{count}} cars found",
+    "noResults": "No cars found with the selected filters.",
+    "prev": "Prev",
+    "next": "Next",
+    "faqTitle": "FAQ about the fleet",
+    "faqItems": [
+      { "question": "How can I filter cars?", "answer": "Use the filters above the list to choose category, transmission, fuel type and desired price." },
+      { "question": "Can I book online?", "answer": "Yes, every car has a 'Book now' button that takes you directly to the booking form." },
+      { "question": "What does 'Reserved' mean?", "answer": "The car is currently unavailable for the current dates. You can contact us for availability on other dates." }
+    ],
+    "removeFilter": "Remove filter {{label}}"
+  },
+  "carCard": {
+    "popular": "Popular",
+    "luxury": "Luxury ✨",
+    "seats": "{{count}} seats",
+    "luggage": "{{count}} suitcases",
+    "verifiedCar": "Verified car",
+    "available": "✓ Available",
+    "perDay": "/day",
+    "perWeek": "/week",
+    "details": "Details",
+    "book": "Book"
+  },
+  "carDetail": {
+    "back": "Fleet",
+    "loading": "Loading details...",
+    "notFound": "Car not found",
+    "backToFleet": "Back to fleet",
+    "from": "From",
+    "perDay": "/day",
+    "weekly": "Weekly (~)",
+    "monthly": "Monthly (~)",
+    "tabs": {
+      "specs": "Specifications",
+      "features": "Equipment",
+      "policy": "Policy"
+    },
+    "specs": {
+      "transmission": "Transmission",
+      "fuel": "Fuel",
+      "seats": "Seats",
+      "luggage": "Luggage",
+      "category": "Category",
+      "insurance": "Insurance",
+      "insuranceValue": "Basic included"
+    },
+    "features": {
+      "title": "Standard equipment included with {{brand}} {{model}}:",
+      "extras": "Available extras",
+      "extrasNote": "Extras can be selected during booking"
+    },
+    "policy": {
+      "age": { "title": "Age requirements", "text": "Minimum age 21. Drivers aged 21-25 may have a young driver surcharge." },
+      "license": { "title": "Driver's license", "text": "License must have been held for at least 1 year. International licenses accepted." },
+      "fuel": { "title": "Fuel", "text": "Car is delivered with a full tank. Customer is required to return it full or pay a refueling fee." },
+      "mileage": { "title": "Mileage", "text": "Unlimited mileage for rentals over 3 days. 1-2 days: 300km/day applies." },
+      "cancellation": { "title": "Cancellation", "text": "Free cancellation up to 48 hours before pickup. After that, a 30% fee applies." }
+    },
+    "about": {
+      "title": "About this car",
+      "text": "{{brand}} {{model}} ({{year}}) is an excellent choice for rental in Tirana and Albania. Category {{category}} with {{transmission}} and {{fuel}} fuel — comfortable for city roads, highways and inter-city trips. With {{seats}} seats and {{luggage}} suitcases of space, suitable for groups and families."
+    },
+    "reviews": {
+      "title": "Customer reviews",
+      "count": "{{count}} reviews"
+    },
+    "support": {
+      "question": "Have questions about this car?",
+      "available": "Our team is available 24/7 to help you",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp"
+    },
+    "booking": {
+      "bookNow": "Book now",
+      "departure": "Departure",
+      "return": "Return",
+      "pickupLocation": "Pickup location",
+      "airportFree": "Free airport pickup included",
+      "unavailable": "Currently reserved",
+      "chooseDates": "Choose other dates",
+      "reserve": "Book now",
+      "instant": "Instant confirmation · No cancellation fee",
+      "totalLabel": "Total",
+      "basePrice": "€{{price}} × {{days}} days",
+      "insuranceFree": "Free",
+      "serviceFree": "Free",
+      "insurance": "Basic insurance",
+      "serviceFee": "Service fee",
+      "freeDays": "Car is free — {{days}} days",
+      "dateTaken": "Car is taken on the selected dates"
+    },
+    "support2": {
+      "title": "Immediate help",
+      "call": "Call"
+    },
+    "pricing": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "related": {
+      "title": "Similar cars",
+      "subtitle": "Category {{category}} — other alternatives",
+      "viewAll": "View all"
+    },
+    "faqTitle": "FAQ about this car",
+    "faqItems": [
+      { "question": "Is insurance included?", "answer": "Yes, all our cars come with basic insurance included. You can add extra insurance during booking." },
+      { "question": "What happens with damages?", "answer": "Each car has a security deposit. Minor damages are covered by insurance. We recommend full coverage." },
+      { "question": "Can I pick up the car from the airport?", "answer": "Yes, we offer free pickup from Tirana International Airport. Book on the reservation page." }
+    ],
+    "trust": {
+      "verified": "Verified & clean",
+      "instant": "Instant confirmation",
+      "support": "24/7 support",
+      "insurance": "Insurance included"
+    },
+    "floatingBtn": "Book {{brand}} {{model}}"
+  },
+  "booking": {
+    "title": "Book your car",
+    "subtitle": "Fill in the form to confirm your reservation",
+    "loading": "Loading...",
+    "confirmed": {
+      "title": "Booking confirmed!",
+      "subtitle": "You will receive a confirmation email within minutes.",
+      "redirecting": "Redirecting..."
+    },
+    "locationDates": "Location and dates",
+    "pickup": "Pick up from *",
+    "dropoff": "Return to *",
+    "selectPlace": "Select location",
+    "centerTirana": "Tirana Center",
+    "airport": "Mother Teresa Airport",
+    "departureDatetime": "Departure date and time *",
+    "returnDatetime": "Return date and time *",
+    "yourInfo": "Your information",
+    "firstName": "First name *",
+    "lastName": "Last name *",
+    "firstNamePlaceholder": "Your first name",
+    "lastNamePlaceholder": "Your last name",
+    "phone": "Phone *",
+    "phonePlaceholder": "+355 69 ...",
+    "email": "Email *",
+    "emailPlaceholder": "email@yours.com",
+    "extrasInsurance": "Extras and insurance",
+    "insuranceType": "Insurance type",
+    "perDay": "/day",
+    "free": "Free",
+    "seasonalPrices": "Seasonal prices",
+    "currentlyLabel": "Currently:",
+    "priceInfo": "Prices vary by season. Base price for this car is €{{price}}/day.",
+    "discountCode": "Discount code",
+    "discountPlaceholder": "Enter code (e.g. TIRANA10)",
+    "apply": "Apply",
+    "codeApplied": "Code applied!",
+    "contract": {
+      "title": "Contract & Signature",
+      "subtitle": "Please read the rental terms and sign the digital contract to proceed.",
+      "termsTitle": "CAR RENTAL TERMS",
+      "acceptLabel": "I have read and accept the Rental Terms and authorize the digital signature as legally valid.",
+      "mustAccept": "You must accept the terms before signing",
+      "signatureLabel": "Your signature *",
+      "signatureRequired": "Signature is required to proceed",
+      "downloadTitle": "Download signed contract",
+      "downloadSubtitle": "Generate PDF with all your data and digital signature.",
+      "downloadedTitle": "✅ Contract downloaded",
+      "downloadedSubtitle": "The PDF contract is ready. You can download it again.",
+      "downloadBtn": "Download PDF"
+    },
+    "carUnavailable": "Car not available",
+    "carUnavailableDetail": "This car is currently {{status}} and cannot be reserved. Go to fleet for alternatives.",
+    "dateConflict": "Car not available on these dates",
+    "dateConflictDetail": "This car is reserved for the selected dates. Choose other dates or go to fleet for alternatives.",
+    "submit": "Confirm booking",
+    "submitting": "Saving...",
+    "unavailableBtn": "Car not available",
+    "summary": "Booking summary",
+    "summaryTitle": "Summary",
+    "days": "days",
+    "hours": "total hours · daily rate applies",
+    "extras": "Extras",
+    "insurance2": "Insurance",
+    "discount": "Discount (10%)",
+    "total": "Total",
+    "selectDateNote": "Select dates and times to see total price",
+    "validation": {
+      "pickup": "Select pickup location",
+      "dropoff": "Select return location",
+      "startDate": "Select departure date",
+      "endDate": "Select return date",
+      "endDateAfter": "Return date must be after departure",
+      "firstName": "First name is required",
+      "lastName": "Last name is required",
+      "phone": "Phone is required",
+      "email": "Invalid email"
+    }
+  },
+  "reviews": {
+    "title": "Customer reviews",
+    "ratingCount": "{{count}} reviews",
+    "loading": "Loading...",
+    "writeTitle": "Write your review",
+    "thankYou": "Thank you!",
+    "thankYouSub": "Your review was sent for moderation.",
+    "overallRating": "Overall rating *",
+    "yourName": "Your name *",
+    "namePlaceholder": "e.g. John D.",
+    "comment": "Your comment *",
+    "commentPlaceholder": "Share your experience...",
+    "submit": "Send review",
+    "submitting": "Sending...",
+    "noReviews": "No approved reviews yet.",
+    "beFirst": "Be the first to leave a review!",
+    "aspects": {
+      "carCondition": "Car condition",
+      "staffService": "Staff service",
+      "valueForMoney": "Price / Value",
+      "bookingEase": "Ease of booking"
+    }
+  },
+  "account": {
+    "title": "My Account",
+    "loginPrompt": "Sign in to view your reservations and rental history.",
+    "loginBtn": "Sign in now",
+    "noAccount": "Don't have an account?",
+    "registerFree": "Register for free",
+    "administrator": "Administrator",
+    "adminPanel": "Admin Panel",
+    "logout": "Sign out",
+    "stats": {
+      "active": "Active",
+      "pending": "Pending",
+      "completed": "Completed"
+    },
+    "reservationsTitle": "My Reservations ({{count}})",
+    "unknownCar": "Unknown car",
+    "noReservations": "You have no reservations yet.",
+    "viewFleet": "View fleet",
+    "status": {
+      "Pending": "Pending",
+      "Confirmed": "Confirmed",
+      "Active": "Active",
+      "Completed": "Completed",
+      "Cancelled": "Cancelled"
+    }
+  }
+}

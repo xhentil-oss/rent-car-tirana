@@ -1,0 +1,384 @@
+{
+  "header": {
+    "fleet": "Flota",
+    "reviews": "Vlerësimet",
+    "about": "Rreth Nesh",
+    "contact": "Kontakti",
+    "phone": "+355 69 123 4567",
+    "bookNow": "Rezervo Tani",
+    "loginGoogle": "Kyçu me Google",
+    "myReservations": "Rezervimet e Mia",
+    "adminPanel": "Panel Admin",
+    "logout": "Dil nga llogaria",
+    "user": "Përdoruesi"
+  },
+  "footer": {
+    "tagline": "Shërbimi nr.1 i makinave me qira në Tiranë. Flota moderne, çmime transparente, shërbim 24/7.",
+    "navigation": "Navigimi",
+    "services": "Shërbimet",
+    "contactTitle": "Kontakti",
+    "nav": {
+      "fleet": "Flota jonë",
+      "book": "Rezervo tani",
+      "reviews": "Vlerësimet",
+      "account": "Llogaria ime",
+      "sitemap": "Harta e faqes"
+    },
+    "seo": {
+      "tirana": "Makina me qira Tiranë",
+      "airport": "Makinë nga Aeroporti",
+      "suv": "SUV me qira",
+      "luxury": "Makina luksoze",
+      "automatic": "Makina automatike"
+    },
+    "address": "Rruga e Kavajës, Tiranë, Shqipëri",
+    "email": "info@rentcartirana.al",
+    "accepts": "Pranojmë:",
+    "trustRating": "bazuar në 500+ vlerësime",
+    "privacy": "Politika e Privatësisë",
+    "terms": "Kushtet e Shërbimit",
+    "rights": "Të gjitha të drejtat e rezervuara."
+  },
+  "home": {
+    "promoBanner": "<strong>Last Minute:</strong> Rezervo brenda 24 orëve dhe merr <strong>-10% zbritje</strong> me kodin",
+    "hero": {
+      "title": "Makina me qira në Tiranë.",
+      "titleHighlight": "Rezervo në pak hapa.",
+      "subtitle": "Merr makinën në aeroport ose në qendër të Tiranës. Çmime të qarta, rezervim i menjëhershëm.",
+      "pickupFrom": "Tërhiqni nga",
+      "returnTo": "Ktheni në",
+      "selectPlace": "Zgjidhni vendin",
+      "centerTirana": "Tiranë Qendër",
+      "airport": "Aeroporti Nënë Tereza",
+      "departureDate": "Data e nisjes",
+      "returnDate": "Data e kthimit",
+      "searchBtn": "Kërko makina"
+    },
+    "trustStats": {
+      "clients": "Klientë të kënaqur",
+      "rating": "Vlerësim mesatar",
+      "support": "Suport i disponueshëm",
+      "locations": "Vendpikë (TIA + Tiranë)"
+    },
+    "featuredCars": {
+      "title": "Makinat e zgjedhura",
+      "subtitle": "Modelet më të kërkuara nga klientët tanë",
+      "viewAll": "Shiko të gjitha"
+    },
+    "categories": {
+      "title": "Kategoritë tona",
+      "subtitle": "Gjeni makinën e duhur për çdo nevojë",
+      "ekonomike": { "name": "Ekonomike", "desc": "Ideale për qytet, konsum i ulët" },
+      "suv": { "name": "SUV", "desc": "Hapësirë e madhe, terrene të ndryshme" },
+      "luksoze": { "name": "Luksoze", "desc": "Elegancë dhe komoditet maksimal" },
+      "familjare": { "name": "Familjare", "desc": "Perfekte për familje dhe grupe" },
+      "automatike": { "name": "Automatike", "desc": "Lehtësi drejtimi, teknologji moderne" }
+    },
+    "howItWorks": {
+      "title": "Si funksionon?",
+      "subtitle": "Rezervo makinën tënde në 3 hapa të thjeshtë",
+      "steps": [
+        { "title": "Zgjidh makinën", "desc": "Filtro sipas kategorisë, çmimit dhe disponueshmërisë. Krahasoni specifikat." },
+        { "title": "Konfirmo rezervimin", "desc": "Plotëso formularin, zglidh sigurimin dhe nënshkruaj kontratën dixhitale." },
+        { "title": "Merr çelësat", "desc": "Tërhiqe makinën nga aeroporti ose qendra e Tiranës. Pa pritje." }
+      ],
+      "cta": "Rezervo tani — është e shpejtë"
+    },
+    "whyUs": {
+      "title": "Pse të zgjidhni Rent Car Tirana?",
+      "subtitle": "Ofrojmë shërbimin më të mirë të makinave me qira në Tiranë. Me flotën tonë moderne dhe shërbimin 24/7, udhëtimi juaj fillon me besim.",
+      "items": [
+        { "title": "Çmime të qarta", "desc": "Pa kosto të fshehura. Çmimi që shihni është çmimi final." },
+        { "title": "Mbështetje 24/7", "desc": "Jemi gjithmonë në dispozicion për çdo nevojë tuajën." },
+        { "title": "Sigurim përfshirë", "desc": "Të gjitha makinat vijnë me sigurim të plotë të përfshirë." },
+        { "title": "Fleksibilitet", "desc": "Tërhiqni dhe ktheni makinën ku ju nevojitet." }
+      ]
+    },
+    "guarantees": [
+      { "title": "Çmim i garantuar", "desc": "Nëse gjeni çmim më të lirë gjetkë, barazojmë atë çmim pa kushte." },
+      { "title": "Pa kosto të fshehura", "desc": "Çmimi final përfshin gjithçka: taksën, sigurimin bazë dhe deliveryn." },
+      { "title": "Anulim falas", "desc": "Anulo falas deri 48 orë para tërhieves. Pa rrezik, pa gjoba." }
+    ],
+    "reviews": {
+      "title": "Çfarë thonë klientët tanë",
+      "subtitle": "Mbi 500 klientë të kënaqur çdo vit"
+    },
+    "faq": {
+      "items": [
+        { "question": "Si funksionon rezervimi?", "answer": "Zgjidhni makinën, plotësoni formularin e rezervimit me datat dhe informacionin tuaj, dhe konfirmoni. Do të merrni email konfirmimi menjëherë." },
+        { "question": "Cilat dokumente duhen?", "answer": "Keni nevojë për patentë shoferi të vlefshme (minimum 1 vit), kartë identiteti ose pasaportë, dhe kartë krediti/debiti për depozitën." },
+        { "question": "A mund të marr makinën nga aeroporti?", "answer": "Po! Ofrojmë shërbim tërhieje dhe kthimi direkt në Aeroportin Ndërkombëtar Nënë Tereza pa kosto shtesë." },
+        { "question": "Çfarë ndodh nëse makina prishet?", "answer": "Kemi shërbim asistence 24/7. Do t'ju dërgojmë menjëherë ndihmë ose makinë zëvendësuese pa kosto shtesë." },
+        { "question": "A mund të anuloj rezervimin?", "answer": "Po, mund të anuloni falas deri 24 orë para datës së tërhieves. Pas kësaj, aplikohet tarifa e anulimit." }
+      ]
+    },
+    "cta": {
+      "title": "Keni pyetje? Na kontaktoni!",
+      "subtitle": "Jemi të disponueshëm 24/7 për t'ju ndihmuar",
+      "whatsapp": "WhatsApp",
+      "whatsappMsg": "Përshëndetje!%20Dëshiroj%20të%20rezervoj%20një%20makinë.",
+      "contactUs": "Na kontaktoni"
+    }
+  },
+  "fleet": {
+    "title": "Flota jonë",
+    "subtitle": "Zgjidhni makinën e duhur nga {{count}} modele të disponueshme",
+    "filterLabel": "Filtro:",
+    "maxPrice": "Çmimi max: €{{price}}/ditë",
+    "sort": {
+      "label": "Renditja: Default",
+      "default": "Renditja: Default",
+      "price_asc": "Çmimi: i ulët → i lartë",
+      "price_desc": "Çmimi: i lartë → i ulët",
+      "name_asc": "Emri: A → Z"
+    },
+    "clearFilters": "Pastro filtrat",
+    "carsFound": "{{count}} makina të gjetura",
+    "noResults": "Nuk u gjetën makina me filtrat e zgjedhur.",
+    "prev": "Para",
+    "next": "Pas",
+    "faqTitle": "Pyetje rreth flotës",
+    "faqItems": [
+      { "question": "Si mund të filtrojë makinat?", "answer": "Përdorni filtrat sipër listës për të zgjedhur kategorinë, transmetimin, karburantin dhe çmimin e dëshiruar." },
+      { "question": "A mund të rezervoj online?", "answer": "Po, çdo makinë ka butonin 'Rezervo tani' që ju çon direkt në formularin e rezervimit." },
+      { "question": "Çfarë do të thotë 'I rezervuar'?", "answer": "Makina është e zënë për datat aktuale. Mund të kontaktoni për disponueshmërinë e datave të tjera." }
+    ],
+    "removeFilter": "Hiq filtrin {{label}}"
+  },
+  "carCard": {
+    "popular": "Popullar",
+    "luxury": "Luks ✨",
+    "seats": "{{count}} vende",
+    "luggage": "{{count}} valixhe",
+    "verifiedCar": "Makinë e verifikuar",
+    "available": "✓ E disponueshme",
+    "perDay": "/ditë",
+    "perWeek": "/javë",
+    "details": "Detajet",
+    "book": "Rezervo"
+  },
+  "carDetail": {
+    "back": "Flota",
+    "loading": "Duke ngarkuar detajet...",
+    "notFound": "Makina nuk u gjet",
+    "backToFleet": "Kthehu te flota",
+    "from": "Nga",
+    "perDay": "/ditë",
+    "weekly": "Javore (~)",
+    "monthly": "Mujore (~)",
+    "tabs": {
+      "specs": "Specifikimet",
+      "features": "Pajisjet",
+      "policy": "Politika"
+    },
+    "specs": {
+      "transmission": "Transmetimi",
+      "fuel": "Karburanti",
+      "seats": "Vendesh",
+      "luggage": "Bagazhi",
+      "category": "Kategoria",
+      "insurance": "Sigurimi",
+      "insuranceValue": "Bazë i përfshirë"
+    },
+    "features": {
+      "title": "Pajisje standarde të përfshira me {{brand}} {{model}}:",
+      "extras": "Ekstras disponibël",
+      "extrasNote": "Ekstrasat mund t'i zgjidhni gjatë rezervimit"
+    },
+    "policy": {
+      "age": { "title": "Kushtet e moshës", "text": "Moshë minimale 21 vjeç. Drejtuesit 21-25 vjeç mund të kenë tarifë shtesë të rinisë." },
+      "license": { "title": "Patentë shoferi", "text": "Patenta duhet të ketë minimalisht 1 vit vlefshmëri. Pranohen patentat ndërkombëtare." },
+      "fuel": { "title": "Karburanti", "text": "Makina dorëzohet me bombol plot. Klientit i kërkohet ta kthejë me bombolen plot ose të paguajë tarifën e rikushtetimit." },
+      "mileage": { "title": "Kilometrazhi", "text": "Kilometrazh i pakufizuar për rezervimet mbi 3 ditë. Mes 1-2 ditë aplikohet 300km/ditë." },
+      "cancellation": { "title": "Anulimi", "text": "Anulim falas deri 48 orë para momentit të marrjes. Pas kësaj periudhe aplikohet zbritje prej 30%." }
+    },
+    "about": {
+      "title": "Rreth kësaj makine",
+      "text": "{{brand}} {{model}} ({{year}}) është një zgjedhje e shkëlqyer për qira në Tiranë dhe Shqipëri. Kategoria {{category}} me {{transmission}} dhe karburant {{fuel}} — e rehatshme për rrugë qyteti, autostradë dhe udhëtime ndër-qytetëse. Me {{seats}} vendesh dhe {{luggage}} valixhe hapësitë, i përshtatet grupeve dhe familjeve."
+    },
+    "reviews": {
+      "title": "Vlerësimet e klientëve",
+      "count": "{{count}} vlerësime"
+    },
+    "support": {
+      "question": "Keni pyetje rreth kësaj makine?",
+      "available": "Ekipi ynë është i disponibëll 24/7 për t'ju ndihmuar",
+      "phone": "Telefon",
+      "whatsapp": "WhatsApp"
+    },
+    "booking": {
+      "bookNow": "Rezervo tani",
+      "departure": "Nisja",
+      "return": "Kthimi",
+      "pickupLocation": "Vendi i marrjes",
+      "airportFree": "Pickup falas nga aeroporti i përfshirë",
+      "unavailable": "Momentalisht e rezervuar",
+      "chooseDates": "Zgjidhni data tjera",
+      "reserve": "Rezervo tani",
+      "instant": "Konfirmim i menjëhershëm · Pa tarifë anulimi",
+      "totalLabel": "Totali",
+      "basePrice": "€{{price}} × {{days}} ditë",
+      "insuranceFree": "Falas",
+      "serviceFree": "Falas",
+      "insurance": "Sigurimi bazë",
+      "serviceFee": "Tarifa shërbimi",
+      "freeDays": "Makina është e lirë — {{days}} ditë",
+      "dateTaken": "Makina është e zënë në datat e zgjedhura"
+    },
+    "support2": {
+      "title": "Ndihmë e menjëhershme",
+      "call": "Thirr"
+    },
+    "pricing": {
+      "daily": "Ditor",
+      "weekly": "Javor",
+      "monthly": "Mujor"
+    },
+    "related": {
+      "title": "Makina të ngjashme",
+      "subtitle": "Kategoria {{category}} — alternativa tjera",
+      "viewAll": "Shiko të gjitha"
+    },
+    "faqTitle": "Pyetje rreth kësaj makine",
+    "faqItems": [
+      { "question": "A përfshihet sigurimi?", "answer": "Po, të gjitha makinat tona vijnë me sigurim bazë të përfshirë. Mund të shtoni sigurim shtesë gjatë rezervimit." },
+      { "question": "Çfarë ndodh me dëmtimet?", "answer": "Çdo makinë ka depozitë sigurie. Dëmtimet e vogla mbulohen nga sigurimi. Ju rekomandojmë sigurim të plotë." },
+      { "question": "A mund ta marr makinën nga aeroporti?", "answer": "Po, ofrojmë shërbim pickup falas nga Aeroporti Ndërkombëtar Tirana. Rezervoni në faqen e rezervimit." }
+    ],
+    "trust": {
+      "verified": "Verifikuar & i pastër",
+      "instant": "Konfirmim i menjëhershëm",
+      "support": "Mbështetje 24/7",
+      "insurance": "Sigurim i përfshirë"
+    },
+    "floatingBtn": "Rezervo {{brand}} {{model}}"
+  },
+  "booking": {
+    "title": "Rezervo makinën",
+    "subtitle": "Plotësoni formularin për të konfirmuar rezervimin tuaj",
+    "loading": "Duke ngarkuar...",
+    "confirmed": {
+      "title": "Rezervimi u konfirmua!",
+      "subtitle": "Do të merrni email konfirmimi brenda pak minutash.",
+      "redirecting": "Po ju ridrejtojmë..."
+    },
+    "locationDates": "Vendndodhja dhe datat",
+    "pickup": "Tërhiqni nga *",
+    "dropoff": "Ktheni në *",
+    "selectPlace": "Zgjidhni vendin",
+    "centerTirana": "Tiranë Qendër",
+    "airport": "Aeroporti Nënë Tereza",
+    "departureDatetime": "Data dhe ora e nisjes *",
+    "returnDatetime": "Data dhe ora e kthimit *",
+    "yourInfo": "Informacioni juaj",
+    "firstName": "Emri *",
+    "lastName": "Mbiemri *",
+    "firstNamePlaceholder": "Emri juaj",
+    "lastNamePlaceholder": "Mbiemri juaj",
+    "phone": "Telefoni *",
+    "phonePlaceholder": "+355 69 ...",
+    "email": "Email *",
+    "emailPlaceholder": "email@juaj.com",
+    "extrasInsurance": "Shtesa dhe sigurimi",
+    "insuranceType": "Lloji i sigurimit",
+    "perDay": "/ditë",
+    "free": "Falas",
+    "seasonalPrices": "Çmimet sezonale",
+    "currentlyLabel": "Aktualisht:",
+    "priceInfo": "Çmimet ndryshojnë sipas sezonit. Çmimi bazë i kësaj makine është €{{price}}/ditë.",
+    "discountCode": "Kodi i zbritjes",
+    "discountPlaceholder": "Shkruani kodin (p.sh. TIRANA10)",
+    "apply": "Apliko",
+    "codeApplied": "Kodi u aplikua!",
+    "contract": {
+      "title": "Kontrata & Nënshkrimi",
+      "subtitle": "Ju lutemi lexoni kushtet e qirasë dhe nënshkruani kontratën dixhitale për të vazhduar.",
+      "termsTitle": "KUSHTET E QIRASË SË AUTOMJETIT",
+      "acceptLabel": "Kam lexuar dhe pranoj Kushtet e Qirasë dhe autorizoj nënshkrimin dixhital si të vlefshëm ligjërisht.",
+      "mustAccept": "Duhet të pranoni kushtet para se të nënshkruani",
+      "signatureLabel": "Nënshkrimi juaj *",
+      "signatureRequired": "Nënshkrimi është i detyrueshëm për të vazhduar",
+      "downloadTitle": "Shkarko kontratën e nënshkruar",
+      "downloadSubtitle": "Gjenero PDF me të gjitha të dhënat dhe firmën tuaj dixhitale.",
+      "downloadedTitle": "✅ Kontrata u shkarkua",
+      "downloadedSubtitle": "Kontrata PDF është gati. Mund ta shkarkoni sërish.",
+      "downloadBtn": "Shkarko PDF"
+    },
+    "carUnavailable": "Makina nuk është e disponueshme",
+    "carUnavailableDetail": "Kjo makinë është aktualisht {{status}} dhe nuk mund të rezervohet. Shkoni te flota për alternativa.",
+    "dateConflict": "Makina nuk është e disponueshme për këto data",
+    "dateConflictDetail": "Kjo makinë është rezervuar për datat e zgjedhura. Zgjidhni data të tjera ose shkoni te flota për të gjetur alternativa.",
+    "submit": "Konfirmo rezervimin",
+    "submitting": "Duke ruajtur...",
+    "unavailableBtn": "Makina nuk disponueshme",
+    "summary": "Përmbledhja e rezervimit",
+    "summaryTitle": "Përmbledhja",
+    "days": "ditë",
+    "hours": "orë totale · tarifë ditore aplikohet",
+    "extras": "Shtesa",
+    "insurance2": "Sigurimi",
+    "discount": "Zbritja (10%)",
+    "total": "Totali",
+    "selectDateNote": "Zgjidhni datat dhe oraret për të parë çmimin total",
+    "validation": {
+      "pickup": "Zgjidhni vendin e tërhieves",
+      "dropoff": "Zgjidhni vendin e kthimit",
+      "startDate": "Zgjidhni datën e nisjes",
+      "endDate": "Zgjidhni datën e kthimit",
+      "endDateAfter": "Data e kthimit duhet të jetë pas nisjes",
+      "firstName": "Emri është i detyrueshëm",
+      "lastName": "Mbiemri është i detyrueshëm",
+      "phone": "Telefoni është i detyrueshëm",
+      "email": "Email i pavlefshëm"
+    }
+  },
+  "reviews": {
+    "title": "Vlerësimet e klientëve",
+    "ratingCount": "{{count}} vlerësime",
+    "loading": "Duke ngarkuar...",
+    "writeTitle": "Lër vlerësimin tuaj",
+    "thankYou": "Faleminderit!",
+    "thankYouSub": "Vlerësimi juaj u dërgua për rishikim.",
+    "overallRating": "Vlerësimi overall *",
+    "yourName": "Emri juaj *",
+    "namePlaceholder": "p.sh. Artan H.",
+    "comment": "Komenti juaj *",
+    "commentPlaceholder": "Ndani eksperiencën tuaj...",
+    "submit": "Dërgo vlerësimin",
+    "submitting": "Duke dërguar...",
+    "noReviews": "Nuk ka vlerësime të aprovuara ende.",
+    "beFirst": "Jini i pari që lini një vlerësim!",
+    "aspects": {
+      "carCondition": "Gjendja e makinës",
+      "staffService": "Shërbimi i stafit",
+      "valueForMoney": "Çmimi / Vlera",
+      "bookingEase": "Lehtësia e rezervimit"
+    }
+  },
+  "account": {
+    "title": "Llogaria Ime",
+    "loginPrompt": "Kyçuni për të parë rezervimet tuaja dhe historinë e qirasë.",
+    "loginBtn": "Kyçu tani",
+    "noAccount": "Nuk keni llogari?",
+    "registerFree": "Regjistrohu falas",
+    "administrator": "Administrator",
+    "adminPanel": "Admin Panel",
+    "logout": "Dil",
+    "stats": {
+      "active": "Aktive",
+      "pending": "Në pritje",
+      "completed": "Të kryera"
+    },
+    "reservationsTitle": "Rezervimet e Mia ({{count}})",
+    "unknownCar": "Makinë e panjohur",
+    "noReservations": "Nuk keni asnjë rezervim ende.",
+    "viewFleet": "Shiko flotën",
+    "status": {
+      "Pending": "Në pritje",
+      "Confirmed": "Konfirmuar",
+      "Active": "Aktive",
+      "Completed": "Përfunduar",
+      "Cancelled": "Anuluar"
+    }
+  }
+}

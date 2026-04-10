@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /llogaria
+
+Sitemap: https://rentcartirana.al/sitemap.xml

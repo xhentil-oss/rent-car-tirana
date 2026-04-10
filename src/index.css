@@ -1,0 +1,172 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+:root {
+  --color-primary: hsl(215, 90%, 32%);
+  --color-primary-foreground: hsl(0, 0%, 100%);
+  --color-primary-hover: hsl(215, 90%, 25%);
+  --color-primary-active: hsl(215, 90%, 20%);
+
+  --color-secondary: hsl(215, 85%, 92%);
+  --color-secondary-foreground: hsl(215, 85%, 22%);
+
+  --color-accent: hsl(45, 100%, 55%);
+  --color-accent-foreground: hsl(215, 95%, 10%);
+
+  --color-background: hsl(0, 0%, 98%);
+  --color-foreground: hsl(215, 15%, 15%);
+  --color-border: hsl(215, 10%, 80%);
+
+  --color-success: hsl(142, 60%, 42%);
+  --color-warning: hsl(45, 100%, 51%);
+  --color-error: hsl(0, 70%, 45%);
+
+  --font-sans: "DM Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+}
+
+html,
+body {
+  color: hsl(215, 15%, 15%);
+  background-color: hsl(0, 0%, 98%);
+  font-family: "DM Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: hsl(215, 20%, 12%);
+    font-family: "DM Sans", sans-serif;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  p,
+  span,
+  li,
+  td,
+  th,
+  label,
+  input,
+  textarea,
+  select {
+    color: hsl(215, 15%, 15%);
+  }
+
+  a {
+    color: hsl(215, 90%, 32%);
+    transition: color 200ms ease-in-out;
+  }
+
+  a:hover {
+    color: hsl(215, 90%, 25%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-primary-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(215, 90%, 35%) 0%,
+      hsl(230, 90%, 50%) 100%
+    );
+  }
+
+  .gradient-accent-bg {
+    background: linear-gradient(
+      90deg,
+      hsl(43, 100%, 55%) 0%,
+      hsl(35, 100%, 52%) 100%
+    );
+  }
+
+  .card-hover {
+    transition:
+      transform 250ms ease-in-out,
+      box-shadow 250ms ease-in-out;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px hsl(215 20% 20% / 0.1);
+  }
+
+  .stagger-1 {
+    animation-delay: 0ms;
+  }
+  .stagger-2 {
+    animation-delay: 80ms;
+  }
+  .stagger-3 {
+    animation-delay: 160ms;
+  }
+  .stagger-4 {
+    animation-delay: 240ms;
+  }
+}
+
+/* Admin sidebar — override global color rules for all descendants */
+aside[aria-label="Admin navigimi"] a,
+aside[aria-label="Admin navigimi"] a:hover,
+aside[aria-label="Admin navigimi"] a:visited,
+aside[aria-label="Admin navigimi"] span,
+aside[aria-label="Admin navigimi"] p,
+aside[aria-label="Admin navigimi"] button {
+  color: #ffffff !important;
+}
+
+/* No-scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(0, 0%, 94%);
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(215, 10%, 75%);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(215, 10%, 62%);
+}
