@@ -416,7 +416,7 @@ export default function HomePage() {
               style={{ height: "400px" }}
             >
               <img
-                src="https://images.unsplash.com/photo-1449965408869-ebd13bc0c322?w=800&q=80"
+                src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80"
                 alt="Happy customer standing by rented car"
                 loading="lazy"
                 className="w-full h-full object-cover"
