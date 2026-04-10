@@ -68,12 +68,32 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, status, totalPrice, insurance, extras, discountCode, paymentStatus } = req.body;
-    const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : d;
-    await pool.query(
-      'UPDATE reservations SET car_id=?, customer_id=?, pickup_location=?, dropoff_location=?, start_date=?, start_time=?, end_date=?, end_time=?, notes=?, source=?, status=?, total_price=?, insurance=?, extras=?, discount_code=?, payment_status=? WHERE id=?',
-      [carId, customerId, pickupLocation, dropoffLocation, fmtDate(startDate), startTime, fmtDate(endDate), endTime, notes, source, status, totalPrice, insurance, extras, discountCode, paymentStatus, req.params.id]
-    );
+    const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : undefined;
+    const fields = {
+      car_id: req.body.carId,
+      customer_id: req.body.customerId,
+      pickup_location: req.body.pickupLocation,
+      dropoff_location: req.body.dropoffLocation,
+      start_date: req.body.startDate ? fmtDate(req.body.startDate) : undefined,
+      start_time: req.body.startTime,
+      end_date: req.body.endDate ? fmtDate(req.body.endDate) : undefined,
+      end_time: req.body.endTime,
+      notes: req.body.notes,
+      source: req.body.source,
+      status: req.body.status,
+      total_price: req.body.totalPrice,
+      insurance: req.body.insurance,
+      extras: req.body.extras,
+      discount_code: req.body.discountCode,
+      payment_status: req.body.paymentStatus,
+    };
+    // Only update fields that were actually sent
+    const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
+    if (!entries.length) return res.status(400).json({ error: 'Asnjë fushë për të ndryshuar.' });
+    const setClauses = entries.map(([k]) => `${k} = ?`).join(', ');
+    const values = entries.map(([, v]) => v);
+    values.push(req.params.id);
+    await pool.query(`UPDATE reservations SET ${setClauses} WHERE id = ?`, values);
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
   } catch (err) { res.status(500).json({ error: err.message }); }
