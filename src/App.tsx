@@ -31,6 +31,7 @@ import ContactPage from "./pages/ContactPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import ThankYouPage from "./pages/ThankYouPage";
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -81,6 +82,14 @@ export default function App() {
           element={
             <PublicLayout>
               <BookingPage />
+            </PublicLayout>
+          }
+        />
+        <Route
+          path="/faleminderit"
+          element={
+            <PublicLayout>
+              <ThankYouPage />
             </PublicLayout>
           }
         />

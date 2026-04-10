@@ -350,7 +350,17 @@ export default function BookingPage() {
         reservationId: reservation.id,
       });
       setSubmitted(true);
-      setTimeout(() => navigate("/"), 3000);
+      // Redirect to thank-you page with booking summary
+      const params = new URLSearchParams({
+        rid: reservation.id,
+        name: `${form.firstName.trim()} ${form.lastName.trim()}`,
+        car: `${car.brand} ${car.model}`,
+        pickup: form.pickup,
+        start: new Date(`${form.startDate}T${form.startTime}`).toLocaleDateString("sq-AL"),
+        end: new Date(`${form.endDate}T${form.endTime}`).toLocaleDateString("sq-AL"),
+        total: String(total),
+      });
+      navigate(`/faleminderit?${params.toString()}`);
     } catch (err) {
       console.error("Booking error:", err);
     } finally {
