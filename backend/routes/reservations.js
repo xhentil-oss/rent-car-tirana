@@ -44,10 +44,12 @@ router.post('/', async (req, res) => {
     if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate || !totalPrice) {
       return res.status(400).json({ error: 'Fusha të detyrueshme mungojnë.' });
     }
+    // Convert ISO datetime strings to YYYY-MM-DD for MySQL DATE columns
+    const fmtDate = (d) => new Date(d).toISOString().slice(0, 10);
     const id = uuidv4();
     await pool.query(
       'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, carId, customerId, pickupLocation, dropoffLocation, startDate, startTime || '10:00', endDate, endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
+      [id, carId, customerId, pickupLocation, dropoffLocation, fmtDate(startDate), startTime || '10:00', fmtDate(endDate), endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
     );
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
@@ -67,9 +69,10 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, status, totalPrice, insurance, extras, discountCode, paymentStatus } = req.body;
+    const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : d;
     await pool.query(
       'UPDATE reservations SET car_id=?, customer_id=?, pickup_location=?, dropoff_location=?, start_date=?, start_time=?, end_date=?, end_time=?, notes=?, source=?, status=?, total_price=?, insurance=?, extras=?, discount_code=?, payment_status=? WHERE id=?',
-      [carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, status, totalPrice, insurance, extras, discountCode, paymentStatus, req.params.id]
+      [carId, customerId, pickupLocation, dropoffLocation, fmtDate(startDate), startTime, fmtDate(endDate), endTime, notes, source, status, totalPrice, insurance, extras, discountCode, paymentStatus, req.params.id]
     );
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));

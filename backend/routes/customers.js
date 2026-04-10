@@ -27,15 +27,25 @@ router.get('/:id', authenticate, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', authenticate, async (req, res) => {
+// Public: find-or-create customer (used by booking form)
+router.post('/', async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type = 'Standard' } = req.body;
+    // Check if customer with this email already exists
+    const [existing] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    if (existing.length) {
+      // Update name/phone if changed
+      await pool.query('UPDATE customers SET name=?, first_name=?, last_name=?, phone=? WHERE id=?',
+        [name || `${firstName} ${lastName}`, firstName, lastName, phone, existing[0].id]);
+      const [updated] = await pool.query('SELECT * FROM customers WHERE id = ?', [existing[0].id]);
+      return res.json(fmt(updated[0]));
+    }
     const id = uuidv4();
+    const createdBy = req.user ? req.user.id : null;
     await pool.query(
       'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, created_by) VALUES (?,?,?,?,?,?,?,?)',
-      [id, name || `${firstName} ${lastName}`, firstName, lastName, email, phone, type, req.user.id]
+      [id, name || `${firstName} ${lastName}`, firstName, lastName, email, phone, type, createdBy]
     );
-    await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'Customer', entityId: id, description: `Klient i ri: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
   } catch (err) { res.status(500).json({ error: err.message }); }
