@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import emailjs from "@emailjs/browser";
 import { EMAIL_CONFIG } from "../lib/emailConfig";
+import { useSEO, buildLocalBusinessSchema, buildBreadcrumbSchema } from "../hooks/useSEO";
 
 type FormState = {
   name: string;
@@ -34,6 +35,20 @@ const SUBJECTS = [
 ];
 
 export default function ContactPage() {
+  useSEO({
+    title: "Na Kontaktoni — Rent Car Tirana",
+    description: "Kontaktoni Rent Car Tirana për rezervime, pyetje, ose ndihmë. Telefon +355 69 756 2951, email, ose formulari online. Disponueshëm 24/7.",
+    keywords: "kontakt rent car tirana, telefon makina me qira, email rent a car albania, na kontaktoni",
+    canonical: "/kontakt",
+    structuredData: [
+      buildLocalBusinessSchema(),
+      buildBreadcrumbSchema([
+        { name: "Kryefaqja", url: "/" },
+        { name: "Kontakt", url: "/kontakt" },
+      ]),
+    ],
+  });
+
   const [form, setForm] = useState<FormState>({
     name: "",
     email: "",

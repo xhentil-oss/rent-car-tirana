@@ -7,6 +7,7 @@ export default function PrivacyPage() {
     title: "Politika e Privatësisë — Rent Car Tirana",
     description: "Si Rent Car Tirana mbledh, përdor dhe mbron të dhënat tuaja personale. Sipas GDPR dhe ligjit shqiptar për mbrojtjen e të dhënave.",
     keywords: "politika privatesi, mbrojtja te dhenave, GDPR, rent car tirana",
+    canonical: "/privatesie",
   });
 
   const highlights = [

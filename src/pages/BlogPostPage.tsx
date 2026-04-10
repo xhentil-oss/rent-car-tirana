@@ -38,6 +38,23 @@ export default function BlogPostPage() {
     description: metaDesc,
     canonical: `/blog/${slug}`,
     ogImage: post?.coverImage,
+    ogType: "article",
+    structuredData: post ? {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": title,
+      "description": metaDesc,
+      "image": post.coverImage || undefined,
+      "datePublished": post.publishedAt,
+      "dateModified": post.updatedAt || post.publishedAt,
+      "author": { "@type": "Organization", "name": "Rent Car Tirana" },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Rent Car Tirana",
+        "url": "https://rentcartiranaairport.com"
+      },
+      "mainEntityOfPage": `https://rentcartiranaairport.com/blog/${slug}`
+    } : undefined,
   });
 
   if (loading) {

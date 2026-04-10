@@ -7,6 +7,7 @@ export default function TermsPage() {
     title: "Kushtet e Shërbimit — Rent Car Tirana",
     description: "Lexoni kushtet e shërbimit të Rent Car Tirana: rregullat e qirasë, politikat e faturimit, dhe të drejtat e klientit.",
     keywords: "kushtet e sherbimit, makinë me qira kushte, rent car tirana kushte",
+    canonical: "/termat-e-sherbimit",
   });
 
   const sections = [
