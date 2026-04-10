@@ -12,6 +12,7 @@ import {
   CaretDown,
   SpinnerGap,
   Globe,
+  UserPlus,
 } from "@phosphor-icons/react";
 import { useAuth, useLazyQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
@@ -50,15 +51,23 @@ function LanguageSwitcher() {
 }
 
 function UserMenu() {
-  const { user, isPending, isAnonymous, login, logout } = useAuth();
+  const { user, isPending, isAnonymous, login, register, logout } = useAuth();
   const { query: queryAdminProfile } = useLazyQuery("UserAdminProfile");
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "register">("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regPass, setRegPass] = useState("");
+  const [regPass2, setRegPass2] = useState("");
+  const [regError, setRegError] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -97,58 +106,144 @@ function UserMenu() {
   }
 
   if (isAnonymous) {
+    const handleLogin = () => {
+      setLoginLoading(true);
+      setLoginError("");
+      login(loginEmail, loginPass)
+        .then(() => setShowAuth(false))
+        .catch((err: Error) => setLoginError(err.message || "Login dështoi"))
+        .finally(() => setLoginLoading(false));
+    };
+
+    const handleRegister = () => {
+      if (regPass !== regPass2) { setRegError("Fjalëkalimet nuk përputhen"); return; }
+      if (regPass.length < 8) { setRegError("Fjalëkalimi duhet të ketë min 8 karaktere"); return; }
+      setRegLoading(true);
+      setRegError("");
+      register(regName, regEmail, regPass, regPhone)
+        .then(() => setShowAuth(false))
+        .catch((err: Error) => setRegError(err.message || "Regjistrimi dështoi"))
+        .finally(() => setRegLoading(false));
+    };
+
     return (
       <div className="relative" ref={ref}>
         <button
-          onClick={() => setShowLogin(!showLogin)}
+          onClick={() => setShowAuth(!showAuth)}
           className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-colors duration-200 cursor-pointer bg-white shadow-sm"
         >
           <SignIn size={16} weight="bold" />
           {t("header.login", "Hyr")}
         </button>
 
-        {showLogin && (
-          <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl border border-border shadow-lg z-50 p-4">
-            <p className="text-sm font-semibold text-neutral-900 mb-3">{t("header.login", "Hyr në llogari")}</p>
-            {loginError && <p className="text-xs text-error mb-2">{loginError}</p>}
-            <input
-              type="email"
-              placeholder="Email"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={loginPass}
-              onChange={(e) => setLoginPass(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setLoginLoading(true);
-                  setLoginError("");
-                  login(loginEmail, loginPass)
-                    .then(() => setShowLogin(false))
-                    .catch((err: Error) => setLoginError(err.message || "Login dështoi"))
-                    .finally(() => setLoginLoading(false));
-                }
-              }}
-              className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary"
-            />
-            <button
-              disabled={loginLoading || !loginEmail || !loginPass}
-              onClick={() => {
-                setLoginLoading(true);
-                setLoginError("");
-                login(loginEmail, loginPass)
-                  .then(() => setShowLogin(false))
-                  .catch((err: Error) => setLoginError(err.message || "Login dështoi"))
-                  .finally(() => setLoginLoading(false));
-              }}
-              className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
-            >
-              {loginLoading ? "Duke hyrë..." : t("header.login", "Hyr")}
-            </button>
+        {showAuth && (
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+            {/* Tabs */}
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setAuthTab("login")}
+                className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "login" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
+              >
+                <SignIn size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
+                Hyr
+              </button>
+              <button
+                onClick={() => setAuthTab("register")}
+                className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "register" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
+              >
+                <UserPlus size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
+                Regjistrohu
+              </button>
+            </div>
+
+            <div className="p-4">
+              {authTab === "login" ? (
+                <>
+                  {loginError && <p className="text-xs text-error mb-2">{loginError}</p>}
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Fjalëkalimi"
+                    value={loginPass}
+                    onChange={(e) => setLoginPass(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary"
+                  />
+                  <button
+                    disabled={loginLoading || !loginEmail || !loginPass}
+                    onClick={handleLogin}
+                    className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
+                  >
+                    {loginLoading ? "Duke hyrë..." : "Hyr"}
+                  </button>
+                  <p className="mt-3 text-xs text-center text-neutral-400">
+                    Nuk ke llogari?{" "}
+                    <button onClick={() => setAuthTab("register")} className="text-primary underline cursor-pointer bg-transparent border-0 text-xs">
+                      Regjistrohu falas
+                    </button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  {regError && <p className="text-xs text-error mb-2">{regError}</p>}
+                  <input
+                    type="text"
+                    placeholder="Emri i plotë *"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email *"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Telefoni (opsional)"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Fjalëkalimi * (min 8 karaktere)"
+                    value={regPass}
+                    onChange={(e) => setRegPass(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Konfirmo fjalëkalimin *"
+                    value={regPass2}
+                    onChange={(e) => setRegPass2(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleRegister(); }}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary"
+                  />
+                  <button
+                    disabled={regLoading || !regName || !regEmail || !regPass || !regPass2}
+                    onClick={handleRegister}
+                    className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
+                  >
+                    {regLoading ? "Duke regjistruar..." : "Krijo llogarinë"}
+                  </button>
+                  <p className="mt-3 text-xs text-center text-neutral-400">
+                    Ke llogari?{" "}
+                    <button onClick={() => setAuthTab("login")} className="text-primary underline cursor-pointer bg-transparent border-0 text-xs">
+                      Hyr këtu
+                    </button>
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

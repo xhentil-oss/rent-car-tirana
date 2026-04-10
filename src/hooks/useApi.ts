@@ -74,7 +74,11 @@ async function fetchWithRefresh(url: string, options: RequestInit): Promise<Resp
 function buildQuery(filters?: Record<string, unknown>): string {
   if (!filters) return "";
   const params = new URLSearchParams();
-  if (filters.where) params.set("where", JSON.stringify(filters.where));
+  if (filters.where && typeof filters.where === "object") {
+    for (const [k, v] of Object.entries(filters.where as Record<string, unknown>)) {
+      if (v !== undefined && v !== null) params.set(k, String(v));
+    }
+  }
   if (filters.orderBy) params.set("orderBy", JSON.stringify(filters.orderBy));
   if (filters.limit) params.set("limit", String(filters.limit));
   return params.toString() ? `?${params.toString()}` : "";
@@ -216,7 +220,6 @@ export function useAuth() {
 
   const login = useCallback(async (email?: string, password?: string) => {
     if (!email || !password) {
-      // Redirect to admin login or show prompt
       window.location.href = "/admin";
       return;
     }
@@ -238,6 +241,26 @@ export function useAuth() {
     return data.user;
   }, []);
 
+  const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, phone }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (err.errors) throw new Error(err.errors.map((e: any) => e.msg).join(", "));
+      throw new Error(err.error || "Registration failed");
+    }
+    const data = await res.json();
+    localStorage.setItem("rct_token", data.accessToken);
+    localStorage.setItem("rct_refresh_token", data.refreshToken);
+    localStorage.setItem("rct_user", JSON.stringify(data.user));
+    setUser(data.user);
+    setIsAnonymous(false);
+    return data.user;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem("rct_token");
     localStorage.removeItem("rct_refresh_token");
@@ -247,5 +270,5 @@ export function useAuth() {
     window.location.href = "/";
   }, []);
 
-  return { user, isPending, isAnonymous, login, logout };
+  return { user, isPending, isAnonymous, login, register, logout };
 }

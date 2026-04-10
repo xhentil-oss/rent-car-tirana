@@ -29,9 +29,18 @@ router.get('/', authenticate, async (req, res) => {
     const { status, carId, customerId, limit = 200, offset = 0 } = req.query;
     let sql = 'SELECT * FROM reservations WHERE 1=1';
     const params = [];
+
+    // Security: customer role users can only see their own reservations
+    if (req.user.role === 'customer') {
+      const [custRows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [req.user.id]);
+      if (!custRows.length) return res.json([]);
+      sql += ' AND customer_id = ?'; params.push(custRows[0].id);
+    } else if (customerId) {
+      sql += ' AND customer_id = ?'; params.push(customerId);
+    }
+
     if (status)     { sql += ' AND status = ?';      params.push(status); }
     if (carId)      { sql += ' AND car_id = ?';      params.push(carId); }
-    if (customerId) { sql += ' AND customer_id = ?'; params.push(customerId); }
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, params);

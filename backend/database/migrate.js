@@ -402,6 +402,14 @@ const TABLES = [
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
+// ── Post-migration ALTER statements (safe to re-run) ──────────
+const ALTERS = [
+  // Add 'customer' to users role enum
+  `ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','staff','accountant','customer') DEFAULT 'staff'`,
+  // Add customer_id column to link user→customer record
+  `ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id CHAR(36) DEFAULT NULL`,
+];
+
 async function migrate() {
   const connection = await mysql.createConnection({
     host:     process.env.DB_HOST || 'localhost',
@@ -427,6 +435,22 @@ async function migrate() {
     } catch (err) {
       console.error(`  ❌ ${tableName}: ${err.message}`);
       failed++;
+    }
+  }
+
+  // Run ALTER statements (safe to re-run)
+  console.log('\n🔧 Running ALTER statements...');
+  for (const sql of ALTERS) {
+    try {
+      await connection.query(sql);
+      console.log(`  ✅ ${sql.slice(0, 60)}...`);
+    } catch (err) {
+      // Ignore "Duplicate column" or "already exists" errors
+      if (err.code === 'ER_DUP_FIELDNAME' || err.message.includes('Duplicate column')) {
+        console.log(`  ⏭️  Already applied: ${sql.slice(0, 60)}...`);
+      } else {
+        console.log(`  ⚠️  ${err.message.slice(0, 80)}`);
+      }
     }
   }
 

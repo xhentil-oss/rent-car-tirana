@@ -23,36 +23,54 @@ router.post(
     body('email').isEmail().withMessage('Email i pavlefshëm'),
     body('password').isLength({ min: 8 }).withMessage('Fjalëkalimi duhet të ketë min 8 karaktere'),
     body('name').notEmpty().withMessage('Emri është i detyrueshëm'),
+    body('phone').optional().isMobilePhone('any').withMessage('Numri i telefonit nuk është i vlefshëm'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email, name, password } = req.body;
-    const role = 'staff'; // Hardcoded — only admins can promote via /users route
+    const { email, name, password, phone } = req.body;
+    const role = 'customer';
 
     try {
-      const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-      if (existing.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
+      // Check if email already exists in users or customers
+      const [existingUser] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+      if (existingUser.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
 
       const hash = await bcrypt.hash(password, 12);
-      const id = uuidv4();
+      const userId = uuidv4();
+      const customerId = uuidv4();
+
+      // Create customer record
+      const nameParts = name.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
       await pool.query(
-        'INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)',
-        [id, email, name, hash, role]
+        'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [customerId, name, firstName, lastName, email, phone || '', 'Standard', userId]
       );
 
-      const { access, refresh } = makeTokens(id);
+      // Create user record
+      await pool.query(
+        'INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)',
+        [userId, email, name, hash, role]
+      );
+
+      const { access, refresh } = makeTokens(userId);
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       await pool.query(
         'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-        [uuidv4(), id, refresh, expiresAt]
+        [uuidv4(), userId, refresh, expiresAt]
       );
 
-      await logActivity({ userId: id, action: 'CREATE', entity: 'User', entityId: id, description: `Regjistrim i ri: ${email}`, ipAddress: req.ip });
+      await logActivity({ userId, action: 'CREATE', entity: 'Customer', entityId: customerId, description: `Regjistrim klienti: ${email}`, ipAddress: req.ip });
 
-      return res.status(201).json({ accessToken: access, refreshToken: refresh, user: { id, email, name, role } });
+      return res.status(201).json({
+        accessToken: access,
+        refreshToken: refresh,
+        user: { id: userId, email, name, role, customerId },
+      });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });
@@ -95,10 +113,17 @@ router.post(
       await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
       await logActivity({ userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id, description: `Login: ${email}`, ipAddress: req.ip });
 
+      // If customer role, find their customer record
+      let customerId = null;
+      if (user.role === 'customer') {
+        const [cust] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user.id]);
+        if (cust.length) customerId = cust[0].id;
+      }
+
       return res.json({
         accessToken: access,
         refreshToken: refresh,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role, permissions: user.permissions },
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, permissions: user.permissions, customerId },
       });
     } catch (err) {
       console.error(err);

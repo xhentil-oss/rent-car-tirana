@@ -31,12 +31,11 @@ export default function MyAccountPage() {
     Cancelled: { label: t("account.status.Cancelled"), color: "bg-red-100 text-red-600 border-red-200",          icon: <XCircle size={13} weight="fill" /> },
   };
 
-  const { user, isAnonymous, isPending: authPending, login, logout } = useAuth();
+  const { user, isAnonymous, isPending: authPending, logout } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const { query: queryAdminProfile } = useLazyQuery("UserAdminProfile");
 
   const { data: reservations, isPending: resLoading } = useQuery("Reservation", {
-    where: user ? { createdByUserId: user.id } : undefined,
     orderBy: { createdAt: "desc" },
   });
   const { data: cars } = useQuery("Car");
@@ -66,14 +65,14 @@ export default function MyAccountPage() {
           <h1 className="text-xl font-semibold text-neutral-900 mb-2">{t("account.title")}</h1>
           <p className="text-sm text-neutral-500 mb-6">{t("account.loginPrompt")}</p>
           <button
-            onClick={() => login()}
+            onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }}
             className="w-full py-3 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
           >
             {t("account.loginBtn")}
           </button>
           <p className="mt-4 text-xs text-neutral-400">
             {t("account.noAccount")}{" "}
-            <button onClick={() => login()} className="text-primary underline cursor-pointer bg-transparent border-0">
+            <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-primary underline cursor-pointer bg-transparent border-0">
               {t("account.registerFree")}
             </button>
           </p>
