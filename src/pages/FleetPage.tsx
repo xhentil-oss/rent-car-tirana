@@ -16,7 +16,7 @@ export default function FleetPage() {
   const [activeCategory, setActiveCategory] = useState<string>(searchParams.get("kategoria") ?? "");
   const [activeTransmission, setActiveTransmission] = useState<string>(searchParams.get("transmision") ?? "");
   const [activeFuel, setActiveFuel] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<number>(200);
+  const [maxPrice, setMaxPrice] = useState<number>(500);
   const [sortBy, setSortBy] = useState<string>("default");
   const [page, setPage] = useState(1);
 
@@ -76,13 +76,13 @@ export default function FleetPage() {
     setActiveCategory("");
     setActiveTransmission("");
     setActiveFuel("");
-    setMaxPrice(200);
+    setMaxPrice(500);
     setSortBy("default");
     setPage(1);
   };
 
   const hasFilters =
-    activeCategory || activeTransmission || activeFuel || maxPrice < 200 || sortBy !== "default";
+    activeCategory || activeTransmission || activeFuel || maxPrice < 500 || sortBy !== "default";
 
   const FilterChip = ({
     label,
@@ -192,7 +192,7 @@ export default function FleetPage() {
                 id="maxPrice"
                 type="range"
                 min={20}
-                max={200}
+                max={500}
                 value={maxPrice}
                 onChange={(e) => {
                   setMaxPrice(Number(e.target.value));
@@ -238,10 +238,10 @@ export default function FleetPage() {
               {activeFuel && (
                 <FilterChip label={activeFuel} onRemove={() => setActiveFuel("")} />
               )}
-              {maxPrice < 200 && (
+              {maxPrice < 500 && (
                 <FilterChip
                   label={`Max €${maxPrice}/ditë`}
-                  onRemove={() => setMaxPrice(200)}
+                  onRemove={() => setMaxPrice(500)}
                 />
               )}
             </div>
