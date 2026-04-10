@@ -31,10 +31,12 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type = 'Standard' } = req.body;
-    // Check if customer with this email already exists
-    const [existing] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    // Check if customer with this email or phone already exists
+    const [existing] = await pool.query(
+      'SELECT * FROM customers WHERE email = ? OR phone = ?', [email, phone]
+    );
     if (existing.length) {
-      // Update name/phone if changed
+      // Return existing customer (update name/phone if changed)
       await pool.query('UPDATE customers SET name=?, first_name=?, last_name=?, phone=? WHERE id=?',
         [name || `${firstName} ${lastName}`, firstName, lastName, phone, existing[0].id]);
       const [updated] = await pool.query('SELECT * FROM customers WHERE id = ?', [existing[0].id]);
@@ -54,6 +56,13 @@ router.post('/', async (req, res) => {
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type } = req.body;
+    // Check duplicate email/phone on another customer
+    const [dup] = await pool.query(
+      'SELECT id FROM customers WHERE (email = ? OR phone = ?) AND id != ?', [email, phone, req.params.id]
+    );
+    if (dup.length) {
+      return res.status(409).json({ error: 'Një klient me këtë email ose numër telefoni ekziston tashmë.' });
+    }
     await pool.query(
       'UPDATE customers SET name=?, first_name=?, last_name=?, email=?, phone=?, type=? WHERE id=?',
       [name, firstName, lastName, email, phone, type, req.params.id]
