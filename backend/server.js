@@ -72,6 +72,11 @@ app.use('/api/blog',          apiLimiter,  require('./routes/blog'));
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
+// ─── API 404 for unknown endpoints ────────────────────────────
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'Endpoint nuk ekziston.' });
+});
+
 // ─── SERVE FRONTEND (production) ─────────────────────────────
 const distPath = path.join(__dirname, 'public');
 app.use(express.static(distPath));

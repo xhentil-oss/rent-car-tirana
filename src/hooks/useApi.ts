@@ -28,6 +28,9 @@ const ENTITY_MAP: Record<string, string> = {
   ReservationAvailability: "/reservations/availability",
   BlogPost: "/blog",
   BlogPostAdmin: "/blog/admin",
+  CustomerDocument: "/customer-documents",
+  CommunicationLog: "/communication-logs",
+  Deposit: "/deposits",
 };
 
 function getToken(): string | null {
@@ -85,34 +88,45 @@ function buildQuery(filters?: Record<string, unknown>): string {
 }
 
 // ─── useQuery ──────────────────────────────────────────────────
-export function useQuery(entity: string, filters?: Record<string, unknown>) {
+export function useQuery(entity: string, filtersOrId?: Record<string, unknown> | string) {
+  // Support single-entity fetch: useQuery("Car", "uuid") → GET /api/cars/uuid
+  const isIdFetch = typeof filtersOrId === "string";
+  const filters = isIdFetch ? undefined : filtersOrId;
+  const entityId = isIdFetch ? filtersOrId : undefined;
   const skip = !!filters?.skip;
-  const [data, setData] = useState<any[] | undefined>(undefined);
-  const [isPending, setIsPending] = useState(!skip);
+  const [data, setData] = useState<any>(undefined);
+  const [isPending, setIsPending] = useState(!skip && !(isIdFetch && !entityId));
   const [error, setError] = useState<string | null>(null);
 
   const endpoint = ENTITY_MAP[entity] || `/${entity.toLowerCase()}s`;
 
   const refetch = useCallback(() => {
-    if (skip) { setData([]); setIsPending(false); return; }
+    if (skip) { setData(isIdFetch ? null : []); setIsPending(false); return; }
     setIsPending(true);
-    const qs = buildQuery(filters);
-    fetchWithRefresh(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() })
+    const url = entityId
+      ? `${API_BASE}${endpoint}/${entityId}`
+      : `${API_BASE}${endpoint}${buildQuery(filters)}`;
+    fetchWithRefresh(url, { headers: getHeaders() })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
       .then((json) => {
-        setData(Array.isArray(json) ? json : json.data ?? json.items ?? [json]);
+        if (isIdFetch) {
+          // Single entity: return the object directly
+          setData(Array.isArray(json) ? json[0] ?? null : json);
+        } else {
+          setData(Array.isArray(json) ? json : json.data ?? json.items ?? [json]);
+        }
         setError(null);
       })
       .catch((err) => {
         console.warn(`useQuery(${entity}):`, err.message);
-        setData([]);
+        setData(isIdFetch ? null : []);
         setError(err.message);
       })
       .finally(() => setIsPending(false));
-  }, [entity, JSON.stringify(filters)]);
+  }, [entity, isIdFetch ? entityId : JSON.stringify(filters)]);
 
   useEffect(() => {
     refetch();
