@@ -18,7 +18,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.emailjs.com", "https://*.animaapp.com"],
+      connectSrc: ["'self'", "https://api.emailjs.com", "https://*.animaapp.com", "https://unpkg.com"],
     },
   },
 }));
@@ -53,7 +53,7 @@ app.use('/api/activity-logs',              require('./routes/activityLogs'));
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
 // ─── SERVE FRONTEND (production) ─────────────────────────────
-const distPath = path.join(__dirname, '..', 'dist');
+const distPath = path.join(__dirname, 'public');
 app.use(express.static(distPath));
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
