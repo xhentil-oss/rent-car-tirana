@@ -31,7 +31,7 @@ import {
   GoogleLogo,
   X,
 } from "@phosphor-icons/react";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../hooks/useApi";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";

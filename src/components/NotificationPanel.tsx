@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Bell, X, Check, CheckCircle, Car, CalendarBlank, Warning } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../hooks/useApi";
 
 type Notif = {
   id: string;

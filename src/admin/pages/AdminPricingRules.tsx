@@ -4,7 +4,7 @@ import {
   Tag, Lightning, Bird, Timer, CalendarBlank, Sun, MagnifyingGlass,
   Warning, Info, ArrowUp, ArrowDown,
 } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 import { RULE_TYPE_LABELS, ruleConditionSummary } from "../../lib/pricingRules";
 import { EmptyState } from "../../components/ui/EmptyState";
 

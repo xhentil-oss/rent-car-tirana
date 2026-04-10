@@ -12,7 +12,7 @@ import {
   SpinnerGap,
   Globe,
 } from "@phosphor-icons/react";
-import { useAuth, useLazyQuery } from "@animaapp/playground-react-sdk";
+import { useAuth, useLazyQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 
 function LanguageSwitcher() {

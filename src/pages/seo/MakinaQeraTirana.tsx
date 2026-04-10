@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin, CheckCircle, ArrowRight, Clock, ShieldCheck, CurrencyDollar, Star } from "@phosphor-icons/react";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../../hooks/useApi";
 import CarCard from "../../components/CarCard";
 import Footer from "../../components/Footer";
 import { useSEO, buildFAQSchema, buildLocalBusinessSchema } from "../../hooks/useSEO";

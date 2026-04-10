@@ -8,7 +8,7 @@ import {
   ArrowRight,
   Warning,
 } from "@phosphor-icons/react";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../../hooks/useApi";
 import { useCountUp } from "../../hooks/useCountUp";
 import StatusBadge from "../../components/StatusBadge";
 

@@ -18,7 +18,7 @@ import {
   Tag,
   Images,
 } from "@phosphor-icons/react";
-import { useAuth } from "@animaapp/playground-react-sdk";
+import { useAuth } from "../hooks/useApi";
 import NotificationPanel from "../components/NotificationPanel";
 
 const navItems = [

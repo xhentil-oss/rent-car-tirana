@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Check, X, Eye, Plus, MagnifyingGlass, Calendar, Car, User, MapPin, CurrencyEur, Note, UserPlus, Phone, Envelope, Tag } from "@phosphor-icons/react";
-import { useQuery, useMutation, useLazyQuery } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation, useLazyQuery } from "../../hooks/useApi";
 import { calculateSeasonalTotal, getDominantSeason } from "../../lib/seasonalPricing";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";

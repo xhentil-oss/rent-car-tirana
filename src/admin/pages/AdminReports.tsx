@@ -5,7 +5,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
 import { revenueData, bookingsBySource, topCars } from "../../data/mockData";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../../hooks/useApi";
 
 const PIE_COLORS = ["hsl(215, 90%, 32%)","hsl(45, 100%, 55%)","hsl(142, 60%, 42%)"];
 

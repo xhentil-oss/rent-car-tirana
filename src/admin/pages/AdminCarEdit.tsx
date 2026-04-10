@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, FloppyDisk, Trash, Star, X, Check, SpinnerGap, CarSimple, Warning, Images, UploadSimple } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 import StatusBadge from "../../components/StatusBadge";
 
 function useActivityLog() {

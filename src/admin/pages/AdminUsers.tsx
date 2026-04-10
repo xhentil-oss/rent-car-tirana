@@ -3,7 +3,7 @@ import {
   useQuery,
   useMutation,
   useAuth,
-} from "@animaapp/playground-react-sdk";
+} from "../../hooks/useApi";
 import {
   Users,
   Plus,

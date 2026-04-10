@@ -4,7 +4,7 @@ import {
   Warning, Star, Buildings, Plus, PaperPlaneRight, Shield, ShieldSlash,
   Upload, Clock, Crown, Certificate,
 } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 

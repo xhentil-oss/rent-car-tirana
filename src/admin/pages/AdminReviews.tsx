@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Star, Check, X, Eye, Trash, MagnifyingGlass } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
 
 export default function AdminReviews() {

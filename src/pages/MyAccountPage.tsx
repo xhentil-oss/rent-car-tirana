@@ -12,7 +12,7 @@ import {
   SignOut,
   ShieldCheck,
 } from "@phosphor-icons/react";
-import { useAuth, useQuery, useLazyQuery } from "@animaapp/playground-react-sdk";
+import { useAuth, useQuery, useLazyQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 

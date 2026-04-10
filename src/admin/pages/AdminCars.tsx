@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Plus, PencilSimple, Trash, Star, X, Check, ArrowSquareOut, Images, UploadSimple, Link as LinkIcon, MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";

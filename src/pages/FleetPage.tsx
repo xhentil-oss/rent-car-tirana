@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSEO } from "../hooks/useSEO";
 import { X, FunnelSimple, SortAscending } from "@phosphor-icons/react";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";

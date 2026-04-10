@@ -19,7 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { downloadContractPdf } from "../lib/generateContractPdf";
 import SignaturePad from "../components/SignaturePad";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../hooks/useApi";
 import Footer from "../components/Footer";
 import { useSEO } from "../hooks/useSEO";
 import {

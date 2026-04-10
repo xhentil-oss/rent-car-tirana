@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Star, CheckCircle, SmileyWink } from "@phosphor-icons/react";
-import { useQuery, useMutation, useAuth } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation, useAuth } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import Footer from "../components/Footer";
 import { useSEO, buildFAQSchema } from "../hooks/useSEO";

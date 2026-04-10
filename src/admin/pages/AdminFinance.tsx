@@ -5,7 +5,7 @@ import {
   FileXls, Eye, X, Buildings, User, Calendar, Car, Printer,
   ArrowUp, Coins, ChartBar, TrendUp, Tag,
 } from "@phosphor-icons/react";
-import { useQuery, useMutation, useLazyQuery } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation, useLazyQuery } from "../../hooks/useApi";
 
 type InvoiceStatus = "Paguar" | "Pa paguar" | "Vonuar" | "Anuluar";
 type DepositStatus = "Mbajtur" | "Kthyer" | "Pjesërisht";

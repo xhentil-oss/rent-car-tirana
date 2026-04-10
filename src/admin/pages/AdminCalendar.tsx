@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CaretLeft, CaretRight, X, Car, User, MapPin, CalendarBlank, CurrencyEur } from "@phosphor-icons/react";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../../hooks/useApi";
 
 type Reservation = {
   id: string;

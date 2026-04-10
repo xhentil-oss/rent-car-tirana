@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@animaapp/playground-react-sdk";
+import { useQuery } from "../hooks/useApi";
 import {
   ArrowLeft,
   House,

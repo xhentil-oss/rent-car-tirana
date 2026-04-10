@@ -15,7 +15,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation } from "@animaapp/playground-react-sdk";
+import { useQuery, useMutation } from "../../hooks/useApi";
 
 type MediaItem = {
   id: string;
