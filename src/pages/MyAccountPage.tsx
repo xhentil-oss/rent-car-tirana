@@ -211,7 +211,7 @@ export default function MyAccountPage() {
                     </p>
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-neutral-800">
-                        €{res.totalPrice?.toFixed(2) ?? "—"}
+                        €{res.totalPrice ? Number(res.totalPrice).toFixed(2) : "—"}
                       </p>
                       <p className="text-xs text-neutral-400">{res.insurance}</p>
                     </div>

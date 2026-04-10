@@ -495,8 +495,8 @@ function FuelTab({ cars }: { cars: any[] }) {
   const carName = (id: string) => { const c = cars.find(x => x.id === id); return c ? `${c.brand} ${c.model}` : id; };
   const totalCost = form.liters && form.pricePerLiter ? (Number(form.liters) * Number(form.pricePerLiter)).toFixed(2) : "0.00";
 
-  const totalLiters = (records as any[]).reduce((s: number, r: any) => s + (r.liters || 0), 0);
-  const totalSpent = (records as any[]).reduce((s: number, r: any) => s + (r.totalCost || 0), 0);
+  const totalLiters = (records as any[]).reduce((s: number, r: any) => s + (Number(r.liters) || 0), 0);
+  const totalSpent = (records as any[]).reduce((s: number, r: any) => s + (Number(r.totalCost) || 0), 0);
 
   const save = async () => {
     await create({ carId: form.carId, date: new Date(form.date), liters: Number(form.liters), pricePerLiter: Number(form.pricePerLiter), totalCost: Number(totalCost), mileage: Number(form.mileage), fuelType: form.fuelType, station: form.station || undefined, notes: form.notes || undefined });
