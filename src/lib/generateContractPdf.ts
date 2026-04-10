@@ -2,6 +2,16 @@
  * Generates a printable/downloadable HTML contract as a new window → Print to PDF.
  * No external libraries needed — pure browser API.
  */
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export interface ContractData {
   clientName: string;
   clientEmail: string;
@@ -51,7 +61,7 @@ export function downloadContractPdf(data: ContractData): void {
 <html lang="sq">
 <head>
   <meta charset="UTF-8"/>
-  <title>Kontratë Qiraje - ${data.clientName}</title>
+  <title>Kontratë Qiraje - ${escapeHtml(data.clientName)}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -136,9 +146,9 @@ export function downloadContractPdf(data: ContractData): void {
   <div class="section">
     <div class="section-title">Të dhënat e klientit</div>
     <div class="grid-3">
-      <div class="field"><label>Emri i plotë</label><span>${data.clientName}</span></div>
-      <div class="field"><label>Email</label><span>${data.clientEmail}</span></div>
-      <div class="field"><label>Telefon</label><span>${data.clientPhone}</span></div>
+      <div class="field"><label>Emri i plotë</label><span>${escapeHtml(data.clientName)}</span></div>
+      <div class="field"><label>Email</label><span>${escapeHtml(data.clientEmail)}</span></div>
+      <div class="field"><label>Telefon</label><span>${escapeHtml(data.clientPhone)}</span></div>
     </div>
   </div>
 
@@ -146,10 +156,10 @@ export function downloadContractPdf(data: ContractData): void {
   <div class="section">
     <div class="section-title">Automjeti</div>
     <div class="car-block">
-      <img src="${data.carImage}" alt="${data.carName}" />
+      <img src="${escapeHtml(data.carImage)}" alt="${escapeHtml(data.carName)}" />
       <div class="car-info">
-        <div class="car-name">${data.carName}</div>
-        <div class="car-meta">${data.carCategory} · ${data.carTransmission}</div>
+        <div class="car-name">${escapeHtml(data.carName)}</div>
+        <div class="car-meta">${escapeHtml(data.carCategory)} · ${escapeHtml(data.carTransmission)}</div>
       </div>
     </div>
   </div>
@@ -158,10 +168,10 @@ export function downloadContractPdf(data: ContractData): void {
   <div class="section">
     <div class="section-title">Detaje rezervimi</div>
     <div class="grid-2">
-      <div class="field"><label>Vendor tërhiqës</label><span>${data.pickupLocation}</span></div>
-      <div class="field"><label>Vendi i kthimit</label><span>${data.dropoffLocation}</span></div>
-      <div class="field"><label>Data &amp; Ora e nisjes</label><span>${data.startDate} · ${data.startTime}</span></div>
-      <div class="field"><label>Data &amp; Ora e kthimit</label><span>${data.endDate} · ${data.endTime}</span></div>
+      <div class="field"><label>Vendor tërhiqës</label><span>${escapeHtml(data.pickupLocation)}</span></div>
+      <div class="field"><label>Vendi i kthimit</label><span>${escapeHtml(data.dropoffLocation)}</span></div>
+      <div class="field"><label>Data &amp; Ora e nisjes</label><span>${escapeHtml(data.startDate)} · ${escapeHtml(data.startTime)}</span></div>
+      <div class="field"><label>Data &amp; Ora e kthimit</label><span>${escapeHtml(data.endDate)} · ${escapeHtml(data.endTime)}</span></div>
       <div class="field"><label>Numri i ditëve</label><span>${data.days} ditë</span></div>
       <div class="field"><label>Shtesa</label><span>${extrasList}</span></div>
       <div class="field"><label>Sigurimi</label><span>${insuranceLabels[data.insurance] ?? data.insurance}</span></div>
@@ -201,7 +211,7 @@ export function downloadContractPdf(data: ContractData): void {
       <div class="sig-box">
         <div class="sig-label">Nënshkrimi i klientit</div>
         <img class="sig-img" src="${data.signatureDataUrl}" alt="Nënshkrimi i klientit" />
-        <div class="sig-name">${data.clientName}</div>
+        <div class="sig-name">${escapeHtml(data.clientName)}</div>
         <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Datë: ${data.contractDate}</div>
       </div>
       <div class="sig-box">

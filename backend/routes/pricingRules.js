@@ -15,9 +15,24 @@ const fmt = (r) => ({
 
 router.get('/', async (req, res) => {
   try {
+    const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE is_active = 1 ORDER BY priority DESC, created_at DESC');
+    // Hide promo codes and sensitive fields from public
+    res.json(rows.map(r => ({
+      id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
+      discountValue: r.discount_value, startDate: r.start_date, endDate: r.end_date,
+      minDays: r.min_days, maxDays: r.max_days,
+      applicableTo: r.applicable_to, isActive: !!r.is_active, priority: r.priority,
+      description: r.description,
+    })));
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+});
+
+// Admin GET — full data including promo codes
+router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+  try {
     const [rows] = await pool.query('SELECT * FROM pricing_rules ORDER BY priority DESC, created_at DESC');
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
@@ -30,7 +45,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
@@ -42,11 +57,11 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-// Called when a pricing rule is applied during booking — public but validated
-router.post('/:id/use', async (req, res) => {
+// Called when a pricing rule is applied during booking — requires auth
+router.post('/:id/use', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT id, max_usages, usage_count, is_active FROM pricing_rules WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Rregulli nuk u gjet.' });
@@ -57,14 +72,14 @@ router.post('/:id/use', async (req, res) => {
     }
     await pool.query('UPDATE pricing_rules SET usage_count = usage_count + 1 WHERE id = ?', [req.params.id]);
     res.json({ message: 'usage_count +1' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     await pool.query('DELETE FROM pricing_rules WHERE id = ?', [req.params.id]);
     res.json({ message: 'Rregulli u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

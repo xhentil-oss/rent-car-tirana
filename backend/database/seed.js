@@ -7,13 +7,18 @@ async function seed() {
   console.log('🌱 Seeding database...');
 
   // Admin user
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 8) {
+    console.error('❌ Set ADMIN_PASSWORD env var (min 8 chars) before seeding.');
+    process.exit(1);
+  }
   const adminId = uuidv4();
-  const hash = await bcrypt.hash('Admin@1234', 12);
+  const hash = await bcrypt.hash(adminPassword, 12);
   await pool.query(
     'INSERT IGNORE INTO users (id, email, name, password, role, is_active, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [adminId, 'admin@rentalalb.com', 'Admin RentalALB', hash, 'admin', 1, 'cars.view,cars.edit,reservations.view,reservations.edit,customers.view,finance.view']
   );
-  console.log('✅ Admin user: admin@rentalalb.com / Admin@1234');
+  console.log('✅ Admin user created: admin@rentalalb.com');
 
   console.log('🎉 Seed complete!');
   process.exit(0);

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
 
 export default function AdminReviews() {
-  const { data: reviews, isPending } = useQuery("Review", { orderBy: { createdAt: "desc" } });
+  const { data: reviews, isPending } = useQuery("ReviewAdmin", { orderBy: { createdAt: "desc" } });
   const { update, remove, isPending: isMutating } = useMutation("Review");
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
   const [search, setSearch] = useState("");

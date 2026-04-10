@@ -10,7 +10,7 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
   try {
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users ORDER BY created_at DESC');
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.post('/', authenticate, requireRole('admin'), async (req, res) => {
@@ -24,7 +24,7 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'User', entityId: id, description: `Përdorues i ri: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.put('/:id', authenticate, requireRole('admin'), async (req, res) => {
@@ -34,7 +34,7 @@ router.put('/:id', authenticate, requireRole('admin'), async (req, res) => {
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'User', entityId: req.params.id, description: `Përdorues u ndryshua: ${req.params.id}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
@@ -43,7 +43,7 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
     await pool.query('DELETE FROM users WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'User', entityId: req.params.id, description: `Përdorues u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Përdoruesi u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

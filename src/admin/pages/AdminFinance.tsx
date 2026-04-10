@@ -102,7 +102,7 @@ export default function AdminFinance() {
   // Build invoices from SDK reservations
   const invoices: LocalInvoice[] = useMemo(() => {
     return (reservations ?? []).map((r, i) => {
-      const subtotal = r.totalPrice;
+      const subtotal = Number(r.totalPrice || 0);
       const vatAmount = Math.round(subtotal * VAT_RATE * 100) / 100;
       const total = subtotal + vatAmount;
       const statusMap: Record<string, InvoiceStatus> = { Completed: "Paguar", Active: "Paguar", Confirmed: "Pa paguar", Pending: "Pa paguar", Cancelled: "Anuluar" };
@@ -160,10 +160,10 @@ export default function AdminFinance() {
       });
   }, [reservations, sdkCustomers, sdkCars, paidFeeIds]);
 
-  const totalRevenue = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + b.total, 0), [allInvoices]);
+  const totalRevenue = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
   const totalVat = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + b.vatAmount, 0), [allInvoices]);
-  const pendingAmount = useMemo(() => allInvoices.filter(i => i.status === "Pa paguar").reduce((a, b) => a + b.total, 0), [allInvoices]);
-  const overdueAmount = useMemo(() => allInvoices.filter(i => i.status === "Vonuar").reduce((a, b) => a + b.total, 0), [allInvoices]);
+  const pendingAmount = useMemo(() => allInvoices.filter(i => i.status === "Pa paguar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
+  const overdueAmount = useMemo(() => allInvoices.filter(i => i.status === "Vonuar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
   const heldDeposits = useMemo(() => (sdkDeposits ?? []).filter(d => d.status === "Mbajtur").reduce((a, b) => a + b.amount, 0), [sdkDeposits]);
   const lateFeeTotal = useMemo(() => dynamicLateFees.reduce((a, b) => a + b.feeAmount, 0), [dynamicLateFees]);
   const lateFeeUnpaid = useMemo(() => dynamicLateFees.filter(l => !l.paid).reduce((a, b) => a + b.feeAmount, 0), [dynamicLateFees]);

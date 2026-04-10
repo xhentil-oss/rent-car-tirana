@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, logActivity } = require('../middleware/auth');
+const { authenticate, requireRole, logActivity } = require('../middleware/auth');
 
 const fmt = (r) => ({
   id: r.id, carId: r.car_id, customerId: r.customer_id,
@@ -21,7 +21,7 @@ router.get('/availability', async (req, res) => {
       "SELECT car_id, start_date, end_date, status FROM reservations WHERE status IN ('Pending','Confirmed','Active')"
     );
     res.json(rows.map(r => ({ carId: r.car_id, startDate: r.start_date, endDate: r.end_date, status: r.status })));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.get('/', authenticate, async (req, res) => {
@@ -36,7 +36,7 @@ router.get('/', authenticate, async (req, res) => {
     params.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.get('/:id', authenticate, async (req, res) => {
@@ -44,39 +44,59 @@ router.get('/:id', authenticate, async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Rezervimi nuk u gjet.' });
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, totalPrice, insurance, extras, discountCode } = req.body;
-    if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate || !totalPrice) {
+    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode } = req.body;
+    if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate) {
       return res.status(400).json({ error: 'Fusha të detyrueshme mungojnë.' });
     }
     // Convert ISO datetime strings to YYYY-MM-DD for MySQL DATE columns
     const fmtDate = (d) => new Date(d).toISOString().slice(0, 10);
+    const sd = fmtDate(startDate);
+    const ed = fmtDate(endDate);
+
+    // ── Server-side price calculation ──
+    const [carRows] = await pool.query('SELECT price_per_day FROM cars WHERE id = ?', [carId]);
+    if (!carRows.length) return res.status(404).json({ error: 'Makina nuk u gjet.' });
+    const pricePerDay = Number(carRows[0].price_per_day);
+    const msPerDay = 86400000;
+    const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
+    const totalPrice = +(pricePerDay * days).toFixed(2);
+
+    // ── Double-booking prevention ──
+    const [overlap] = await pool.query(
+      "SELECT id FROM reservations WHERE car_id = ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
+      [carId, ed, sd]
+    );
+    if (overlap.length) {
+      return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
+    }
+
     const id = uuidv4();
     await pool.query(
       'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, carId, customerId, pickupLocation, dropoffLocation, fmtDate(startDate), startTime || '10:00', fmtDate(endDate), endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
+      [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
     );
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.patch('/:id/status', authenticate, async (req, res) => {
+router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { status } = req.body;
     await pool.query('UPDATE reservations SET status = ? WHERE id = ?', [status, req.params.id]);
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Reservation', entityId: req.params.id, description: `Status ndryshoi në: ${status}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : undefined;
     const fields = {
@@ -106,15 +126,15 @@ router.put('/:id', authenticate, async (req, res) => {
     await pool.query(`UPDATE reservations SET ${setClauses} WHERE id = ?`, values);
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     await pool.query('DELETE FROM reservations WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Rezervimi u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

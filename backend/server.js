@@ -9,6 +9,16 @@ const path = require('path');
 
 const app = express();
 
+// ─── Validate required secrets ──────────────────────────────
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('❌ JWT_SECRET must be set and at least 32 characters.');
+  process.exit(1);
+}
+if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET.length < 32) {
+  console.error('❌ JWT_REFRESH_SECRET must be set and at least 32 characters.');
+  process.exit(1);
+}
+
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
@@ -24,10 +34,10 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.FRONTEND_URL || 'https://rentcartiranaairport.com',
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(morgan('combined'));
 
 // Rate limit — login endpoint
@@ -37,18 +47,25 @@ const authLimiter = rateLimit({
   message: { error: 'Shumë kërkesa. Provoni pas 15 minutash.' },
 });
 
+// General API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { error: 'Shumë kërkesa. Provoni më vonë.' },
+});
+
 // ─── ROUTES ───────────────────────────────────────────────────
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
-app.use('/api/cars',                       require('./routes/cars'));
-app.use('/api/customers',                  require('./routes/customers'));
-app.use('/api/reservations',               require('./routes/reservations'));
-app.use('/api/invoices',                   require('./routes/invoices'));
-app.use('/api/reviews',                    require('./routes/reviews'));
-app.use('/api/pricing-rules',              require('./routes/pricingRules'));
-app.use('/api/fleet',                      require('./routes/fleet'));
-app.use('/api/users',                      require('./routes/users'));
-app.use('/api/activity-logs',              require('./routes/activityLogs'));
-app.use('/api/chat',                       require('./routes/chat'));
+app.use('/api/cars',          apiLimiter,  require('./routes/cars'));
+app.use('/api/customers',     apiLimiter,  require('./routes/customers'));
+app.use('/api/reservations',  apiLimiter,  require('./routes/reservations'));
+app.use('/api/invoices',      apiLimiter,  require('./routes/invoices'));
+app.use('/api/reviews',       apiLimiter,  require('./routes/reviews'));
+app.use('/api/pricing-rules', apiLimiter,  require('./routes/pricingRules'));
+app.use('/api/fleet',         apiLimiter,  require('./routes/fleet'));
+app.use('/api/users',         apiLimiter,  require('./routes/users'));
+app.use('/api/activity-logs', apiLimiter,  require('./routes/activityLogs'));
+app.use('/api/chat',          apiLimiter,  require('./routes/chat'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));

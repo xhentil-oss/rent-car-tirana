@@ -38,7 +38,7 @@ export default function AdminReports() {
       const d = new Date(r.startDate);
       const key = d.toLocaleDateString("sq-AL", { month: "short", year: "2-digit" });
       if (!map[key]) map[key] = { revenue: 0, bookings: 0 };
-      map[key].revenue += r.totalPrice ?? 0;
+      map[key].revenue += Number(r.totalPrice ?? 0);
       map[key].bookings += 1;
     });
     const result = Object.entries(map).map(([month, v]) => ({ month, ...v }));
@@ -63,7 +63,7 @@ export default function AdminReports() {
       const name = car ? `${car.brand} ${car.model}` : r.carId;
       if (!map[r.carId]) map[r.carId] = { name, bookings: 0, revenue: 0 };
       map[r.carId].bookings += 1;
-      map[r.carId].revenue += r.totalPrice ?? 0;
+      map[r.carId].revenue += Number(r.totalPrice ?? 0);
     });
     return Object.values(map).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
   }, [reservations, cars]);

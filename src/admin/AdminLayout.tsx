@@ -117,6 +117,23 @@ export default function AdminLayout() {
     return <AdminLoginForm login={login} />;
   }
 
+  // Role-based access control — only admin, manager, staff can access admin panel
+  const allowedRoles = ['admin', 'manager', 'staff'];
+  if (!user?.role || !allowedRoles.includes(user.role)) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background px-6">
+        <div className="bg-white rounded-xl border border-border p-10 max-w-sm w-full shadow-md text-center">
+          <ShieldCheck size={40} weight="duotone" className="text-red-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-neutral-900 mb-2">Akses i Refuzuar</h1>
+          <p className="text-sm text-neutral-500 mb-6">Nuk keni leje të aksesoni panelin e administrimit.</p>
+          <button onClick={logout} className="px-5 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 cursor-pointer border-0">
+            Shkyçu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isActive = (href: string) => {
     if (href === "/admin") return location.pathname === "/admin";
     return location.pathname.startsWith(href);

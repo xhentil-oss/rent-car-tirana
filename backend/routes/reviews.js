@@ -8,22 +8,31 @@ const fmt = (r) => ({ id: r.id, rating: r.rating, text: r.text, authorName: r.au
 // Public — only approved
 router.get('/', async (req, res) => {
   try {
-    const admin = req.query.admin === 'true';
-    let sql = admin ? 'SELECT * FROM reviews ORDER BY created_at DESC' : 'SELECT * FROM reviews WHERE approved = 1 ORDER BY created_at DESC';
-    const [rows] = await pool.query(sql);
+    const [rows] = await pool.query('SELECT * FROM reviews WHERE approved = 1 ORDER BY created_at DESC');
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+});
+
+// Admin — all reviews (requires auth)
+router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+    res.json(rows.map(fmt));
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Public submit
 router.post('/', async (req, res) => {
   try {
     const { rating, text, authorName, aspects } = req.body;
+    if (!rating || !Number.isInteger(Number(rating)) || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Vlerësimi duhet të jetë 1-5.' });
+    }
     const id = uuidv4();
-    await pool.query('INSERT INTO reviews (id, rating, text, author_name, aspects, approved) VALUES (?,?,?,?,?,0)', [id, rating, text, authorName, aspects || null]);
+    await pool.query('INSERT INTO reviews (id, rating, text, author_name, aspects, approved) VALUES (?,?,?,?,?,0)', [id, Number(rating), text, authorName, aspects || null]);
     const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.patch('/:id/approve', authenticate, requireRole('admin', 'manager'), async (req, res) => {
@@ -33,14 +42,14 @@ router.patch('/:id/approve', authenticate, requireRole('admin', 'manager'), asyn
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Review', entityId: req.params.id, description: `Review ${approved ? 'u aprovua' : 'u refuzua'}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     await pool.query('DELETE FROM reviews WHERE id = ?', [req.params.id]);
     res.json({ message: 'Review u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

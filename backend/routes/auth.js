@@ -8,7 +8,7 @@ const { authenticate, logActivity } = require('../middleware/auth');
 
 const makeTokens = (userId) => {
   const access = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
   });
   const refresh = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
@@ -28,7 +28,8 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email, name, password, role = 'staff' } = req.body;
+    const { email, name, password } = req.body;
+    const role = 'staff'; // Hardcoded — only admins can promote via /users route
 
     try {
       const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);

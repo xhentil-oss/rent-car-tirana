@@ -88,7 +88,7 @@ export default function AdminCustomers() {
 
   const totalSpent = customerReservations
     .filter(r => r.status !== "Cancelled")
-    .reduce((s, r) => s + r.totalPrice, 0);
+    .reduce((s, r) => s + Number(r.totalPrice || 0), 0);
 
   const handleToggleBlacklist = async (customer: any) => {
     const newVal = !customer.isBlacklisted;

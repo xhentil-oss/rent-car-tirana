@@ -12,7 +12,9 @@ const ENTITY_MAP: Record<string, string> = {
   Reservation: "/reservations",
   Customer: "/customers",
   Review: "/reviews",
+  ReviewAdmin: "/reviews/admin",
   PricingRule: "/pricing-rules",
+  PricingRuleAdmin: "/pricing-rules/admin",
   UserAdminProfile: "/users",
   Invoice: "/invoices",
   ActivityLog: "/activity-logs",
@@ -36,6 +38,36 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
+  let res = await fetch(url, options);
+  if (res.status === 401) {
+    // Try to refresh the token
+    const refreshToken = localStorage.getItem("rct_refresh_token");
+    if (refreshToken) {
+      const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        localStorage.setItem("rct_token", data.accessToken);
+        localStorage.setItem("rct_refresh_token", data.refreshToken);
+        // Retry original request with new token
+        const newHeaders = { ...options.headers } as Record<string, string>;
+        newHeaders["Authorization"] = `Bearer ${data.accessToken}`;
+        res = await fetch(url, { ...options, headers: newHeaders });
+      } else {
+        // Refresh failed — clear session
+        localStorage.removeItem("rct_token");
+        localStorage.removeItem("rct_refresh_token");
+        localStorage.removeItem("rct_user");
+      }
+    }
+  }
+  return res;
+}
+
 function buildQuery(filters?: Record<string, unknown>): string {
   if (!filters) return "";
   const params = new URLSearchParams();
@@ -56,7 +88,7 @@ export function useQuery(entity: string, filters?: Record<string, unknown>) {
   const refetch = useCallback(() => {
     setIsPending(true);
     const qs = buildQuery(filters);
-    fetch(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() })
+    fetchWithRefresh(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
@@ -98,46 +130,62 @@ export function useLazyQuery(entity: string) {
 // ─── useMutation ───────────────────────────────────────────────
 export function useMutation(entity: string) {
   const endpoint = ENTITY_MAP[entity] || `/${entity.toLowerCase()}s`;
+  const [isPending, setIsPending] = useState(false);
 
   const create = useCallback(async (data: Record<string, unknown>) => {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `${res.status}`);
+    setIsPending(true);
+    try {
+      const res = await fetchWithRefresh(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `${res.status}`);
+      }
+      return res.json();
+    } finally {
+      setIsPending(false);
     }
-    return res.json();
   }, [entity]);
 
   const update = useCallback(async (id: string, data: Record<string, unknown>) => {
-    const res = await fetch(`${API_BASE}${endpoint}/${id}`, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `${res.status}`);
+    setIsPending(true);
+    try {
+      const res = await fetchWithRefresh(`${API_BASE}${endpoint}/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `${res.status}`);
+      }
+      return res.json();
+    } finally {
+      setIsPending(false);
     }
-    return res.json();
   }, [entity]);
 
   const remove = useCallback(async (id: string) => {
-    const res = await fetch(`${API_BASE}${endpoint}/${id}`, {
-      method: "DELETE",
-      headers: getHeaders(),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `${res.status}`);
+    setIsPending(true);
+    try {
+      const res = await fetchWithRefresh(`${API_BASE}${endpoint}/${id}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `${res.status}`);
+      }
+      return res.json();
+    } finally {
+      setIsPending(false);
     }
-    return res.json();
   }, [entity]);
 
-  return { create, update, remove };
+  return { create, update, remove, isPending };
 }
 
 // ─── useAuth ───────────────────────────────────────────────────

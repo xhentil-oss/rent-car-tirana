@@ -52,7 +52,7 @@ const RULE_TYPE_ICONS: Record<string, React.ReactNode> = {
 const CAR_CATEGORIES = ["Ekonomike", "SUV", "Luksoze", "Familjare", "Sportive", "Minivan"];
 
 export default function AdminPricingRules() {
-  const { data: rules, isPending } = useQuery("PricingRule", { orderBy: { priority: "desc" } });
+  const { data: rules, isPending } = useQuery("PricingRuleAdmin", { orderBy: { priority: "desc" } });
   const { data: cars } = useQuery("Car");
   const { create, update, remove, isPending: isMutating } = useMutation("PricingRule");
   const log = useActivityLog();

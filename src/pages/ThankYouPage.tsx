@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Car, CalendarBlank, MapPin, ArrowRight } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import Footer from "../components/Footer";
@@ -7,16 +7,17 @@ import Footer from "../components/Footer";
 export default function ThankYouPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [countdown, setCountdown] = useState(15);
 
-  const reservationId = searchParams.get("rid");
-  const customerName = searchParams.get("name") || "";
-  const carName = searchParams.get("car") || "";
-  const pickup = searchParams.get("pickup") || "";
-  const startDate = searchParams.get("start") || "";
-  const endDate = searchParams.get("end") || "";
-  const total = searchParams.get("total") || "";
+  const state = (location.state as Record<string, string>) || {};
+  const reservationId = state.rid || "";
+  const customerName = state.name || "";
+  const carName = state.car || "";
+  const pickup = state.pickup || "";
+  const startDate = state.start || "";
+  const endDate = state.end || "";
+  const total = state.total || "";
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -62,26 +63,26 @@ export default function ThankYouPage() {
             {customerName && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-neutral-400">{t("thankyou.name", "Emri")}</span>
-                <span className="font-medium text-neutral-800">{decodeURIComponent(customerName)}</span>
+                <span className="font-medium text-neutral-800">{customerName}</span>
               </div>
             )}
             {carName && (
               <div className="flex items-center gap-2 text-sm">
                 <Car size={16} className="text-primary shrink-0" />
-                <span className="text-neutral-700">{decodeURIComponent(carName)}</span>
+                <span className="text-neutral-700">{carName}</span>
               </div>
             )}
             {pickup && (
               <div className="flex items-center gap-2 text-sm">
                 <MapPin size={16} className="text-primary shrink-0" />
-                <span className="text-neutral-700">{decodeURIComponent(pickup)}</span>
+                <span className="text-neutral-700">{pickup}</span>
               </div>
             )}
             {startDate && endDate && (
               <div className="flex items-center gap-2 text-sm">
                 <CalendarBlank size={16} className="text-primary shrink-0" />
                 <span className="text-neutral-700">
-                  {decodeURIComponent(startDate)} — {decodeURIComponent(endDate)}
+                  {startDate} — {endDate}
                 </span>
               </div>
             )}

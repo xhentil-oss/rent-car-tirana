@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
   const totalRevenue = (reservations ?? [])
     .filter((r) => r.status !== "Cancelled")
-    .reduce((s, r) => s + r.totalPrice, 0);
+    .reduce((s, r) => s + Number(r.totalPrice || 0), 0);
 
   const activeRes = (reservations ?? []).filter(
     (r) => r.status === "Active" || r.status === "Confirmed",

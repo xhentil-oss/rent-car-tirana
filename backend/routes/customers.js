@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, logActivity } = require('../middleware/auth');
+const { authenticate, requireRole, logActivity } = require('../middleware/auth');
 
 const fmt = (r) => ({ id: r.id, name: r.name, firstName: r.first_name, lastName: r.last_name, email: r.email, phone: r.phone, type: r.type, createdAt: r.created_at, updatedAt: r.updated_at });
 
@@ -16,7 +16,7 @@ router.get('/', authenticate, async (req, res) => {
     params.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.get('/:id', authenticate, async (req, res) => {
@@ -24,7 +24,7 @@ router.get('/:id', authenticate, async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Klienti nuk u gjet.' });
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Public: find-or-create customer (used by booking form)
@@ -50,10 +50,10 @@ router.post('/', async (req, res) => {
     );
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type } = req.body;
     // Check duplicate email/phone on another customer
@@ -70,15 +70,15 @@ router.put('/:id', authenticate, async (req, res) => {
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Customer', entityId: req.params.id, description: `Klient u ndryshua: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     await pool.query('DELETE FROM customers WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Customer', entityId: req.params.id, description: `Klient u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Klienti u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

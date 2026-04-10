@@ -17,7 +17,7 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
     p.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, p);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;

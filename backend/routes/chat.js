@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireRole } = require('../middleware/auth');
 
 const fmt = (r) => ({
   id: r.id,
@@ -23,7 +23,7 @@ router.get('/', authenticate, async (req, res) => {
     params.push(Number(limit), Number(offset));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.post('/', authenticate, async (req, res) => {
@@ -39,14 +39,14 @@ router.post('/', authenticate, async (req, res) => {
     );
     const [rows] = await pool.query('SELECT * FROM chat_messages WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     await pool.query('DELETE FROM chat_messages WHERE id = ?', [req.params.id]);
     res.json({ message: 'Mesazhi u fshi.' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 module.exports = router;
