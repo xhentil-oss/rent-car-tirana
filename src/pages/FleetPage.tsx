@@ -72,7 +72,7 @@ export default function FleetPage() {
     if (sortBy === "price_desc") return [...base].sort((a, b) => b.pricePerDay - a.pricePerDay);
     if (sortBy === "name_asc") return [...base].sort((a, b) => `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`));
     return [...base].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-  }, [activeCategory, activeTransmission, activeFuel, effectiveMaxPrice, sortBy]);
+  }, [cars, activeCategory, activeTransmission, activeFuel, effectiveMaxPrice, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
