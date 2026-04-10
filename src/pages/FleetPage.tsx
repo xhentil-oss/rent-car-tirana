@@ -16,7 +16,7 @@ export default function FleetPage() {
   const [activeCategory, setActiveCategory] = useState<string>(searchParams.get("kategoria") ?? "");
   const [activeTransmission, setActiveTransmission] = useState<string>(searchParams.get("transmision") ?? "");
   const [activeFuel, setActiveFuel] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<number>(500);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>("default");
   const [page, setPage] = useState(1);
 
@@ -30,6 +30,14 @@ export default function FleetPage() {
 
   const { data: allCars } = useQuery("Car");
   const cars = allCars ?? [];
+
+  const priceMin = cars.length > 0 ? Math.floor(Math.min(...cars.map((c: any) => c.pricePerDay))) : 20;
+  const priceMax = cars.length > 0 ? Math.ceil(Math.max(...cars.map((c: any) => c.pricePerDay))) : 500;
+  const effectiveMaxPrice = maxPrice ?? priceMax;
+
+  useEffect(() => {
+    if (cars.length > 0 && maxPrice === null) setMaxPrice(priceMax);
+  }, [cars.length]);
 
   const fleetTitle = activeCategory
     ? `Makina ${activeCategory} me Qira Tiranë`
@@ -57,14 +65,14 @@ export default function FleetPage() {
       if (activeCategory && car.category !== activeCategory) return false;
       if (activeTransmission && car.transmission !== activeTransmission) return false;
       if (activeFuel && car.fuel !== activeFuel) return false;
-      if (car.pricePerDay > maxPrice) return false;
+      if (car.pricePerDay > effectiveMaxPrice) return false;
       return true;
     });
     if (sortBy === "price_asc") return [...base].sort((a, b) => a.pricePerDay - b.pricePerDay);
     if (sortBy === "price_desc") return [...base].sort((a, b) => b.pricePerDay - a.pricePerDay);
     if (sortBy === "name_asc") return [...base].sort((a, b) => `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`));
     return [...base].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-  }, [activeCategory, activeTransmission, activeFuel, maxPrice, sortBy]);
+  }, [activeCategory, activeTransmission, activeFuel, effectiveMaxPrice, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
@@ -76,13 +84,13 @@ export default function FleetPage() {
     setActiveCategory("");
     setActiveTransmission("");
     setActiveFuel("");
-    setMaxPrice(500);
+    setMaxPrice(priceMax);
     setSortBy("default");
     setPage(1);
   };
 
   const hasFilters =
-    activeCategory || activeTransmission || activeFuel || maxPrice < 500 || sortBy !== "default";
+    activeCategory || activeTransmission || activeFuel || effectiveMaxPrice < priceMax || sortBy !== "default";
 
   const FilterChip = ({
     label,
@@ -186,14 +194,14 @@ export default function FleetPage() {
                 htmlFor="maxPrice"
                 className="text-xs text-neutral-600 whitespace-nowrap"
               >
-                {t("fleet.maxPrice", { price: maxPrice })}
+                {t("fleet.maxPrice", { price: effectiveMaxPrice })}
               </label>
               <input
                 id="maxPrice"
                 type="range"
-                min={20}
-                max={500}
-                value={maxPrice}
+                min={priceMin}
+                max={priceMax}
+                value={effectiveMaxPrice}
                 onChange={(e) => {
                   setMaxPrice(Number(e.target.value));
                   setPage(1);
@@ -238,10 +246,10 @@ export default function FleetPage() {
               {activeFuel && (
                 <FilterChip label={activeFuel} onRemove={() => setActiveFuel("")} />
               )}
-              {maxPrice < 500 && (
+              {effectiveMaxPrice < priceMax && (
                 <FilterChip
-                  label={`Max €${maxPrice}/ditë`}
-                  onRemove={() => setMaxPrice(500)}
+                  label={`Max €${effectiveMaxPrice}/ditë`}
+                  onRemove={() => setMaxPrice(priceMax)}
                 />
               )}
             </div>
