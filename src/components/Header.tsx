@@ -274,14 +274,36 @@ function MobileUserMenu({ onClose }: { onClose: () => void }) {
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const navLinks = [
     { label: t("header.fleet"), href: "/flota" },
     { label: t("header.reviews"), href: "/vleresime" },
-    { label: t("header.about"), href: "/#rreth-nesh" },
-    { label: t("header.contact"), href: "/#kontakti" },
+    { label: t("header.about"), href: "/", anchor: "rreth-nesh" },
+    { label: t("header.contact"), href: "/", anchor: "kontakti" },
   ];
+
+  const scrollToAnchor = (anchor: string) => {
+    const el = document.getElementById(anchor);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleNavClick = (link: typeof navLinks[number]) => {
+    if (link.anchor) {
+      const hashPath = location.hash.replace(/^#/, "") || "/";
+      if (hashPath === "/" || hashPath === "") {
+        // Already on home page — just scroll
+        scrollToAnchor(link.anchor);
+      } else {
+        // Navigate to home first, then scroll after render
+        navigate("/");
+        setTimeout(() => scrollToAnchor(link.anchor), 300);
+      }
+    }
+  };
 
   const isActive = (href: string) => {
     // HashRouter: location.pathname is always "/" — use location.hash instead.
@@ -318,19 +340,31 @@ export default function Header() {
           className="hidden md:flex items-center gap-1"
           aria-label="Navigimi kryesor"
         >
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer ${
-                isActive(link.href)
-                  ? "text-primary bg-secondary"
-                  : "text-neutral-700 hover:text-primary hover:bg-secondary"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.anchor ? (
+              <button
+                key={link.anchor}
+                onClick={() => handleNavClick(link)}
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer border-0 bg-transparent ${
+                  "text-neutral-700 hover:text-primary hover:bg-secondary"
+                }`}
+              >
+                {link.label}
+              </button>
+            ) : (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer ${
+                  isActive(link.href)
+                    ? "text-primary bg-secondary"
+                    : "text-neutral-700 hover:text-primary hover:bg-secondary"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
 
         {/* Desktop Right */}
@@ -373,20 +407,32 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden absolute top-[72px] left-0 right-0 bg-white border-b border-border z-50 shadow-lg">
           <nav className="flex flex-col p-4 gap-1" aria-label="Navigimi mobil">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline ${
-                  isActive(link.href)
-                    ? "text-primary bg-secondary"
-                    : "text-neutral-700 hover:text-primary hover:bg-secondary"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.anchor ? (
+                <button
+                  key={link.anchor}
+                  onClick={() => { setMobileOpen(false); handleNavClick(link); }}
+                  className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer border-0 bg-transparent text-left ${
+                    "text-neutral-700 hover:text-primary hover:bg-secondary"
+                  }`}
+                >
+                  {link.label}
+                </button>
+              ) : (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline ${
+                    isActive(link.href)
+                      ? "text-primary bg-secondary"
+                      : "text-neutral-700 hover:text-primary hover:bg-secondary"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
             <div className="pt-3 border-t border-border mt-2 flex flex-col gap-2">
               <a
                 href="tel:+355691234567"
