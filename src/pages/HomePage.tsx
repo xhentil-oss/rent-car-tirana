@@ -503,6 +503,42 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Register CTA for Customers ──────────────────────── */}
+      <section className="py-14 px-6 bg-white border-b border-border">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Users size={28} weight="duotone" className="text-primary" />
+          </div>
+          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
+            {t("home.registerCta.title", "Krijo llogarinë falas")}
+          </h2>
+          <p className="text-neutral-500 text-sm mb-6 max-w-lg mx-auto">
+            {t("home.registerCta.subtitle", "Regjistrohu për të menaxhuar rezervimet, kontratat dhe historinë e qirave të tua — gjithçka në një vend.")}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <LLink
+              to="/llogaria"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold bg-gradient-primary text-white hover:opacity-90 transition-opacity no-underline shadow-sm"
+            >
+              <Users size={16} weight="bold" />
+              {t("home.registerCta.btn", "Regjistrohu tani")}
+            </LLink>
+            <LLink
+              to="/flota"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors no-underline"
+            >
+              <Car size={16} weight="regular" />
+              {t("home.registerCta.fleet", "Shiko flotën")}
+            </LLink>
+          </div>
+          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-neutral-400">
+            <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f1", "Pa pagesë")}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f2", "Menaxho rezervimet")}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f3", "Histori e plotë")}</span>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <FAQAccordion items={faqItems} />
 
