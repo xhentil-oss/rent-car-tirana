@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
-const { authenticate, logActivity } = require('../middleware/auth');
+const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 
 const makeTokens = (userId) => {
   const access = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -115,8 +115,7 @@ router.post(
 
       // If not admin role, find their customer record
       let customerId = null;
-      const adminRoles = ['admin', 'manager', 'staff', 'accountant'];
-      if (!adminRoles.includes(user.role)) {
+      if (!ADMIN_ROLES.includes(user.role)) {
         const [cust] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user.id]);
         if (cust.length) customerId = cust[0].id;
       }

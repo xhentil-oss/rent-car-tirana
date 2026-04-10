@@ -14,7 +14,7 @@ import {
   Globe,
   UserPlus,
 } from "@phosphor-icons/react";
-import { useAuth, useLazyQuery } from "../hooks/useApi";
+import { useAuth } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import { useLocale } from "../hooks/useLocale";
 import LLink from "./LLink";
@@ -52,9 +52,7 @@ function LanguageSwitcher() {
 
 function UserMenu() {
   const { user, isPending, isAnonymous, login, register, logout } = useAuth();
-  const { query: queryAdminProfile } = useLazyQuery("UserAdminProfile");
   const [open, setOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
   const [loginEmail, setLoginEmail] = useState("");
@@ -71,6 +69,8 @@ function UserMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const isAdmin = !isAnonymous && user?.role && ['admin', 'manager', 'staff'].includes(user.role);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -81,19 +81,6 @@ function UserMenu() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  // Check if logged-in user has an admin profile
-  useEffect(() => {
-    if (!user || isAnonymous) {
-      setIsAdmin(false);
-      return;
-    }
-    queryAdminProfile({ where: { isActive: true } })
-      .then((profiles) => {
-        setIsAdmin(profiles.length > 0);
-      })
-      .catch(() => setIsAdmin(false));
-  }, [user, isAnonymous]);
 
   const { t } = useTranslation();
 

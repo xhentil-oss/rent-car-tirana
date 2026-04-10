@@ -4,7 +4,7 @@ const pool = require('../database/db');
 const { authenticate, requireRole } = require('../middleware/auth');
 
 // ── MAINTENANCE ──────────────────────────────────────────────
-router.get('/maintenance', authenticate, async (req, res) => {
+router.get('/maintenance', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const { carId, status } = req.query;
     let sql = 'SELECT * FROM maintenance_records WHERE 1=1';
@@ -43,7 +43,7 @@ router.delete('/maintenance/:id', authenticate, requireRole('admin', 'manager'),
 });
 
 // ── INSURANCE ────────────────────────────────────────────────
-router.get('/insurance', authenticate, async (req, res) => {
+router.get('/insurance', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM insurance_records ORDER BY expiry_date ASC');
     res.json(rows.map(r => ({ id: r.id, carId: r.car_id, provider: r.provider, policyNumber: r.policy_number, startDate: r.start_date, expiryDate: r.expiry_date, cost: r.cost, type: r.type, status: r.status })));
@@ -76,7 +76,7 @@ router.delete('/insurance/:id', authenticate, requireRole('admin'), async (req, 
 });
 
 // ── REGISTRATION ─────────────────────────────────────────────
-router.get('/registration', authenticate, async (req, res) => {
+router.get('/registration', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM registration_records ORDER BY expiry_date ASC');
     res.json(rows.map(r => ({ id: r.id, carId: r.car_id, plateNumber: r.plate_number, expiryDate: r.expiry_date, renewalCost: r.renewal_cost, status: r.status, notes: r.notes })));
@@ -102,7 +102,7 @@ router.put('/registration/:id', authenticate, requireRole('admin', 'manager'), a
 });
 
 // ── FUEL LOGS ────────────────────────────────────────────────
-router.get('/fuel', authenticate, async (req, res) => {
+router.get('/fuel', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const { carId } = req.query;
     let sql = 'SELECT * FROM fuel_logs WHERE 1=1';
@@ -114,7 +114,7 @@ router.get('/fuel', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/fuel', authenticate, async (req, res) => {
+router.post('/fuel', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { carId, date, liters, pricePerLiter, totalCost, mileage, fuelType, station, notes } = req.body;
     const id = uuidv4();
@@ -125,7 +125,7 @@ router.post('/fuel', authenticate, async (req, res) => {
 });
 
 // ── DAMAGE REPORTS ───────────────────────────────────────────
-router.get('/damage', authenticate, async (req, res) => {
+router.get('/damage', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const { carId, status } = req.query;
     let sql = 'SELECT * FROM damage_reports WHERE 1=1';
@@ -138,7 +138,7 @@ router.get('/damage', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/damage', authenticate, async (req, res) => {
+router.post('/damage', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { carId, reservationId, reportDate, description, severity, status, repairCost, photoUrls, reportedBy, notes } = req.body;
     const id = uuidv4();
@@ -148,7 +148,7 @@ router.post('/damage', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.put('/damage/:id', authenticate, async (req, res) => {
+router.put('/damage/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { status, repairCost, notes } = req.body;
     await pool.query('UPDATE damage_reports SET status=?, repair_cost=?, notes=? WHERE id=?', [status, repairCost, notes, req.params.id]);

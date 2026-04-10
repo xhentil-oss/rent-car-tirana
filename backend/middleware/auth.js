@@ -61,4 +61,7 @@ const logActivity = async ({ userId, action, entity, entityId, description, ipAd
   }
 };
 
-module.exports = { authenticate, requireRole, logActivity };
+// Admin roles that can access admin panel and manage data
+const ADMIN_ROLES = ['admin', 'manager', 'staff', 'accountant'];
+
+module.exports = { authenticate, requireRole, logActivity, ADMIN_ROLES };

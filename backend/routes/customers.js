@@ -1,11 +1,11 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 
 const fmt = (r) => ({ id: r.id, name: r.name, firstName: r.first_name, lastName: r.last_name, email: r.email, phone: r.phone, type: r.type, createdAt: r.created_at, updatedAt: r.updated_at });
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const { type, search, limit = 100, offset = 0 } = req.query;
     let sql = 'SELECT * FROM customers WHERE 1=1';
@@ -23,6 +23,10 @@ router.get('/:id', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Klienti nuk u gjet.' });
+    // Non-admin can only see their own customer record
+    if (!ADMIN_ROLES.includes(req.user.role) && rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Nuk keni leje.' });
+    }
     res.json(fmt(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

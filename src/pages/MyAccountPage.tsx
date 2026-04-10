@@ -12,7 +12,7 @@ import {
   SignOut,
   ShieldCheck,
 } from "@phosphor-icons/react";
-import { useAuth, useQuery, useLazyQuery } from "../hooks/useApi";
+import { useAuth, useQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 
@@ -32,21 +32,13 @@ export default function MyAccountPage() {
   };
 
   const { user, isAnonymous, isPending: authPending, logout } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { query: queryAdminProfile } = useLazyQuery("UserAdminProfile");
+  const isAdmin = !isAnonymous && user?.role && ['admin', 'manager', 'staff'].includes(user.role);
 
   const { data: reservations, isPending: resLoading } = useQuery("Reservation", {
     orderBy: { createdAt: "desc" },
     skip: isAnonymous,
   });
   const { data: cars } = useQuery("Car");
-
-  useEffect(() => {
-    if (!user || isAnonymous) return;
-    queryAdminProfile({ where: { isActive: true } })
-      .then((p) => setIsAdmin(p.length > 0))
-      .catch(() => {});
-  }, [user, isAnonymous]);
 
   if (authPending) {
     return (

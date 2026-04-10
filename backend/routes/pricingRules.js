@@ -61,7 +61,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
 });
 
 // Called when a pricing rule is applied during booking — requires auth
-router.post('/:id/use', authenticate, async (req, res) => {
+router.post('/:id/use', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT id, max_usages, usage_count, is_active FROM pricing_rules WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Rregulli nuk u gjet.' });

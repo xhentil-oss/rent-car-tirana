@@ -13,7 +13,7 @@ const fmt = (r) => ({
   updatedAt: r.updated_at,
 });
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { conversationId, limit = 200, offset = 0 } = req.query;
     let sql = 'SELECT * FROM chat_messages WHERE 1=1';
@@ -26,7 +26,7 @@ router.get('/', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { conversationId, text, isFromAdmin } = req.body;
     if (!conversationId || !text) {

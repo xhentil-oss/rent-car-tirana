@@ -5,7 +5,7 @@ const { authenticate, requireRole, logActivity } = require('../middleware/auth')
 
 const fmt = (r) => ({ id: r.id, invoiceNo: r.invoice_no, reservationId: r.reservation_id, amount: r.amount, status: r.status, dueDate: r.due_date, paidAt: r.paid_at, createdAt: r.created_at, updatedAt: r.updated_at });
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const { status, reservationId } = req.query;
     let sql = 'SELECT * FROM invoices WHERE 1=1';
@@ -18,7 +18,7 @@ router.get('/', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, requireRole('admin', 'manager', 'staff', 'accountant'), async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM invoices WHERE id = ? OR invoice_no = ?', [req.params.id, req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Fatura nuk u gjet.' });

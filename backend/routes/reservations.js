@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 
 const fmt = (r) => ({
   id: r.id, carId: r.car_id, customerId: r.customer_id,
@@ -31,8 +31,7 @@ router.get('/', authenticate, async (req, res) => {
     const params = [];
 
     // Security: only admin roles see all reservations; everyone else sees only their own
-    const adminRoles = ['admin', 'manager', 'staff', 'accountant'];
-    if (!adminRoles.includes(req.user.role)) {
+    if (!ADMIN_ROLES.includes(req.user.role)) {
       const [custRows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [req.user.id]);
       if (!custRows.length) return res.json([]);
       sql += ' AND customer_id = ?'; params.push(custRows[0].id);
@@ -53,6 +52,12 @@ router.get('/:id', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Rezervimi nuk u gjet.' });
+    // Non-admin can only see their own reservation
+    if (!ADMIN_ROLES.includes(req.user.role)) {
+      const [custRows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [req.user.id]);
+      const custId = custRows.length ? custRows[0].id : null;
+      if (rows[0].customer_id !== custId) return res.status(403).json({ error: 'Nuk keni leje.' });
+    }
     res.json(fmt(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
