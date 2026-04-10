@@ -37,6 +37,7 @@ export default function MyAccountPage() {
 
   const { data: reservations, isPending: resLoading } = useQuery("Reservation", {
     orderBy: { createdAt: "desc" },
+    skip: isAnonymous,
   });
   const { data: cars } = useQuery("Car");
 

@@ -86,13 +86,15 @@ function buildQuery(filters?: Record<string, unknown>): string {
 
 // ─── useQuery ──────────────────────────────────────────────────
 export function useQuery(entity: string, filters?: Record<string, unknown>) {
+  const skip = !!filters?.skip;
   const [data, setData] = useState<any[] | undefined>(undefined);
-  const [isPending, setIsPending] = useState(true);
+  const [isPending, setIsPending] = useState(!skip);
   const [error, setError] = useState<string | null>(null);
 
   const endpoint = ENTITY_MAP[entity] || `/${entity.toLowerCase()}s`;
 
   const refetch = useCallback(() => {
+    if (skip) { setData([]); setIsPending(false); return; }
     setIsPending(true);
     const qs = buildQuery(filters);
     fetchWithRefresh(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() })
