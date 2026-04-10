@@ -148,7 +148,7 @@ export default function CarDetailPage() {
   const navigate = useNavigate();
   const { localePath } = useLocale();
   const { data: allCars, isPending } = useQuery("Car");
-  const { data: allReservations } = useQuery("Reservation");
+  const { data: allReservations } = useQuery("ReservationAvailability");
   const { data: dbReviews } = useQuery("Review", { where: { approved: true }, orderBy: { createdAt: "desc" }, limit: 6 });
 
   const [startDate, setStartDate] = useState("");
