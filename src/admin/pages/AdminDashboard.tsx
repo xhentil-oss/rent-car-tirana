@@ -72,13 +72,13 @@ export default function AdminDashboard() {
   // Resolve names from IDs
   const getCustomerName = (id: string) => {
     const c = (customers ?? []).find((x) => x.id === id);
-    if (!c) return id.slice(0, 10) + "…";
+    if (!c) return (id ?? "").slice(0, 10) + "…";
     return c.name || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email;
   };
 
   const getCarName = (id: string) => {
     const c = (cars ?? []).find((x) => x.id === id);
-    return c ? `${c.brand} ${c.model}` : id.slice(0, 10) + "…";
+    return c ? `${c.brand} ${c.model}` : (id ?? "").slice(0, 10) + "…";
   };
 
   if (isLoading) {

@@ -148,8 +148,8 @@ export default function AdminFinance() {
         return {
           id: `lf-${r.id}`,
           reservationId: r.id,
-          customerName: customer?.name ?? customer?.firstName ?? r.customerId.slice(0, 8),
-          carName: car ? `${car.brand} ${car.model}` : r.carId.slice(0, 8),
+          customerName: customer?.name ?? customer?.firstName ?? (r.customerId ?? "").slice(0, 8),
+          carName: car ? `${car.brand} ${car.model}` : (r.carId ?? "").slice(0, 8),
           scheduledReturn: new Date(r.endDate).toLocaleDateString("sq-AL"),
           actualReturn: today.toLocaleDateString("sq-AL"),
           daysLate,
@@ -312,7 +312,7 @@ export default function AdminFinance() {
                   return (
                     <tr key={d.id} className="hover:bg-neutral-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-neutral-800">{customerName}</td>
-                      <td className="px-4 py-3 text-neutral-500 font-mono text-xs hidden md:table-cell">#{d.reservationId.slice(0, 8)}</td>
+                      <td className="px-4 py-3 text-neutral-500 font-mono text-xs hidden md:table-cell">#{(d.reservationId ?? "").slice(0, 8)}</td>
                       <td className="px-4 py-3 text-right font-semibold text-neutral-900">€{fmt(d.amount)}</td>
                       <td className="px-4 py-3 text-center"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${depositColor(d.status as DepositStatus)}`}>{d.status}</span></td>
                       <td className="px-4 py-3 text-neutral-400 text-xs hidden lg:table-cell">{d.note || "—"}</td>

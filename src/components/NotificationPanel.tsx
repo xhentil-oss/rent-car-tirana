@@ -21,7 +21,7 @@ function buildNotifications(reservations: any[], cars: any[], insurances: any[])
       id: `res-${r.id}`,
       type: "reservation",
       title: "Rezervim i ri",
-      message: `Rezervim i ri në pritje (#${r.id.slice(-6)})`,
+      message: `Rezervim i ri në pritje (#${(r.id ?? "").slice(-6)})`,
       time: new Date(r.createdAt).toLocaleDateString("sq-AL"),
       read: false,
     });

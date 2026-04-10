@@ -70,13 +70,13 @@ export default function AdminCalendar() {
 
   const getCustomerName = (customerId: string) => {
     const c = (customers ?? []).find((cu) => cu.id === customerId);
-    if (!c) return customerId.slice(0, 8) + "...";
+    if (!c) return (customerId ?? "").slice(0, 8) + "...";
     return c.name || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email;
   };
 
   const getCarName = (carId: string) => {
     const c = (cars ?? []).find((ca) => ca.id === carId);
-    return c ? `${c.brand} ${c.model} (${c.year})` : carId.slice(0, 8) + "...";
+    return c ? `${c.brand} ${c.model} (${c.year})` : (carId ?? "").slice(0, 8) + "...";
   };
 
   const isLoading = carsLoading || resLoading;
