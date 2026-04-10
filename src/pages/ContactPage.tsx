@@ -167,8 +167,9 @@ export default function ContactPage() {
                     <MapPin size={18} weight="fill" className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Adresa</p>
+                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Adresat</p>
                     <p className="text-sm text-neutral-700">Bulevardi Zogu I, Nr. 1, Tiranë 1001</p>
+                    <p className="text-sm text-neutral-700 mt-1">Rruga e Aeroportit, Tiranë 1001</p>
                     <a
                       href="https://maps.google.com/?q=Bulevardi+Zogu+I+1+Tirana+Albania"
                       target="_blank"
