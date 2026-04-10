@@ -569,24 +569,24 @@ export default function CarDetailPage() {
               ))}
             </div>
 
-            {/* TAB: Specs — with scroll-triggered animation */}
+            {/* TAB: Specs — compact rows */}
             {tab === "specs" && (
-              <div ref={specsRef} key="specs" className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div ref={specsRef} key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
                 {specs.map(({ icon: Icon, label, value }, i) => (
                   <div
                     key={label}
-                    className="group bg-white rounded-xl border border-border/80 p-5 hover:border-primary/30 hover:shadow-md transition-all duration-300"
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-secondary/40 transition-colors duration-200"
                     style={{
                       opacity: specsInView ? 1 : 0,
-                      transform: specsInView ? "translateY(0)" : "translateY(20px)",
-                      transition: `opacity 0.4s ease ${i * 70}ms, transform 0.4s ease ${i * 70}ms, border-color 0.2s, box-shadow 0.2s`,
+                      transform: specsInView ? "translateX(0)" : "translateX(-12px)",
+                      transition: `opacity 0.35s ease ${i * 50}ms, transform 0.35s ease ${i * 50}ms`,
                     }}
                   >
-                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors duration-200">
-                      <Icon size={20} weight="fill" className="text-primary" />
+                    <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                      <Icon size={18} weight="fill" className="text-primary" />
                     </div>
-                    <p className="text-xs text-neutral-400 mb-0.5">{label}</p>
-                    <p className="text-sm font-semibold text-neutral-800">{value}</p>
+                    <span className="text-sm text-neutral-500 flex-1">{label}</span>
+                    <span className="text-sm font-semibold text-neutral-800">{value}</span>
                   </div>
                 ))}
               </div>
