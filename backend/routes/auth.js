@@ -113,9 +113,10 @@ router.post(
       await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
       await logActivity({ userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id, description: `Login: ${email}`, ipAddress: req.ip });
 
-      // If customer role, find their customer record
+      // If not admin role, find their customer record
       let customerId = null;
-      if (user.role === 'customer') {
+      const adminRoles = ['admin', 'manager', 'staff', 'accountant'];
+      if (!adminRoles.includes(user.role)) {
         const [cust] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user.id]);
         if (cust.length) customerId = cust[0].id;
       }

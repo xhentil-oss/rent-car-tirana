@@ -30,8 +30,9 @@ router.get('/', authenticate, async (req, res) => {
     let sql = 'SELECT * FROM reservations WHERE 1=1';
     const params = [];
 
-    // Security: customer role users can only see their own reservations
-    if (req.user.role === 'customer') {
+    // Security: only admin roles see all reservations; everyone else sees only their own
+    const adminRoles = ['admin', 'manager', 'staff', 'accountant'];
+    if (!adminRoles.includes(req.user.role)) {
       const [custRows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [req.user.id]);
       if (!custRows.length) return res.json([]);
       sql += ' AND customer_id = ?'; params.push(custRows[0].id);
