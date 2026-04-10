@@ -74,7 +74,7 @@ export default function AdminCarEdit() {
       pricePerDay: Number(form.pricePerDay), category: form.category,
       status: form.status, transmission: form.transmission, fuel: form.fuel,
       seats: Number(form.seats), luggage: Number(form.luggage),
-      image: form.image || "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png",
+      image: form.image || "/placeholder-car.svg",
       slug: form.slug || `${form.brand}-${form.model}`.toLowerCase().replace(/\s+/g, "-"),
       featured: form.featured,
     };
@@ -178,7 +178,7 @@ export default function AdminCarEdit() {
               src={form.image || car.image}
               alt={`${form.brand} ${form.model}`}
               className="w-full h-48 object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png"; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-car.svg"; }}
             />
             <div className="p-4">
               <h3 className="font-semibold text-neutral-900">{form.brand} {form.model}</h3>

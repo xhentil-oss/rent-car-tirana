@@ -144,7 +144,7 @@ export default function HomePage() {
       >
         <div className="absolute inset-0">
           <img
-            src="https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png"
+            src="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80"
             alt="Rental car in Tirana city street"
             className="w-full h-full object-cover"
             loading="eager"
@@ -413,7 +413,7 @@ export default function HomePage() {
               style={{ height: "400px" }}
             >
               <img
-                src="https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_4.png"
+                src="https://images.unsplash.com/photo-1449965408869-ebd13bc0c322?w=800&q=80"
                 alt="Happy customer standing by rented car"
                 loading="lazy"
                 className="w-full h-full object-cover"

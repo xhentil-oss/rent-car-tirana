@@ -14,7 +14,7 @@ interface SEOProps {
 }
 
 const SITE_NAME = "Rent Car Tirana";
-const DEFAULT_OG_IMAGE = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png";
+const DEFAULT_OG_IMAGE = "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80";
 const SITE_URL = "https://rentcartiranaairport.com";
 
 function setMeta(name: string, content: string, property = false) {

@@ -154,7 +154,7 @@ function ImagePickerModal({ current, cars, onSelect, onClose }: ImagePickerProps
                         src={item.url}
                         alt={item.label}
                         className="w-full h-24 object-cover bg-neutral-100"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png"; }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-car.svg"; }}
                       />
                       <div className="px-2 py-1 bg-white">
                         <p className="text-xs text-neutral-600 truncate">{item.label}</p>
@@ -270,7 +270,7 @@ function ImagePickerField({ value, cars, onChange }: { value: string; cars: any[
             src={value}
             alt="preview"
             className="w-full h-32 object-cover rounded-lg bg-neutral-100"
-            onError={(e) => { (e.target as HTMLImageElement).src = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png"; }}
+            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-car.svg"; }}
           />
         )}
         <button
@@ -355,7 +355,7 @@ export default function AdminCars() {
       pricePerDay: Number(form.pricePerDay), category: form.category,
       status: form.status, transmission: form.transmission, fuel: form.fuel,
       seats: Number(form.seats), luggage: Number(form.luggage),
-      image: form.image || "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png",
+      image: form.image || "/placeholder-car.svg",
       slug: form.slug || `${form.brand}-${form.model}`.toLowerCase().replace(/\s+/g, "-"),
       featured: form.featured,
     };

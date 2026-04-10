@@ -31,7 +31,7 @@ export default function MakinaQeraTirana() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative py-20 px-6 bg-gradient-to-br from-primary to-blue-700 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png')] bg-cover bg-center" />
+        <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80')] bg-cover bg-center" />
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 mb-4 text-sm">
             <MapPin size={14} /> Tiranë, Shqipëri

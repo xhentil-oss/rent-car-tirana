@@ -110,7 +110,7 @@ export default function AdminMedia() {
   };
 
   const handleDeleteImage = async (carId: string) => {
-    await update(carId, { image: "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png" });
+    await update(carId, { image: "/placeholder-car.svg" });
     setDeleteConfirm(null);
     if (selected === carId) setSelected(null);
   };
@@ -321,7 +321,7 @@ export default function AdminMedia() {
                     className="w-full h-32 object-cover bg-neutral-100"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png";
+                        "/placeholder-car.svg";
                     }}
                   />
                   {/* Hover overlay */}
@@ -369,7 +369,7 @@ export default function AdminMedia() {
               src={selectedItem.url}
               alt={selectedItem.name}
               className="w-full h-36 object-cover rounded-lg bg-neutral-100"
-              onError={(e) => { (e.target as HTMLImageElement).src = "https://c.animaapp.com/mn8p6q9fyOONvV/img/ai_1.png"; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-car.svg"; }}
             />
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-lg">
