@@ -17,6 +17,7 @@ import {
   Star,
   Tag,
   Images,
+  Gear,
 } from "@phosphor-icons/react";
 import { useAuth } from "../hooks/useApi";
 import NotificationPanel from "../components/NotificationPanel";
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Media", href: "/admin/media", icon: Images, group: "main" },
   { label: "Vlerësimet", href: "/admin/vleresimet", icon: Star, group: "system" },
   { label: "Përdoruesit", href: "/admin/perdoruesit", icon: UserGear, group: "system" },
+  { label: "Cilësimet", href: "/admin/cilesimet", icon: Gear, group: "system" },
 ];
 
 function AdminLoginForm({ login }: { login: (email: string, password: string) => Promise<any> }) {

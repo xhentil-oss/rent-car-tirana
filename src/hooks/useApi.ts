@@ -24,6 +24,7 @@ const ENTITY_MAP: Record<string, string> = {
   FuelLog: "/fleet/fuel",
   DamageReport: "/fleet/damage",
   ChatMessage: "/chat",
+  Setting: "/settings",
   ReservationAvailability: "/reservations/availability",
 };
 

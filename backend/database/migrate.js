@@ -361,6 +361,17 @@ const TABLES = [
     PRIMARY KEY (id),
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+  // SITE SETTINGS (key-value pairs, grouped by category)
+  `CREATE TABLE IF NOT EXISTS settings (
+    setting_key   VARCHAR(100) NOT NULL,
+    setting_value TEXT,
+    category      VARCHAR(50) NOT NULL DEFAULT 'general',
+    updated_by    CHAR(36),
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (setting_key),
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
 async function migrate() {

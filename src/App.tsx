@@ -20,6 +20,7 @@ import AdminReviews from "./admin/pages/AdminReviews";
 import AdminPricingRules from "./admin/pages/AdminPricingRules";
 import AdminCarEdit from "./admin/pages/AdminCarEdit";
 import AdminMedia from "./admin/pages/AdminMedia";
+import AdminSettings from "./admin/pages/AdminSettings";
 import ReviewsPage from "./pages/ReviewsPage";
 import MakinaQeraTirana from "./pages/seo/MakinaQeraTirana";
 import MakineAeroport from "./pages/seo/MakineAeroport";
@@ -197,6 +198,7 @@ export default function App() {
           <Route path="ofertat" element={<AdminPricingRules />} />
           <Route path="flota/:id" element={<AdminCarEdit />} />
           <Route path="media" element={<AdminMedia />} />
+          <Route path="cilesimet" element={<AdminSettings />} />
         </Route>
 
         {/* Fallback — Custom 404 */}
