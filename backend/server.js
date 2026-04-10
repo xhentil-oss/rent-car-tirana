@@ -10,7 +10,18 @@ const path = require('path');
 const app = express();
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.emailjs.com", "https://*.animaapp.com"],
+    },
+  },
+}));
 app.use(compression());
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
