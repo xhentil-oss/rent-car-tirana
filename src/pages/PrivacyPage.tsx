@@ -20,7 +20,7 @@ export default function PrivacyPage() {
   const sections = [
     {
       title: "1. Kontrolluesi i të Dhënave",
-      content: `Rent Car Tirana, me adresë Rruga e Kavajës, Tiranë, Shqipëri, është kontrollues i të dhënave personale sipas Ligjit Nr. 9887 "Për Mbrojtjen e të Dhënave Personale" dhe Rregullores (BE) 2016/679 (GDPR).
+      content: `Rent Car Tirana, me adresë Bulevardi Zogu I, Nr. 1, Tiranë 1001, Shqipëri, është kontrollues i të dhënave personale sipas Ligjit Nr. 9887 "Për Mbrojtjen e të Dhënave Personale" dhe Rregullores (BE) 2016/679 (GDPR).
 
 Mund të na kontaktoni për çdo pyetje mbi privatësinë në: privacy@rentcartiranaairport.com`,
     },

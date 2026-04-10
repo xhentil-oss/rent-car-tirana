@@ -168,9 +168,9 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Adresa</p>
-                    <p className="text-sm text-neutral-700">Rruga Myslym Shyri, Tiranë</p>
+                    <p className="text-sm text-neutral-700">Bulevardi Zogu I, Nr. 1, Tiranë 1001</p>
                     <a
-                      href="https://maps.google.com/?q=Rruga+Myslym+Shyri+Tirana"
+                      href="https://maps.google.com/?q=Bulevardi+Zogu+I+1+Tirana+Albania"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary hover:underline mt-0.5 inline-block no-underline"

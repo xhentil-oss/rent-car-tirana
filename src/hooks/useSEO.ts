@@ -141,8 +141,9 @@ export const buildLocalBusinessSchema = () => ({
   "telephone": "+355697562951",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "Ruga Myslym Shyri",
+    "streetAddress": "Bulevardi Zogu I, Nr. 1",
     "addressLocality": "Tiranë",
+    "postalCode": "1001",
     "addressCountry": "AL"
   },
   "geo": {

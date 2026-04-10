@@ -74,7 +74,7 @@ const TRUST_ITEMS = [
 const PICKUP_LOCATIONS = [
   { value: "Tiranë - Qendër", label: "Tiranë - Qendër", icon: "🏙️" },
   { value: "Aeroporti Ndërkombëtar", label: "Aeroporti Ndërkombëtar", icon: "✈️" },
-  { value: "Tiranë - Rruga e Kavajës", label: "Tiranë - Rruga e Kavajës", icon: "📍" },
+  { value: "Tiranë - Bulevardi Zogu I", label: "Tiranë - Bulevardi Zogu I", icon: "📍" },
   { value: "Durrës - Plazh", label: "Durrës - Plazh", icon: "🏖️" },
   { value: "Shkodër", label: "Shkodër", icon: "🏔️" },
   { value: "Vlorë", label: "Vlorë", icon: "⛵" },
