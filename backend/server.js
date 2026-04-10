@@ -48,6 +48,7 @@ app.use('/api/pricing-rules',              require('./routes/pricingRules'));
 app.use('/api/fleet',                      require('./routes/fleet'));
 app.use('/api/users',                      require('./routes/users'));
 app.use('/api/activity-logs',              require('./routes/activityLogs'));
+app.use('/api/chat',                       require('./routes/chat'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
