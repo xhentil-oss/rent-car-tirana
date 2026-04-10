@@ -4,11 +4,14 @@ const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const compression = require('compression');
+const path = require('path');
 
 const app = express();
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 app.use(helmet());
+app.use(compression());
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true,
@@ -38,8 +41,12 @@ app.use('/api/activity-logs',              require('./routes/activityLogs'));
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
-// ─── 404 ──────────────────────────────────────────────────────
-app.use((req, res) => res.status(404).json({ error: 'Endpoint nuk ekziston.' }));
+// ─── SERVE FRONTEND (production) ─────────────────────────────
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // ─── ERROR HANDLER ────────────────────────────────────────────
 app.use((err, req, res, next) => {
@@ -48,7 +55,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
