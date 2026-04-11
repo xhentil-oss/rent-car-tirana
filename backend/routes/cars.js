@@ -8,6 +8,7 @@ const toSnake = (r) => ({
   category: r.category, transmission: r.transmission, fuel: r.fuel,
   seats: r.seats, luggage: r.luggage, pricePerDay: r.price_per_day,
   status: r.status, image: r.image, slug: r.slug, featured: !!r.featured,
+  quantity: r.quantity ?? 1, description: r.description ?? '',
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -36,11 +37,11 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured } = req.body;
+    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured, quantity, description } = req.body;
     const id = uuidv4();
     await pool.query(
-      'INSERT INTO cars (id, brand, model, year, category, transmission, fuel, seats, luggage, price_per_day, status, image, slug, featured, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status || 'Available', image, slug, featured ? 1 : 0, req.user.id]
+      'INSERT INTO cars (id, brand, model, year, category, transmission, fuel, seats, luggage, price_per_day, status, image, slug, featured, quantity, description, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [id, brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status || 'Available', image, slug, featured ? 1 : 0, quantity ?? 1, description ?? null, req.user.id]
     );
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'Car', entityId: id, description: `Makina e re: ${brand} ${model}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ?', [id]);
@@ -50,10 +51,10 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
 
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured } = req.body;
+    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured, quantity, description } = req.body;
     await pool.query(
-      'UPDATE cars SET brand=?, model=?, year=?, category=?, transmission=?, fuel=?, seats=?, luggage=?, price_per_day=?, status=?, image=?, slug=?, featured=? WHERE id=?',
-      [brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured ? 1 : 0, req.params.id]
+      'UPDATE cars SET brand=?, model=?, year=?, category=?, transmission=?, fuel=?, seats=?, luggage=?, price_per_day=?, status=?, image=?, slug=?, featured=?, quantity=?, description=? WHERE id=?',
+      [brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured ? 1 : 0, quantity ?? 1, description ?? null, req.params.id]
     );
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Car', entityId: req.params.id, description: `Makina u ndryshua: ${brand} ${model}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ?', [req.params.id]);

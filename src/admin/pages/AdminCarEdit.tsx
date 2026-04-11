@@ -24,6 +24,8 @@ type CarDraftForm = {
   image: string;
   slug: string;
   featured: boolean;
+  quantity: string;
+  description: string;
 };
 
 export default function AdminCarEdit() {
@@ -36,7 +38,7 @@ export default function AdminCarEdit() {
   const [form, setForm] = useState<CarDraftForm>({
     brand: "", model: "", year: "", pricePerDay: "", category: "Ekonomike",
     status: "Në dispozicion", transmission: "Automatike", fuel: "Benzinë",
-    seats: "5", luggage: "2", image: "", slug: "", featured: false,
+    seats: "5", luggage: "2", image: "", slug: "", featured: false, quantity: "1", description: "",
   });
   const [saved, setSaved] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -58,6 +60,8 @@ export default function AdminCarEdit() {
         image: car.image,
         slug: car.slug,
         featured: car.featured,
+        quantity: String(car.quantity ?? 1),
+        description: car.description ?? '',
       });
     }
   }, [car]);
@@ -77,6 +81,8 @@ export default function AdminCarEdit() {
       image: form.image || "/placeholder-car.svg",
       slug: form.slug || `${form.brand}-${form.model}`.toLowerCase().replace(/\s+/g, "-"),
       featured: form.featured,
+      quantity: Number(form.quantity) || 1,
+      description: form.description || null,
     };
     try {
       await update(id, draft);
@@ -211,6 +217,7 @@ export default function AdminCarEdit() {
               { label: "Karburanti", value: form.fuel },
               { label: "Vendesh", value: form.seats },
               { label: "Bagazhi", value: `${form.luggage} valixhe` },
+              { label: "Sasia", value: form.quantity },
               { label: "Slug", value: form.slug },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between text-sm">
@@ -333,7 +340,31 @@ export default function AdminCarEdit() {
                   className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Sasia (sa copë identike)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={form.quantity}
+                  onChange={(e) => setField("quantity", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Section: Përshkrimi */}
+          <div className="bg-white rounded-xl border border-border p-5">
+            <p className="text-sm font-semibold text-neutral-700 mb-4 pb-3 border-b border-border">Përshkrimi i makinës</p>
+            <textarea
+              value={form.description}
+              onChange={(e) => setField("description", e.target.value)}
+              placeholder="Shkruani një përshkrim të detajuar për këtë makinë..."
+              rows={5}
+              className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-y"
+            />
+            <p className="text-xs text-neutral-400 mt-1.5">Përshkrimi shfaqet në faqen publike të makinës.</p>
           </div>
 
           {/* Section: Imazhi */}

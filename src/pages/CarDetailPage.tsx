@@ -669,9 +669,13 @@ export default function CarDetailPage() {
               <h2 className="text-base font-semibold text-neutral-800 mb-2">
                 {t("carDetail.about.title")}
               </h2>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                {t("carDetail.about.text", { brand: car.brand, model: car.model, year: car.year, category: car.category, transmission: car.transmission, fuel: car.fuel, seats: car.seats, luggage: car.luggage })}
-              </p>
+              {car.description ? (
+                <p className="text-sm text-neutral-600 leading-relaxed whitespace-pre-line">{car.description}</p>
+              ) : (
+                <p className="text-sm text-neutral-600 leading-relaxed">
+                  {t("carDetail.about.text", { brand: car.brand, model: car.model, year: car.year, category: car.category, transmission: car.transmission, fuel: car.fuel, seats: car.seats, luggage: car.luggage })}
+                </p>
+              )}
             </div>
 
             {/* ── GOOGLE REVIEWS ─────────────────────────────────── */}

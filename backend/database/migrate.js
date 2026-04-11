@@ -59,6 +59,8 @@ const TABLES = [
     image           TEXT,
     slug            VARCHAR(255) UNIQUE NOT NULL,
     featured        TINYINT(1) DEFAULT 0,
+    quantity        SMALLINT NOT NULL DEFAULT 1,
+    description     TEXT DEFAULT NULL,
     created_by      CHAR(36),
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -408,6 +410,9 @@ const ALTERS = [
   `ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','staff','accountant','customer') DEFAULT 'staff'`,
   // Add customer_id column to link user→customer record
   `ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id CHAR(36) DEFAULT NULL`,
+  // Add quantity and description to cars
+  `ALTER TABLE cars ADD COLUMN IF NOT EXISTS quantity SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE cars ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL`,
 ];
 
 async function migrate() {

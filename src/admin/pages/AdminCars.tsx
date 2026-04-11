@@ -27,6 +27,7 @@ type CarDraftForm = {
   image: string;
   slug: string;
   featured: boolean;
+  quantity: string;
 };
 
 type FormErrors = {
@@ -39,7 +40,7 @@ type FormErrors = {
 const emptyForm: CarDraftForm = {
   brand: "", model: "", year: "", pricePerDay: "", category: "Ekonomike",
   status: "Në dispozicion", transmission: "Automatike", fuel: "Benzinë",
-  seats: "5", luggage: "2", image: "", slug: "", featured: false,
+  seats: "5", luggage: "2", image: "", slug: "", featured: false, quantity: "1",
 };
 
 // ─── Image Picker Modal ────────────────────────────────────────────────────
@@ -325,7 +326,7 @@ export default function AdminCars() {
       pricePerDay: String(car.pricePerDay), category: car.category,
       status: car.status, transmission: car.transmission, fuel: car.fuel,
       seats: String(car.seats), luggage: String(car.luggage),
-      image: car.image, slug: car.slug, featured: car.featured,
+      image: car.image, slug: car.slug, featured: car.featured, quantity: String(car.quantity ?? 1),
     });
     setFormErrors({});
     setDrawerOpen(true);
@@ -358,6 +359,7 @@ export default function AdminCars() {
       image: form.image || "/placeholder-car.svg",
       slug: form.slug || `${form.brand}-${form.model}`.toLowerCase().replace(/\s+/g, "-"),
       featured: form.featured,
+      quantity: Number(form.quantity) || 1,
     };
     try {
       if (editingCarId) {
@@ -417,7 +419,7 @@ export default function AdminCars() {
           <table className="w-full" role="table">
             <thead>
               <tr className="border-b border-border bg-neutral-50">
-                {["Makina","Kategoria","Statusi","Çmimi/ditë","Veprimet"].map((h) => (
+                {["Makina","Kategoria","Sasia","Statusi","Çmimi/ditë","Veprimet"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -426,7 +428,7 @@ export default function AdminCars() {
               {isPending ? (
                 <TableSkeleton rows={5} columns={5} />
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={5}><EmptyState type={filterStatus || filterCategory ? "search" : "cars"} actionLabel={!filterStatus && !filterCategory ? "Shto makinë" : undefined} onAction={!filterStatus && !filterCategory ? openAdd : undefined} /></td></tr>
+                <tr><td colSpan={6}><EmptyState type={filterStatus || filterCategory ? "search" : "cars"} actionLabel={!filterStatus && !filterCategory ? "Shto makinë" : undefined} onAction={!filterStatus && !filterCategory ? openAdd : undefined} /></td></tr>
               ) : filtered.map((car) => (
                 <tr key={car.id} className="border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150">
                   <td className="px-4 py-3">
@@ -439,6 +441,7 @@ export default function AdminCars() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-neutral-700">{car.category}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-700">{car.quantity ?? 1}</td>
                   <td className="px-4 py-3"><StatusBadge status={car.status} /></td>
                   <td className="px-4 py-3 text-sm font-medium text-neutral-800">€{car.pricePerDay}</td>
                   <td className="px-4 py-3">
@@ -526,6 +529,10 @@ export default function AdminCars() {
                   <label htmlFor="drawer-luggage" className="block text-sm font-medium text-neutral-700 mb-1.5">Bagazhi (valixhe)</label>
                   <input id="drawer-luggage" type="number" min={1} max={6} value={form.luggage} onChange={(e) => setForm(prev => ({...prev, luggage: e.target.value}))} className="w-full px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary" />
                 </div>
+              </div>
+              <div>
+                <label htmlFor="drawer-quantity" className="block text-sm font-medium text-neutral-700 mb-1.5">Sasia (sa copë identike)</label>
+                <input id="drawer-quantity" type="number" min={1} max={99} value={form.quantity} onChange={(e) => setForm(prev => ({...prev, quantity: e.target.value}))} className="w-full px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
