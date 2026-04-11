@@ -28,6 +28,12 @@ router.post('/', async (req, res) => {
     if (!rating || !Number.isInteger(Number(rating)) || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Vlerësimi duhet të jetë 1-5.' });
     }
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Teksti i review-s është i detyruar.' });
+    }
+    if (!authorName || !authorName.trim()) {
+      return res.status(400).json({ error: 'Emri i autorit është i detyruar.' });
+    }
     const id = uuidv4();
     await pool.query('INSERT INTO reviews (id, rating, text, author_name, aspects, approved) VALUES (?,?,?,?,?,0)', [id, Number(rating), text, authorName, aspects || null]);
     const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [id]);

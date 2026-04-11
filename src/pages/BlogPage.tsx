@@ -26,7 +26,7 @@ export default function BlogPage() {
     canonical: "/blog",
   });
 
-  const { data: posts, loading } = useQuery("BlogPost");
+  const { data: posts, isPending: loading } = useQuery("BlogPost");
   const allPosts = posts ?? [];
 
   const totalPages = Math.ceil(allPosts.length / ITEMS_PER_PAGE);

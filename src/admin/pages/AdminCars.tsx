@@ -299,7 +299,7 @@ function ImagePickerField({ value, cars, onChange }: { value: string; cars: any[
 }
 
 export default function AdminCars() {
-  const { data: cars, isPending } = useQuery("Car");
+  const { data: cars, isPending, refetch } = useQuery("Car");
   const { create, update, remove, isPending: isMutating } = useMutation("Car");
   const log = useActivityLog();
   const navigate = useNavigate();
@@ -369,6 +369,7 @@ export default function AdminCars() {
         const newCar = await create(draft);
         await log("CREATE", "Car", newCar.id, `Makinë e re shtuar: ${form.brand} ${form.model} (${form.year}) — €${form.pricePerDay}/ditë`);
       }
+      await refetch();
       setDrawerOpen(false);
     } catch (e) { console.error(e); }
   };
@@ -378,6 +379,7 @@ export default function AdminCars() {
     try {
       await remove(id);
       await log("DELETE", "Car", id, `Makinë e fshirë: ${car ? `${car.brand} ${car.model}` : id}`);
+      await refetch();
       setDeleteConfirm(null);
     } catch (e) { console.error(e); }
   };
@@ -386,6 +388,7 @@ export default function AdminCars() {
     try {
       await update(car.id, { featured: !car.featured });
       await log("UPDATE", "Car", car.id, `${car.brand} ${car.model} — i zgjedhur: ${!car.featured ? "Po" : "Jo"}`);
+      await refetch();
     } catch (e) { console.error(e); }
   };
 

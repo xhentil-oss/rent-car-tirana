@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
 
 export default function AdminReviews() {
-  const { data: reviews, isPending } = useQuery("ReviewAdmin", { orderBy: { createdAt: "desc" } });
+  const { data: reviews, isPending, refetch } = useQuery("ReviewAdmin", { orderBy: { createdAt: "desc" } });
   const { update, remove, isPending: isMutating } = useMutation("Review");
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
   const [search, setSearch] = useState("");
@@ -94,9 +94,9 @@ export default function AdminReviews() {
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setSelected(r as any)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary cursor-pointer border-0 bg-transparent"><Eye size={15} /></button>
                     {!r.approved && (
-                      <button onClick={() => update(r.id, { approved: true })} disabled={isMutating} className="p-1.5 rounded text-neutral-400 hover:text-success hover:bg-success/10 cursor-pointer border-0 bg-transparent" title="Aprovo"><Check size={15} /></button>
+                      <button onClick={() => update(r.id, { approved: true }).then(() => refetch())} disabled={isMutating} className="p-1.5 rounded text-neutral-400 hover:text-success hover:bg-success/10 cursor-pointer border-0 bg-transparent" title="Aprovo"><Check size={15} /></button>
                     )}
-                    <button onClick={() => remove(r.id)} disabled={isMutating} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer border-0 bg-transparent" title="Fshi"><Trash size={15} /></button>
+                    <button onClick={() => remove(r.id).then(() => refetch())} disabled={isMutating} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer border-0 bg-transparent" title="Fshi"><Trash size={15} /></button>
                   </div>
                 </td>
               </tr>
@@ -128,7 +128,7 @@ export default function AdminReviews() {
               </div>
               <p className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-3 rounded-lg">{(selected as any).text}</p>
               {!(selected as any).approved && (
-                <button onClick={() => { update((selected as any).id, { approved: true }); setSelected(null); }} className="w-full py-2.5 rounded-lg text-sm font-medium bg-success text-white hover:opacity-90 cursor-pointer border-0">
+                <button onClick={() => { update((selected as any).id, { approved: true }).then(() => refetch()); setSelected(null); }} className="w-full py-2.5 rounded-lg text-sm font-medium bg-success text-white hover:opacity-90 cursor-pointer border-0">
                   Aprovo vlerësimin
                 </button>
               )}

@@ -52,7 +52,7 @@ const RULE_TYPE_ICONS: Record<string, React.ReactNode> = {
 const CAR_CATEGORIES = ["Ekonomike", "SUV", "Luksoze", "Familjare", "Sportive", "Minivan"];
 
 export default function AdminPricingRules() {
-  const { data: rules, isPending } = useQuery("PricingRuleAdmin", { orderBy: { priority: "desc" } });
+  const { data: rules, isPending, refetch } = useQuery("PricingRuleAdmin", { orderBy: { priority: "desc" } });
   const { data: cars } = useQuery("Car");
   const { create, update, remove, isPending: isMutating } = useMutation("PricingRule");
   const log = useActivityLog();
@@ -179,6 +179,7 @@ export default function AdminPricingRules() {
         const created = await create(payload);
         await log("CREATE", "PricingRule", created.id, `Rregull i ri çmimi: ${form.name} (${form.type}, ${form.discountValue}${form.discountType === "percent" ? "%" : "€"})`);
       }
+      await refetch();
       setShowForm(false);
       setEditId(null);
       setForm(emptyForm);
@@ -191,6 +192,7 @@ export default function AdminPricingRules() {
     try {
       await update(rule.id, { isActive: !rule.isActive });
       await log("UPDATE", "PricingRule", rule.id, `${rule.isActive ? "Çaktivizuar" : "Aktivizuar"}: ${rule.name}`);
+      await refetch();
     } catch (err) {
       console.error(err);
     }
@@ -201,6 +203,7 @@ export default function AdminPricingRules() {
       const rule = allRules.find((r) => r.id === id);
       await remove(id);
       await log("DELETE", "PricingRule", id, `Rregull i çmimit u fshi: ${rule?.name ?? id}`);
+      await refetch();
       setDeleteConfirmId(null);
     } catch (err) {
       console.error(err);

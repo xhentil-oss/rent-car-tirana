@@ -349,7 +349,7 @@ function ActivityLogTab() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminUsers() {
-  const { data: users, isPending } = useQuery("UserAdminProfile", {
+  const { data: users, isPending, refetch } = useQuery("UserAdminProfile", {
     orderBy: { createdAt: "desc" },
   });
   const { create, update, remove, isPending: isMutating } = useMutation("UserAdminProfile");
@@ -432,6 +432,7 @@ export default function AdminUsers() {
         const created = await create(data);
         await createLog({ action: "CREATE", entity: "UserAdminProfile", entityId: created.id, description: `Krijuar staf i ri: ${form.name.trim()} me rol ${form.role}`, timestamp: new Date() });
       }
+      await refetch();
       setDrawerOpen(false);
     } catch (e) {
       console.error(e);
@@ -442,22 +443,26 @@ export default function AdminUsers() {
     const target = (users ?? []).find((u) => u.id === id);
     await remove(id);
     await createLog({ action: "DELETE", entity: "UserAdminProfile", entityId: id, description: `Fshirë profili ${target?.userId ?? id}`, timestamp: new Date() });
+    await refetch();
     setDeleteConfirm(null);
   };
 
   const handleToggleActive = async (u: any) => {
     await update(u.id, { isActive: !u.isActive });
+    await refetch();
   };
 
   const handle2FAConfirm = async () => {
     if (!showTwoFA) return;
     await update(showTwoFA, { twoFactorEnabled: true });
     await createLog({ action: "UPDATE", entity: "UserAdminProfile", entityId: showTwoFA, description: "Aktivizuar 2FA për llogarinë", timestamp: new Date() });
+    await refetch();
     setShowTwoFA(null);
   };
 
   const handle2FADisable = async (id: string) => {
     await update(id, { twoFactorEnabled: false });
+    await refetch();
   };
 
   // Counts

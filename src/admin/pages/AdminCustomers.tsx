@@ -33,11 +33,11 @@ const typeColor: Record<string, string> = {
 type Tab = "overview" | "reservations" | "documents" | "communications" | "chat";
 
 export default function AdminCustomers() {
-  const { data: customers, isPending } = useQuery("Customer");
+  const { data: customers, isPending, refetch: refetchCustomers } = useQuery("Customer");
   const { data: reservations } = useQuery("Reservation");
-  const { data: documents } = useQuery("CustomerDocument");
-  const { data: communications } = useQuery("CommunicationLog");
-  const { data: chatMessages } = useQuery("ChatMessage");
+  const { data: documents, refetch: refetchDocs } = useQuery("CustomerDocument");
+  const { data: communications, refetch: refetchComms } = useQuery("CommunicationLog");
+  const { data: chatMessages, refetch: refetchChats } = useQuery("ChatMessage");
   const { update: updateCustomer, create: createCustomer, isPending: isMutating } = useMutation("Customer");
   const log = useActivityLog();
   const { create: createDoc } = useMutation("CustomerDocument");
@@ -95,6 +95,7 @@ export default function AdminCustomers() {
     try {
       await updateCustomer(customer.id, { isBlacklisted: newVal });
       await log("UPDATE", "Customer", customer.id, `${customer.name} — blacklist: ${newVal ? "Bllokuar" : "Zhbllokuar"}`);
+      await refetchCustomers();
     } catch (e) { console.error(e); }
   };
 
@@ -102,6 +103,7 @@ export default function AdminCustomers() {
     try {
       await updateCustomer(customer.id, { scoringTier: tier });
       await log("UPDATE", "Customer", customer.id, `${customer.name} — Loyalty Tier ndryshoi → ${tier}`);
+      await refetchCustomers();
     } catch (e) { console.error(e); }
   };
 
@@ -110,6 +112,7 @@ export default function AdminCustomers() {
     try {
       await createChat({ conversationId, text: chatInput.trim(), isFromAdmin: true });
       setChatInput("");
+      await refetchChats();
     } catch (e) { console.error(e); }
   };
 
@@ -125,6 +128,7 @@ export default function AdminCustomers() {
       });
       setCommForm({ type: "Email", subject: "", content: "" });
       setShowCommForm(false);
+      await refetchComms();
     } catch (e) { console.error(e); }
   };
 
@@ -143,6 +147,7 @@ export default function AdminCustomers() {
       await log("CREATE", "Customer", created.id, `Klient i ri shtuar: ${newCustomer.name.trim()} (${newCustomer.type})`);
       setNewCustomer({ name: "", email: "", phone: "", type: "Standard", scoringTier: "Bronze", corporateContractId: "" });
       setShowAddCustomer(false);
+      await refetchCustomers();
     } catch (e) { console.error(e); }
   };
 

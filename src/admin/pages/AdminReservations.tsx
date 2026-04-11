@@ -48,8 +48,8 @@ const timeOptions = Array.from({ length: 24 }, (_, i) => {
 }).flat();
 
 export default function AdminReservations() {
-  const { data: reservations, isPending: resLoading } = useQuery("Reservation", { orderBy: { createdAt: "desc" } });
-  const { data: customers } = useQuery("Customer");
+  const { data: reservations, isPending: resLoading, refetch: refetchReservations } = useQuery("Reservation", { orderBy: { createdAt: "desc" } });
+  const { data: customers, refetch: refetchCustomers } = useQuery("Customer");
   const { data: cars } = useQuery("Car");
   const { create: createReservation, update: updateReservation, isPending: isMutating } = useMutation("Reservation");
   const { create: createCustomer } = useMutation("Customer");
@@ -143,6 +143,7 @@ export default function AdminReservations() {
       setNewCustomerData(initialNewCustomerState);
       setNewCustomerErrors({});
       setShowNewCustomerForm(false);
+      await refetchCustomers();
     } catch (e) { console.error(e); }
   };
 
@@ -184,6 +185,7 @@ export default function AdminReservations() {
       setFormData(initialFormState);
       setFormErrors({});
       setShowNewForm(false);
+      await refetchReservations();
     } catch (e) { console.error(e); }
   };
 
@@ -202,6 +204,7 @@ export default function AdminReservations() {
       const res = (reservations ?? []).find(r => r.id === id);
       const customerName = res ? getCustomerName(res.customerId) : id;
       await log("UPDATE", "Reservation", id, `Statusi ndryshoi → ${status}: ${customerName}`);
+      await refetchReservations();
 
       if (res) {
         const customer = (customers ?? []).find(c => c.id === res.customerId);

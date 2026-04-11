@@ -44,31 +44,44 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+// Token refresh mutex — prevents concurrent refresh requests
+let refreshPromise: Promise<string | null> | null = null;
+
+async function doRefresh(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("rct_refresh_token");
+  if (!refreshToken) return null;
+  try {
+    const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (refreshRes.ok) {
+      const data = await refreshRes.json();
+      localStorage.setItem("rct_token", data.accessToken);
+      localStorage.setItem("rct_refresh_token", data.refreshToken);
+      return data.accessToken;
+    }
+  } catch { /* refresh failed */ }
+  // Refresh failed — clear session
+  localStorage.removeItem("rct_token");
+  localStorage.removeItem("rct_refresh_token");
+  localStorage.removeItem("rct_user");
+  return null;
+}
+
 async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
   let res = await fetch(url, options);
   if (res.status === 401) {
-    // Try to refresh the token
-    const refreshToken = localStorage.getItem("rct_refresh_token");
-    if (refreshToken) {
-      const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        localStorage.setItem("rct_token", data.accessToken);
-        localStorage.setItem("rct_refresh_token", data.refreshToken);
-        // Retry original request with new token
-        const newHeaders = { ...options.headers } as Record<string, string>;
-        newHeaders["Authorization"] = `Bearer ${data.accessToken}`;
-        res = await fetch(url, { ...options, headers: newHeaders });
-      } else {
-        // Refresh failed — clear session
-        localStorage.removeItem("rct_token");
-        localStorage.removeItem("rct_refresh_token");
-        localStorage.removeItem("rct_user");
-      }
+    // Use mutex to prevent concurrent refresh attempts
+    if (!refreshPromise) {
+      refreshPromise = doRefresh().finally(() => { refreshPromise = null; });
+    }
+    const newToken = await refreshPromise;
+    if (newToken) {
+      const newHeaders = { ...options.headers } as Record<string, string>;
+      newHeaders["Authorization"] = `Bearer ${newToken}`;
+      res = await fetch(url, { ...options, headers: newHeaders });
     }
   }
   return res;

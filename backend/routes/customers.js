@@ -13,7 +13,7 @@ router.get('/', authenticate, requireRole('admin', 'manager', 'staff', 'accounta
     if (type) { sql += ' AND type = ?'; params.push(type); }
     if (search) { sql += ' AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(Number(limit), Number(offset));
+    params.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
@@ -35,16 +35,13 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type = 'Standard' } = req.body;
-    // Check if customer with this email or phone already exists
+    // Check if customer with this email already exists (match by email only, not OR phone)
     const [existing] = await pool.query(
-      'SELECT * FROM customers WHERE email = ? OR phone = ?', [email, phone]
+      'SELECT * FROM customers WHERE email = ?', [email]
     );
     if (existing.length) {
-      // Return existing customer (update name/phone if changed)
-      await pool.query('UPDATE customers SET name=?, first_name=?, last_name=?, phone=? WHERE id=?',
-        [name || `${firstName} ${lastName}`, firstName, lastName, phone, existing[0].id]);
-      const [updated] = await pool.query('SELECT * FROM customers WHERE id = ?', [existing[0].id]);
-      return res.json(fmt(updated[0]));
+      // Return existing customer without overwriting their data
+      return res.json(fmt(existing[0]));
     }
     const id = uuidv4();
     const createdBy = req.user ? req.user.id : null;

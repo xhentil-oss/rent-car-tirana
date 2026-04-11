@@ -37,40 +37,54 @@ router.post(
       const [existingUser] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
       if (existingUser.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
 
+      const [existingCust] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
+      if (existingCust.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar si klient.' });
+
       const hash = await bcrypt.hash(password, 12);
       const userId = uuidv4();
       const customerId = uuidv4();
 
-      // Create customer record
       const nameParts = name.trim().split(/\s+/);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      await pool.query(
-        'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [customerId, name, firstName, lastName, email, phone || '', 'Standard', userId]
-      );
+      // Wrap in transaction to prevent orphaned records
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
 
-      // Create user record
-      await pool.query(
-        'INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)',
-        [userId, email, name, hash, role]
-      );
+        await conn.query(
+          'INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)',
+          [userId, email, name, hash, role]
+        );
 
-      const { access, refresh } = makeTokens(userId);
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      await pool.query(
-        'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-        [uuidv4(), userId, refresh, expiresAt]
-      );
+        await conn.query(
+          'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [customerId, name, firstName, lastName, email, phone || '', 'Standard', userId]
+        );
 
-      await logActivity({ userId, action: 'CREATE', entity: 'Customer', entityId: customerId, description: `Regjistrim klienti: ${email}`, ipAddress: req.ip });
+        const { access, refresh } = makeTokens(userId);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await conn.query(
+          'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
+          [uuidv4(), userId, refresh, expiresAt]
+        );
 
-      return res.status(201).json({
-        accessToken: access,
-        refreshToken: refresh,
-        user: { id: userId, email, name, role, customerId },
-      });
+        await conn.commit();
+        conn.release();
+
+        await logActivity({ userId, action: 'CREATE', entity: 'Customer', entityId: customerId, description: `Regjistrim klienti: ${email}`, ipAddress: req.ip });
+
+        return res.status(201).json({
+          accessToken: access,
+          refreshToken: refresh,
+          user: { id: userId, email, name, role, customerId },
+        });
+      } catch (txErr) {
+        await conn.rollback();
+        conn.release();
+        throw txErr;
+      }
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });

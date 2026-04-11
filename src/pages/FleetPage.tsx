@@ -56,7 +56,7 @@ export default function FleetPage() {
 
   const categories = ["Ekonomike", "SUV", "Luksoze", "Familjare", "Automatike"];
   const transmissions = ["Automatike", "Manuale"];
-  const fuels = ["Benzinë", "Diesel", "Hibrid", "Elektrik"];
+  const fuels = ["Benzinë", "Naftë", "Hibrid", "Elektrik"];
 
   const faqItems = (t("fleet.faqItems", { returnObjects: true }) as { question: string; answer: string }[]);
 

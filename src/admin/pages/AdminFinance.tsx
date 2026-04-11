@@ -86,7 +86,7 @@ export default function AdminFinance() {
   const { data: reservations } = useQuery("Reservation");
   const { data: sdkCustomers } = useQuery("Customer");
   const { data: sdkCars } = useQuery("Car");
-  const { data: sdkDeposits } = useQuery("Deposit", { orderBy: { createdAt: "desc" } });
+  const { data: sdkDeposits, refetch: refetchDeposits } = useQuery("Deposit", { orderBy: { createdAt: "desc" } });
   const { update: updateDeposit } = useMutation("Deposit");
 
   const [activeTab, setActiveTab] = useState<Tab>("invoice");
@@ -318,7 +318,7 @@ export default function AdminFinance() {
                       <td className="px-4 py-3 text-neutral-400 text-xs hidden lg:table-cell">{d.note || "—"}</td>
                       <td className="px-4 py-3 text-right">
                         {d.status === "Mbajtur" && (
-                          <button onClick={() => updateDeposit(d.id, { status: "Kthyer", returnDate: new Date() })} className="text-xs text-success border border-success/30 bg-success/5 px-2 py-1 rounded-lg hover:bg-success/10 cursor-pointer font-medium transition-colors">Kthe</button>
+                          <button onClick={() => updateDeposit(d.id, { status: "Kthyer", returnDate: new Date() }).then(() => refetchDeposits())} className="text-xs text-success border border-success/30 bg-success/5 px-2 py-1 rounded-lg hover:bg-success/10 cursor-pointer font-medium transition-colors">Kthe</button>
                         )}
                       </td>
                     </tr>

@@ -2,7 +2,22 @@ import React from "react";
 import LLink from "./LLink";
 import { Users, Briefcase, GasPump, Gear, Star, Fire } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import type { Car } from "../data/mockData";
+interface Car {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  slug: string;
+  image: string;
+  category: string;
+  transmission: string;
+  fuel: string;
+  seats: number;
+  luggage: number;
+  pricePerDay: number;
+  status: string;
+  featured?: boolean;
+}
 
 interface CarCardProps {
   car: Car;

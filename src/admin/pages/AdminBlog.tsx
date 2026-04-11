@@ -35,11 +35,9 @@ const emptyPost: Omit<BlogPost, "id" | "publishedAt"> = {
 };
 
 export default function AdminBlog() {
-  const { data, loading, refetch } = useQuery("BlogPostAdmin");
+  const { data, isPending: loading, refetch } = useQuery("BlogPostAdmin");
   const posts: BlogPost[] = data ?? [];
-  const createPost = useMutation("BlogPost", "POST");
-  const updatePost = useMutation("BlogPost", "PUT");
-  const deletePost = useMutation("BlogPost", "DELETE");
+  const { create: createPost, update: updatePost, remove: deletePost, isPending: mutating } = useMutation("BlogPost");
 
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [form, setForm] = useState(emptyPost);
@@ -83,9 +81,9 @@ export default function AdminBlog() {
         slug: form.slug || slugify(form.titleSq),
       };
       if (editing) {
-        await updatePost.trigger(payload, editing.id);
+        await updatePost(editing.id, payload);
       } else {
-        await createPost.trigger(payload);
+        await createPost(payload);
       }
       await refetch();
       setShowEditor(false);
@@ -95,7 +93,7 @@ export default function AdminBlog() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Jeni i sigurtë që doni të fshini këtë postim?")) return;
-    await deletePost.trigger(undefined, id);
+    await deletePost(id);
     await refetch();
   };
 

@@ -16,6 +16,8 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
 router.post('/', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const { email, name, password, role, permissions } = req.body;
+    if (!password || password.length < 8) return res.status(400).json({ error: 'Fjalëkalimi duhet të ketë min 8 karaktere.' });
+    if (!email || !name) return res.status(400).json({ error: 'Email dhe emri janë të detyrueshme.' });
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length) return res.status(409).json({ error: 'Email ekziston.' });
     const hash = await bcrypt.hash(password, 12);
@@ -30,7 +32,11 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
 router.put('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const { name, role, isActive, permissions, twoFactorEnabled } = req.body;
-    await pool.query('UPDATE users SET name=?, role=?, is_active=?, permissions=?, two_factor_enabled=? WHERE id=?', [name, role, isActive ? 1 : 0, permissions, twoFactorEnabled ? 1 : 0, req.params.id]);
+    // Use COALESCE to preserve existing values when fields are not sent
+    await pool.query(
+      'UPDATE users SET name=COALESCE(?,name), role=COALESCE(?,role), is_active=COALESCE(?,is_active), permissions=COALESCE(?,permissions), two_factor_enabled=COALESCE(?,two_factor_enabled) WHERE id=?',
+      [name, role, isActive !== undefined ? (isActive ? 1 : 0) : null, permissions !== undefined ? permissions : null, twoFactorEnabled !== undefined ? (twoFactorEnabled ? 1 : 0) : null, req.params.id]
+    );
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'User', entityId: req.params.id, description: `Përdorues u ndryshua: ${req.params.id}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));

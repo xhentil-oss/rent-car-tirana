@@ -71,7 +71,7 @@ const TABS = [
 
 // ─── Maintenance Tab ──────────────────────────────────────────────────────────
 function MaintenanceTab({ cars }: { cars: any[] }) {
-  const { data: records = [], isPending } = useQuery("MaintenanceRecord", { orderBy: { scheduledDate: "asc" } });
+  const { data: records = [], isPending, refetch } = useQuery("MaintenanceRecord", { orderBy: { scheduledDate: "asc" } });
   const { create, update, remove, isPending: mut } = useMutation("MaintenanceRecord");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -85,6 +85,7 @@ function MaintenanceTab({ cars }: { cars: any[] }) {
   const save = async () => {
     const payload = { carId: form.carId, type: form.type, status: form.status, scheduledDate: new Date(form.scheduledDate), cost: form.cost ? Number(form.cost) : undefined, mechanicName: form.mechanicName || undefined, notes: form.notes || undefined, mileageAtService: form.mileageAtService ? Number(form.mileageAtService) : undefined, nextServiceMileage: form.nextServiceMileage ? Number(form.nextServiceMileage) : undefined };
     if (editing) await update(editing.id, payload); else await create(payload);
+    await refetch();
     setOpen(false);
   };
 
@@ -137,7 +138,7 @@ function MaintenanceTab({ cars }: { cars: any[] }) {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 cursor-pointer"><PencilSimple size={15} /></button>
-                      <button onClick={() => remove(r.id)} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
+                      <button onClick={() => remove(r.id).then(() => refetch())} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -214,7 +215,7 @@ function MaintenanceTab({ cars }: { cars: any[] }) {
 
 // ─── Insurance Tab ────────────────────────────────────────────────────────────
 function InsuranceTab({ cars }: { cars: any[] }) {
-  const { data: records = [], isPending } = useQuery("InsuranceRecord", { orderBy: { expiryDate: "asc" } });
+  const { data: records = [], isPending, refetch } = useQuery("InsuranceRecord", { orderBy: { expiryDate: "asc" } });
   const { create, update, remove, isPending: mut } = useMutation("InsuranceRecord");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -232,6 +233,7 @@ function InsuranceTab({ cars }: { cars: any[] }) {
   const save = async () => {
     const payload = { carId: form.carId, provider: form.provider, policyNumber: form.policyNumber, startDate: new Date(form.startDate), expiryDate: new Date(form.expiryDate), cost: Number(form.cost), type: form.type, status: form.status };
     if (editing) await update(editing.id, payload); else await create(payload);
+    await refetch();
     setOpen(false);
   };
 
@@ -298,7 +300,7 @@ function InsuranceTab({ cars }: { cars: any[] }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 cursor-pointer"><PencilSimple size={15} /></button>
-                        <button onClick={() => remove(r.id)} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
+                        <button onClick={() => remove(r.id).then(() => refetch())} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -366,7 +368,7 @@ function InsuranceTab({ cars }: { cars: any[] }) {
 
 // ─── Registration Tab ─────────────────────────────────────────────────────────
 function RegistrationTab({ cars }: { cars: any[] }) {
-  const { data: records = [], isPending } = useQuery("RegistrationRecord", { orderBy: { expiryDate: "asc" } });
+  const { data: records = [], isPending, refetch } = useQuery("RegistrationRecord", { orderBy: { expiryDate: "asc" } });
   const { create, update, remove, isPending: mut } = useMutation("RegistrationRecord");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -379,6 +381,7 @@ function RegistrationTab({ cars }: { cars: any[] }) {
   const save = async () => {
     const payload = { carId: form.carId, plateNumber: form.plateNumber, expiryDate: new Date(form.expiryDate), renewalCost: form.renewalCost ? Number(form.renewalCost) : undefined, status: form.status, notes: form.notes || undefined };
     if (editing) await update(editing.id, payload); else await create(payload);
+    await refetch();
     setOpen(false);
   };
 
@@ -429,7 +432,7 @@ function RegistrationTab({ cars }: { cars: any[] }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 cursor-pointer"><PencilSimple size={15} /></button>
-                        <button onClick={() => remove(r.id)} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
+                        <button onClick={() => remove(r.id).then(() => refetch())} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -487,7 +490,7 @@ function RegistrationTab({ cars }: { cars: any[] }) {
 
 // ─── Fuel Tab ─────────────────────────────────────────────────────────────────
 function FuelTab({ cars }: { cars: any[] }) {
-  const { data: records = [], isPending } = useQuery("FuelLog", { orderBy: { date: "desc" } });
+  const { data: records = [], isPending, refetch } = useQuery("FuelLog", { orderBy: { date: "desc" } });
   const { create, remove, isPending: mut } = useMutation("FuelLog");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ carId: "", date: new Date().toISOString().slice(0, 10), liters: "", pricePerLiter: "", mileage: "", fuelType: "Benzinë", station: "", notes: "" });
@@ -500,6 +503,7 @@ function FuelTab({ cars }: { cars: any[] }) {
 
   const save = async () => {
     await create({ carId: form.carId, date: new Date(form.date), liters: Number(form.liters), pricePerLiter: Number(form.pricePerLiter), totalCost: Number(totalCost), mileage: Number(form.mileage), fuelType: form.fuelType, station: form.station || undefined, notes: form.notes || undefined });
+    await refetch();
     setOpen(false);
     setForm({ carId: "", date: new Date().toISOString().slice(0, 10), liters: "", pricePerLiter: "", mileage: "", fuelType: "Benzinë", station: "", notes: "" });
   };
@@ -548,7 +552,7 @@ function FuelTab({ cars }: { cars: any[] }) {
                   <td className="px-4 py-3"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{r.fuelType}</span></td>
                   <td className="px-4 py-3 text-neutral-500">{r.station || "—"}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => remove(r.id)} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
+                    <button onClick={() => remove(r.id).then(() => refetch())} className="p-1.5 rounded hover:bg-red-50 text-red-400 cursor-pointer"><Trash size={15} /></button>
                   </td>
                 </tr>
               ))}
@@ -623,7 +627,7 @@ function FuelTab({ cars }: { cars: any[] }) {
 
 // ─── Damage Tab ───────────────────────────────────────────────────────────────
 function DamageTab({ cars }: { cars: any[] }) {
-  const { data: records = [], isPending } = useQuery("DamageReport", { orderBy: { reportDate: "desc" } });
+  const { data: records = [], isPending, refetch } = useQuery("DamageReport", { orderBy: { reportDate: "desc" } });
   const { create, update, remove, isPending: mut } = useMutation("DamageReport");
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState<any>(null);
@@ -638,6 +642,7 @@ function DamageTab({ cars }: { cars: any[] }) {
   const save = async () => {
     const payload = { carId: form.carId, reportDate: new Date(form.reportDate), description: form.description, severity: form.severity, status: form.status, repairCost: form.repairCost ? Number(form.repairCost) : undefined, photoUrls: form.photoUrls, reportedBy: form.reportedBy, notes: form.notes || undefined };
     if (editing) await update(editing.id, payload); else await create(payload);
+    await refetch();
     setOpen(false);
   };
 
@@ -704,7 +709,7 @@ function DamageTab({ cars }: { cars: any[] }) {
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setViewing(r)} className="p-1.5 rounded hover:bg-neutral-200 text-neutral-500 cursor-pointer"><Eye size={15} /></button>
                     <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-neutral-200 text-neutral-500 cursor-pointer"><PencilSimple size={15} /></button>
-                    <button onClick={() => remove(r.id)} className="p-1.5 rounded hover:bg-red-100 text-red-400 cursor-pointer"><Trash size={15} /></button>
+                    <button onClick={() => remove(r.id).then(() => refetch())} className="p-1.5 rounded hover:bg-red-100 text-red-400 cursor-pointer"><Trash size={15} /></button>
                   </div>
                 </div>
               </div>
