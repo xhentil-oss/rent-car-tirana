@@ -34,7 +34,10 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public: find-or-create customer (used by booking form)
 router.post('/', async (req, res) => {
   try {
-    const { name, firstName, lastName, email, phone, type = 'Standard' } = req.body;
+    const { name, firstName, lastName, email, phone, type = 'Standard', website } = req.body;
+    // Honeypot bot protection
+    if (website) return res.status(400).json({ error: 'Gabim.' });
+    if (!email || !email.trim()) return res.status(400).json({ error: 'Email është i detyrueshëm.' });
     // Check if customer with this email already exists (match by email only, not OR phone)
     const [existing] = await pool.query(
       'SELECT * FROM customers WHERE email = ?', [email]

@@ -20,6 +20,7 @@ if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET.length < 3
 }
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
+app.set('trust proxy', 1); // Trust cPanel reverse proxy — fixes req.ip and rate limiting
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -94,7 +95,19 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// ─── GRACEFUL SHUTDOWN ────────────────────────────────────────
+const shutdown = (signal) => {
+  console.log(`\n⚡ ${signal} received — shutting down gracefully...`);
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    process.exit(0);
+  });
+  setTimeout(() => { console.error('⏰ Forced shutdown'); process.exit(1); }, 10000);
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

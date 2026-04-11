@@ -24,7 +24,9 @@ router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, 
 // Public submit
 router.post('/', async (req, res) => {
   try {
-    const { rating, text, authorName, aspects } = req.body;
+    const { rating, text, authorName, aspects, website } = req.body;
+    // Honeypot bot protection
+    if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!rating || !Number.isInteger(Number(rating)) || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Vlerësimi duhet të jetë 1-5.' });
     }

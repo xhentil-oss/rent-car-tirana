@@ -413,6 +413,16 @@ const ALTERS = [
   // Add quantity and description to cars
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS quantity SMALLINT NOT NULL DEFAULT 1`,
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL`,
+  // ── Performance indexes ──
+  'CREATE INDEX idx_res_overlap ON reservations (car_id, status, start_date, end_date)',
+  'CREATE INDEX idx_res_status ON reservations (status)',
+  'CREATE INDEX idx_res_customer ON reservations (customer_id)',
+  'CREATE INDEX idx_cust_user_id ON customers (user_id)',
+  'CREATE INDEX idx_cust_email ON customers (email)',
+  'CREATE INDEX idx_car_category ON cars (category)',
+  'CREATE INDEX idx_car_status ON cars (status)',
+  'CREATE INDEX idx_rt_token ON refresh_tokens (token)',
+  'CREATE INDEX idx_rt_user ON refresh_tokens (user_id, expires_at)',
 ];
 
 async function migrate() {

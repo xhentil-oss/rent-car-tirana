@@ -6,6 +6,7 @@ import { CalendarBlank, ArrowLeft, Tag, Clock } from "@phosphor-icons/react";
 import LLink from "../components/LLink";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 
 const API_BASE = "/api";
 
@@ -141,7 +142,7 @@ export default function BlogPostPage() {
         {/* Content */}
         <div
           className="prose prose-neutral max-w-none prose-headings:font-semibold prose-a:text-primary prose-img:rounded-lg"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
       </article>
 

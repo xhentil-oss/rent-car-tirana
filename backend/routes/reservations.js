@@ -65,39 +65,63 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode } = req.body;
+    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website } = req.body;
+    // Honeypot bot protection — real users never fill hidden 'website' field
+    if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate) {
       return res.status(400).json({ error: 'Fusha të detyrueshme mungojnë.' });
     }
     // Convert ISO datetime strings to YYYY-MM-DD for MySQL DATE columns
-    const fmtDate = (d) => new Date(d).toISOString().slice(0, 10);
-    const sd = fmtDate(startDate);
-    const ed = fmtDate(endDate);
+    const fmtDate = (d) => {
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) throw new Error('Datë e pavlefshme.');
+      return dt.toISOString().slice(0, 10);
+    };
+    let sd, ed;
+    try { sd = fmtDate(startDate); ed = fmtDate(endDate); } catch { return res.status(400).json({ error: 'Datat janë të pavlefshme.' }); }
+    if (sd > ed) return res.status(400).json({ error: 'Data e fillimit duhet të jetë para datës së mbarimit.' });
 
-    // ── Server-side price calculation ──
-    const [carRows] = await pool.query('SELECT price_per_day FROM cars WHERE id = ?', [carId]);
-    if (!carRows.length) return res.status(404).json({ error: 'Makina nuk u gjet.' });
-    const pricePerDay = Number(carRows[0].price_per_day);
-    const msPerDay = 86400000;
-    const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
-    const totalPrice = +(pricePerDay * days).toFixed(2);
+    // ── Transaction with row lock to prevent double-booking ──
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-    // ── Double-booking prevention ──
-    const [overlap] = await pool.query(
-      "SELECT id FROM reservations WHERE car_id = ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
-      [carId, ed, sd]
-    );
-    if (overlap.length) {
-      return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
+      // Lock the car row to prevent concurrent bookings
+      const [carRows] = await conn.query('SELECT id, price_per_day, quantity FROM cars WHERE id = ? FOR UPDATE', [carId]);
+      if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
+      const pricePerDay = Number(carRows[0].price_per_day);
+      const carQuantity = Number(carRows[0].quantity) || 1;
+
+      const msPerDay = 86400000;
+      const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
+      const totalPrice = +(pricePerDay * days).toFixed(2);
+
+      // Count overlapping reservations vs car quantity
+      const [overlap] = await conn.query(
+        "SELECT COUNT(*) AS cnt FROM reservations WHERE car_id = ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
+        [carId, ed, sd]
+      );
+      if (overlap[0].cnt >= carQuantity) {
+        await conn.rollback(); conn.release();
+        return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
+      }
+
+      const id = uuidv4();
+      await conn.query(
+        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
+      );
+
+      await conn.commit();
+      conn.release();
+
+      const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
+      res.status(201).json(fmt(rows[0]));
+    } catch (txErr) {
+      await conn.rollback();
+      conn.release();
+      throw txErr;
     }
-
-    const id = uuidv4();
-    await pool.query(
-      'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
-    );
-    const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
-    res.status(201).json(fmt(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 

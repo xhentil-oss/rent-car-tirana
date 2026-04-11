@@ -1,10 +1,14 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
 const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
+
+// Hash refresh tokens before DB storage — protects against DB leak
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const makeTokens = (userId) => {
   const access = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -67,7 +71,7 @@ router.post(
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await conn.query(
           'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-          [uuidv4(), userId, refresh, expiresAt]
+          [uuidv4(), userId, hashToken(refresh), expiresAt]
         );
 
         await conn.commit();
@@ -121,7 +125,7 @@ router.post(
       await pool.query('DELETE FROM refresh_tokens WHERE user_id = ? AND expires_at < NOW()', [user.id]);
       await pool.query(
         'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-        [uuidv4(), user.id, refresh, expiresAt]
+        [uuidv4(), user.id, hashToken(refresh), expiresAt]
       );
 
       await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
@@ -154,19 +158,20 @@ router.post('/refresh', async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
+    const hashedToken = hashToken(refreshToken);
     const [rows] = await pool.query(
       'SELECT * FROM refresh_tokens WHERE token = ? AND user_id = ? AND expires_at > NOW()',
-      [refreshToken, decoded.userId]
+      [hashedToken, decoded.userId]
     );
     if (!rows.length) return res.status(401).json({ error: 'Refresh token i pavlefshëm ose ka skaduar.' });
 
     const { access, refresh: newRefresh } = makeTokens(decoded.userId);
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refreshToken]);
+    await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [hashedToken]);
     await pool.query(
       'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-      [uuidv4(), decoded.userId, newRefresh, expiresAt]
+      [uuidv4(), decoded.userId, hashToken(newRefresh), expiresAt]
     );
 
     return res.json({ accessToken: access, refreshToken: newRefresh });
@@ -180,7 +185,7 @@ router.post('/logout', authenticate, async (req, res) => {
   const { refreshToken } = req.body;
   try {
     if (refreshToken) {
-      await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refreshToken]);
+      await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [hashToken(refreshToken)]);
     }
     await logActivity({ userId: req.user.id, action: 'LOGOUT', entity: 'User', entityId: req.user.id, description: `Logout: ${req.user.email}`, ipAddress: req.ip });
     return res.json({ message: 'U shkyçët me sukses.' });

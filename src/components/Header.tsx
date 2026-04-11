@@ -52,6 +52,7 @@ function LanguageSwitcher() {
 
 function UserMenu() {
   const { user, isPending, isAnonymous, login, register, logout } = useAuth();
+  const { localePath } = useLocale();
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
@@ -236,8 +237,6 @@ function UserMenu() {
       </div>
     );
   }
-
-  const { localePath } = useLocale();
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
