@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
 
 const fmt = (r) => ({
   id: r.id,
@@ -16,8 +17,7 @@ const fmt = (r) => ({
 router.get('/', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { conversationId, limit = 200, offset = 0 } = req.query;
-    const safeLim = Math.min(Math.max(1, Number(limit) || 200), 500);
-    const safeOff = Math.max(0, Number(offset) || 0);
+    const [safeLim, safeOff] = safePagination(limit, offset, 200);
     let sql = 'SELECT * FROM chat_messages WHERE 1=1';
     const params = [];
     if (conversationId) { sql += ' AND conversation_id = ?'; params.push(conversationId); }

@@ -2,7 +2,8 @@ const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
 
 const VALID_TYPES = ['seasonal', 'duration', 'early_bird', 'last_minute', 'promo_code', 'loyalty'];
 const VALID_DISCOUNT_TYPES = ['percentage', 'fixed'];
@@ -37,7 +38,7 @@ router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, 
   try {
     const { limit = 200, offset = 0 } = req.query;
     const [rows] = await pool.query('SELECT * FROM pricing_rules ORDER BY priority DESC, created_at DESC LIMIT ? OFFSET ?',
-      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
+      safePagination(limit, offset, 200));
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
@@ -58,6 +59,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
       [id, name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description, maxUsages || 0, req.user.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
+    await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
     res.status(201).json(fmt(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
@@ -70,6 +72,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
       [name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive ? 1 : 0, priority, description, maxUsages, req.params.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [req.params.id]);
+    await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'PricingRule', entityId: req.params.id, description: `Rregull çmimi u ndryshua: ${name}`, ipAddress: req.ip });
     res.json(fmt(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
@@ -92,6 +95,7 @@ router.post('/:id/use', authenticate, requireRole('admin', 'manager', 'staff'), 
 router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     await pool.query('DELETE FROM pricing_rules WHERE id = ?', [req.params.id]);
+    await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'PricingRule', entityId: req.params.id, description: `Rregull çmimi u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Rregulli u fshi.' });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

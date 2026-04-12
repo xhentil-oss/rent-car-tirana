@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
 const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
+const { BCRYPT_ROUNDS, REFRESH_TOKEN_EXPIRY_MS } = require('../lib/helpers');
 
 // Hash refresh tokens before DB storage — protects against DB leak
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
@@ -44,8 +45,7 @@ router.post(
       const [existingCust] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
       if (existingCust.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar si klient.' });
 
-      const hash = await bcrypt.hash(password, 12);
-      const userId = uuidv4();
+      const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
       const customerId = uuidv4();
 
       const nameParts = name.trim().split(/\s+/);
@@ -68,7 +68,7 @@ router.post(
         );
 
         const { access, refresh } = makeTokens(userId);
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
         await conn.query(
           'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
           [uuidv4(), userId, hashToken(refresh), expiresAt]
@@ -120,7 +120,7 @@ router.post(
       if (!valid) return res.status(401).json({ error: 'Email ose fjalëkalim i gabuar.' });
 
       const { access, refresh } = makeTokens(user.id);
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
 
       await pool.query('DELETE FROM refresh_tokens WHERE user_id = ? AND expires_at < NOW()', [user.id]);
       await pool.query(
@@ -166,7 +166,7 @@ router.post('/refresh', async (req, res) => {
     if (!rows.length) return res.status(401).json({ error: 'Refresh token i pavlefshëm ose ka skaduar.' });
 
     const { access, refresh: newRefresh } = makeTokens(decoded.userId);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
 
     await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [hashedToken]);
     await pool.query(
@@ -215,7 +215,7 @@ router.post('/change-password', authenticate,
       const valid = await bcrypt.compare(currentPassword, rows[0].password);
       if (!valid) return res.status(400).json({ error: 'Fjalëkalimi aktual është i gabuar.' });
 
-      const hash = await bcrypt.hash(newPassword, 12);
+      const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
       await pool.query('UPDATE users SET password = ? WHERE id = ?', [hash, req.user.id]);
       await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.id]);
 

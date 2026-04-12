@@ -50,8 +50,8 @@ function AdminLoginForm({ login }: { login: (email: string, password: string) =>
     setError("");
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err.message || "Email ose fjalëkalimi i gabuar");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Email ose fjalëkalimi i gabuar");
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LocaleProvider } from "./hooks/useLocale";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
@@ -72,13 +73,14 @@ function LazyFallback() {
 }
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md text-sm font-medium"
       >
-        Përmbajtja kryesore
+        {t("skipToContent")}
       </a>
       <Header />
       <main id="main-content"><ErrorBoundary><Suspense fallback={<LazyFallback />}>{children}</Suspense></ErrorBoundary></main>

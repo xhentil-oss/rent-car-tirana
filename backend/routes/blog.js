@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
 
 const fmt = (r) => ({
   id: r.id,
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
     const { limit = 50, offset = 0 } = req.query;
     const [rows] = await pool.query(
       'SELECT * FROM blog_posts WHERE status = ? ORDER BY published_at DESC LIMIT ? OFFSET ?',
-      ['published', Math.min(Math.max(1, Number(limit) || 50), 500), Math.max(0, Number(offset) || 0)]
+      ['published', ...safePagination(limit, offset, 50)]
     );
     res.set('Cache-Control', 'public, max-age=60');
     res.json(rows.map(fmt));
@@ -62,7 +63,7 @@ router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, 
   try {
     const { limit = 100, offset = 0 } = req.query;
     const [rows] = await pool.query('SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0)]);
+      safePagination(limit, offset, 100));
     res.json(rows.map(fmt));
   } catch (err) {
     console.error(err);

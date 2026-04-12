@@ -53,7 +53,7 @@ export default function ReviewsPage() {
         approved: false,
       });
       setSubmitted(true);
-    } catch (e) { console.error(e); } finally { setSaving(false); }
+    } catch (e) { /* error handled by UI state */ } finally { setSaving(false); }
   };
 
   return (

@@ -93,7 +93,7 @@ export default function BlogPostPage() {
   const date = post.publishedAt
     ? new Date(post.publishedAt).toLocaleDateString(isEn ? "en-GB" : "sq-AL", { day: "numeric", month: "long", year: "numeric" })
     : "";
-  const tags = post.tags ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+  const tags = post.tags ? post.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean) : [];
   const readTime = Math.max(1, Math.ceil(content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200));
 
   return (

@@ -14,7 +14,6 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import Footer from "../components/Footer";
-import Header from "../components/Header";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();

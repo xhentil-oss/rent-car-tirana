@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { BCRYPT_ROUNDS, ADMIN_ROLES } = require('../lib/helpers');
+const { safePagination } = require('../lib/helpers');
 
 const fmt = (r) => ({ id: r.id, email: r.email, name: r.name, role: r.role, isActive: !!r.is_active, twoFactorEnabled: !!r.two_factor_enabled, permissions: r.permissions, lastLogin: r.last_login, createdAt: r.created_at });
 
@@ -10,7 +12,7 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
   try {
     const { limit = 200, offset = 0 } = req.query;
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
+      safePagination(limit, offset, 200));
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
@@ -22,10 +24,9 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
     if (!email || !name) return res.status(400).json({ error: 'Email dhe emri janë të detyrueshme.' });
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length) return res.status(409).json({ error: 'Email ekziston.' });
-    const hash = await bcrypt.hash(password, 12);
+    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const id = uuidv4();
-    const VALID_ROLES = ['admin', 'manager', 'staff', 'accountant'];
-    const safeRole = VALID_ROLES.includes(role) ? role : 'staff';
+    const safeRole = ADMIN_ROLES.includes(role) ? role : 'staff';
     await pool.query('INSERT INTO users (id, email, name, password, role, permissions) VALUES (?,?,?,?,?,?)', [id, email, name, hash, safeRole, permissions || '']);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'User', entityId: id, description: `Përdorues i ri: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users WHERE id = ?', [id]);

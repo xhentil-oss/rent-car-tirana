@@ -366,9 +366,8 @@ export default function BookingPage() {
           total: String(total),
         },
       });
-    } catch (err: any) {
-      console.error("Booking error:", err);
-      setBookingError(err?.message || "Rezervimi dështoi. Provoni përsëri.");
+    } catch (err: unknown) {
+      setBookingError(err instanceof Error ? err.message : "Rezervimi dështoi. Provoni përsëri.");
     } finally {
       setSaving(false);
     }

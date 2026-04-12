@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
 
 const fmt = (r) => ({ id: r.id, name: r.name, firstName: r.first_name, lastName: r.last_name, email: r.email, phone: r.phone, type: r.type, createdAt: r.created_at, updatedAt: r.updated_at });
 
@@ -13,7 +14,7 @@ router.get('/', authenticate, requireRole('admin', 'manager', 'staff', 'accounta
     if (type) { sql += ' AND type = ?'; params.push(type); }
     if (search) { sql += ' AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
+    params.push(...safePagination(limit, offset, 100));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }

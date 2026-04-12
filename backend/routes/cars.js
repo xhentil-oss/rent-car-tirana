@@ -3,13 +3,14 @@ const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
 
 const VALID_CATEGORIES = ['Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Convertible'];
 const VALID_TRANSMISSIONS = ['Automatic', 'Manual'];
 const VALID_FUELS = ['Petrol', 'Diesel', 'Hybrid', 'Electric'];
 const VALID_STATUSES = ['Available', 'Rented', 'Maintenance', 'Out of Service'];
 
-const toSnake = (r) => ({
+const toCamel = (r) => ({
   id: r.id, brand: r.brand, model: r.model, year: r.year,
   category: r.category, transmission: r.transmission, fuel: r.fuel,
   seats: r.seats, luggage: r.luggage, pricePerDay: r.price_per_day,
@@ -27,10 +28,10 @@ router.get('/', async (req, res) => {
     if (status)   { sql += ' AND status = ?';   params.push(status); }
     if (featured !== undefined) { sql += ' AND featured = ?'; params.push(featured === 'true' ? 1 : 0); }
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
+    params.push(...safePagination(limit, offset, 100));
     const [rows] = await pool.query(sql, params);
     res.set('Cache-Control', 'public, max-age=30');
-    res.json(rows.map(toSnake));
+    res.json(rows.map(toCamel));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
@@ -38,7 +39,7 @@ router.get('/:id', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ? OR slug = ?', [req.params.id, req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Makina nuk u gjet.' });
-    res.json(toSnake(rows[0]));
+    res.json(toCamel(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
@@ -65,7 +66,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
     );
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'Car', entityId: id, description: `Makina e re: ${brand} ${model}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ?', [id]);
-    res.status(201).json(toSnake(rows[0]));
+    res.status(201).json(toCamel(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
@@ -89,7 +90,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
     await pool.query(`UPDATE cars SET ${setClauses} WHERE id = ?`, values);
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Car', entityId: req.params.id, description: `Makina u ndryshua: ${fields.brand || ''} ${fields.model || ''}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ?', [req.params.id]);
-    res.json(toSnake(rows[0]));
+    res.json(toCamel(rows[0]));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 

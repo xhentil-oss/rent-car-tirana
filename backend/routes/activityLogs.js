@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const pool = require('../database/db');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { safePagination } = require('../lib/helpers');
+
+const toCamel = (r) => ({ id: r.id, userId: r.user_id, userName: r.user_name, userEmail: r.user_email, action: r.action, entity: r.entity, entityId: r.entity_id, description: r.description, ipAddress: r.ip_address, timestamp: r.timestamp });
 
 router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
@@ -14,9 +17,9 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
     if (action) { sql += ' AND al.action = ?'; p.push(action); }
     if (userId) { sql += ' AND al.user_id = ?'; p.push(userId); }
     sql += ' ORDER BY al.timestamp DESC LIMIT ? OFFSET ?';
-    p.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
+    p.push(...safePagination(limit, offset, 100));
     const [rows] = await pool.query(sql, p);
-    res.json(rows);
+    res.json(rows.map(toCamel));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 

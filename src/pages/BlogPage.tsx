@@ -10,7 +10,7 @@ import Footer from "../components/Footer";
 const ITEMS_PER_PAGE = 9;
 
 export default function BlogPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { lang } = useLocale();
   const isEn = lang === "en";
   const [page, setPage] = useState(1);
@@ -79,7 +79,7 @@ export default function BlogPage() {
                 const title = isEn && post.titleEn ? post.titleEn : post.titleSq;
                 const excerpt = isEn && post.excerptEn ? post.excerptEn : post.excerptSq;
                 const date = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString(isEn ? "en-GB" : "sq-AL", { day: "numeric", month: "long", year: "numeric" }) : "";
-                const tags = post.tags ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+                const tags = post.tags ? post.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean) : [];
 
                 return (
                   <LLink

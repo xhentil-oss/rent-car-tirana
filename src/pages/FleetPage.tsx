@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useSEO } from "../hooks/useSEO";
 import { X, FunnelSimple, SortAscending } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
@@ -11,7 +11,7 @@ import Footer from "../components/Footer";
 const ITEMS_PER_PAGE = 9;
 
 export default function FleetPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState<string>(searchParams.get("kategoria") ?? "");
   const [activeTransmission, setActiveTransmission] = useState<string>(searchParams.get("transmision") ?? "");
