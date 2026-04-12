@@ -5,8 +5,8 @@ const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
 
-const VALID_TYPES = ['seasonal', 'duration', 'early_bird', 'last_minute', 'promo_code', 'loyalty'];
-const VALID_DISCOUNT_TYPES = ['percentage', 'fixed'];
+const VALID_TYPES = ['seasonal', 'duration', 'early_bird', 'last_minute', 'promo_code', 'loyalty', 'length_of_stay', 'weekend'];
+const VALID_DISCOUNT_TYPES = ['percentage', 'percent', 'fixed'];
 
 const fmt = (r) => ({
   id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
