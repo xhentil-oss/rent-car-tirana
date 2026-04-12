@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LLink from "../components/LLink";
 import { useLocale } from "../hooks/useLocale";
@@ -98,6 +98,7 @@ export default function CarDetailPage() {
   const [pickupLocation, setPickupLocation] = useState("Tiranë - Qendër");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const bookingCardRef = useRef<HTMLDivElement>(null);
   const [showFloatingBtn, setShowFloatingBtn] = useState(false);
@@ -123,6 +124,35 @@ export default function CarDetailPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Gallery keyboard navigation + focus trap
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const dialog = galleryRef.current;
+    if (dialog) dialog.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setGalleryOpen(false); return; }
+      if (e.key === "ArrowLeft") { setGalleryIndex((prev) => (prev - 1 + carImages.length) % carImages.length); return; }
+      if (e.key === "ArrowRight") { setGalleryIndex((prev) => (prev + 1) % carImages.length); return; }
+      // Focus trap
+      if (e.key === "Tab" && dialog) {
+        const focusable = dialog.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => { window.removeEventListener("keydown", handleKey); document.body.style.overflow = prevOverflow; };
+  }, [galleryOpen, carImages.length]);
+
   const car = (allCars ?? []).find((c) => c.slug === slug);
 
   // Dynamic SEO per car — called unconditionally (hooks rule)
@@ -138,8 +168,8 @@ export default function CarDetailPage() {
           structuredData: [
             buildCarProductSchema(car),
             buildBreadcrumbSchema([
-              { name: t("carDetail.back"), url: "/" },
-              { name: t("carDetail.tabs.specs"), url: "/flota" },
+              { name: t("carDetail.breadcrumb.home"), url: "/" },
+              { name: t("carDetail.breadcrumb.fleet"), url: "/flota" },
               { name: `${car.brand} ${car.model}`, url: `/makina/${car.slug}` },
             ]),
           ],
@@ -153,10 +183,35 @@ export default function CarDetailPage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <SpinnerGap size={36} className="animate-spin text-primary" />
-          <p className="text-sm text-neutral-500">{t("carDetail.loading")}</p>
+      <div className="min-h-screen bg-background">
+        {/* Skeleton hero */}
+        <div className="relative w-full bg-neutral-200 animate-pulse" style={{ height: "72vh", minHeight: 520 }}>
+          <div className="absolute bottom-0 left-0 right-0 px-6 md:px-10 pb-8 space-y-3">
+            <div className="h-3 w-24 bg-neutral-300 rounded" />
+            <div className="h-10 w-72 bg-neutral-300 rounded" />
+            <div className="flex gap-2">
+              {[1,2,3,4].map(i => <div key={i} className="h-7 w-20 bg-neutral-300 rounded-full" />)}
+            </div>
+            <div className="h-10 w-48 bg-neutral-300 rounded" />
+          </div>
+        </div>
+        {/* Skeleton trust bar */}
+        <div className="bg-white border-b border-border/60 py-3 px-6">
+          <div className="flex gap-6">
+            {[1,2,3,4].map(i => <div key={i} className="h-4 w-28 bg-neutral-200 rounded animate-pulse" />)}
+          </div>
+        </div>
+        {/* Skeleton content */}
+        <div className="max-w-[1440px] mx-auto px-6 md:px-10 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="h-10 w-72 bg-neutral-200 rounded animate-pulse" />
+            <div className="h-64 bg-neutral-200 rounded-xl animate-pulse" />
+            <div className="h-40 bg-neutral-200 rounded-xl animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-96 bg-neutral-200 rounded-2xl animate-pulse" />
+            <div className="h-16 bg-neutral-200 rounded-xl animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -272,10 +327,12 @@ export default function CarDetailPage() {
       {/* ── GALLERY LIGHTBOX ─────────────────────────────────── */}
       {galleryOpen && (
         <div
+          ref={galleryRef}
           role="dialog"
           aria-modal="true"
           aria-label={t("carDetail.aria.openGallery")}
-          className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center"
+          tabIndex={-1}
+          className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center outline-none"
           onClick={() => setGalleryOpen(false)}
         >
           {/* Close */}
@@ -347,17 +404,23 @@ export default function CarDetailPage() {
 
       {/* ── HERO FULLSCREEN ─────────────────────────────────── */}
       <div ref={heroRef} className="relative w-full overflow-hidden" style={{ height: "72vh", minHeight: 520 }}>
-        {/* Background image */}
-        <img
-          src={carImages[galleryIndex]}
-          alt={`${car.brand} ${car.model}`}
-          className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700"
-          style={{ transform: heroVisible ? "scale(1)" : "scale(1.05)" }}
-        />
+        {/* Background image — click to open gallery */}
+        <button
+          onClick={() => setGalleryOpen(true)}
+          className="absolute inset-0 w-full h-full border-0 p-0 bg-transparent cursor-pointer focus:outline-none"
+          aria-label={t("carDetail.aria.openGallery")}
+        >
+          <img
+            src={carImages[galleryIndex]}
+            alt={`${car.brand} ${car.model}`}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700"
+            style={{ transform: heroVisible ? "scale(1)" : "scale(1.05)" }}
+          />
+        </button>
 
-        {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/95 via-[#0a1628]/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/60 via-transparent to-transparent" />
+        {/* Multi-layer gradient overlay (pointer-events-none so clicks pass through to button) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/95 via-[#0a1628]/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/60 via-transparent to-transparent pointer-events-none" />
 
         {/* Back nav */}
         <div
@@ -425,12 +488,22 @@ export default function CarDetailPage() {
           className="absolute bottom-0 left-0 right-0 md:right-0 px-6 md:px-10 pb-8 transition-all duration-700"
           style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(24px)" }}
         >
-          {/* Category breadcrumb */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-medium text-white/50 uppercase tracking-widest">{car.category}</span>
+          {/* Breadcrumb navigation */}
+          <nav className="flex items-center gap-1.5 mb-3" aria-label="Breadcrumb">
+            <LLink to="/" className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors no-underline">
+              {t("carDetail.breadcrumb.home")}
+            </LLink>
             <CaretRight size={10} className="text-white/30" />
-            <span className="text-xs font-medium text-white/50">{car.year}</span>
-          </div>
+            <LLink to="/flota" className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors no-underline">
+              {t("carDetail.breadcrumb.fleet")}
+            </LLink>
+            <CaretRight size={10} className="text-white/30" />
+            <LLink to={`/flota?kategoria=${car.category}`} className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors no-underline uppercase tracking-widest">
+              {car.category}
+            </LLink>
+            <CaretRight size={10} className="text-white/30" />
+            <span className="text-xs font-medium text-white/80 uppercase tracking-widest">{car.brand} {car.model}</span>
+          </nav>
 
           {/* Car name */}
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-2 drop-shadow-lg">

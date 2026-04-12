@@ -160,6 +160,10 @@
   },
   "carDetail": {
     "back": "Fleet",
+    "breadcrumb": {
+      "home": "Home",
+      "fleet": "Fleet"
+    },
     "loading": "Loading details...",
     "notFound": "Car not found",
     "backToFleet": "Back to fleet",

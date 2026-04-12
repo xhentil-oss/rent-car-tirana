@@ -160,6 +160,10 @@
   },
   "carDetail": {
     "back": "Flota",
+    "breadcrumb": {
+      "home": "Kryefaqja",
+      "fleet": "Flota"
+    },
     "loading": "Duke ngarkuar detajet...",
     "notFound": "Makina nuk u gjet",
     "backToFleet": "Kthehu te flota",
