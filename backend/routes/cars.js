@@ -5,10 +5,10 @@ const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
 
-const VALID_CATEGORIES = ['Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Convertible'];
-const VALID_TRANSMISSIONS = ['Automatic', 'Manual'];
-const VALID_FUELS = ['Petrol', 'Diesel', 'Hybrid', 'Electric'];
-const VALID_STATUSES = ['Available', 'Rented', 'Maintenance', 'Out of Service'];
+const VALID_CATEGORIES = ['Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Convertible', 'Ekonomike', 'Luksoze', 'Familjare', 'Automatike', 'Sportive', 'Minivan'];
+const VALID_TRANSMISSIONS = ['Automatic', 'Manual', 'Automatike', 'Manuale'];
+const VALID_FUELS = ['Petrol', 'Diesel', 'Hybrid', 'Electric', 'Benzinë', 'Benzine', 'Naftë', 'Nafte', 'Hibrid', 'Elektrik'];
+const VALID_STATUSES = ['Available', 'Rented', 'Maintenance', 'Out of Service', 'Në dispozicion', 'I rezervuar', 'Në mirëmbajtje'];
 
 const toCamel = (r) => ({
   id: r.id, brand: r.brand, model: r.model, year: r.year,
