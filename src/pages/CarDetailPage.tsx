@@ -124,6 +124,9 @@ export default function CarDetailPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const car = (allCars ?? []).find((c) => c.slug === slug);
+  const carImages = useMemo(() => car ? getCarImages(car.image) : [], [car?.image]);
+
   // Gallery keyboard navigation + focus trap
   useEffect(() => {
     if (!galleryOpen) return;
@@ -153,8 +156,6 @@ export default function CarDetailPage() {
     return () => { window.removeEventListener("keydown", handleKey); document.body.style.overflow = prevOverflow; };
   }, [galleryOpen, carImages.length]);
 
-  const car = (allCars ?? []).find((c) => c.slug === slug);
-
   // Dynamic SEO per car — called unconditionally (hooks rule)
   useSEO(
     car
@@ -180,6 +181,53 @@ export default function CarDetailPage() {
           canonical: "/flota",
         }
   );
+
+  const relatedCars = useMemo(() => (allCars ?? [])
+    .filter((c) => car ? c.category === car.category && c.id !== car.id : false)
+    .slice(0, 3), [allCars, car?.category, car?.id]);
+
+  const days = useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [startDate, endDate]);
+
+  // Live availability check
+  const dateConflict = useMemo(() => {
+    if (!startDate || !endDate || !car) return false;
+    const reqStart = new Date(startDate).getTime();
+    const reqEnd = new Date(endDate).getTime();
+    const activeReservations = (allReservations ?? []).filter(
+      (r) => r.carId === car.id && r.status !== "Cancelled" && r.status !== "Completed"
+    );
+    return activeReservations.some((r) => {
+      const rStart = new Date(r.startDate).getTime();
+      const rEnd = new Date(r.endDate).getTime();
+      return reqStart < rEnd && reqEnd > rStart;
+    });
+  }, [startDate, endDate, allReservations, car?.id]);
+
+  // Reviews — prefer DB, fallback to i18n static
+  const reviews = useMemo(() => {
+    if (dbReviews && dbReviews.length > 0) {
+      return dbReviews.map((r) => ({
+        id: r.id,
+        authorName: r.authorName,
+        rating: r.rating,
+        text: r.text,
+        avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+        date: new Date(r.createdAt).toLocaleDateString("sq-AL", { month: "long", year: "numeric" }),
+      }));
+    }
+    return (t("carDetail.staticReviews", { returnObjects: true }) as { authorName: string; rating: number; text: string; date: string }[]).map((r, i) => ({
+      id: `r${i + 1}`,
+      authorName: r.authorName,
+      rating: r.rating,
+      text: r.text,
+      avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+      date: r.date,
+    }));
+  }, [dbReviews, t]);
 
   if (isPending) {
     return (
@@ -230,32 +278,8 @@ export default function CarDetailPage() {
     );
   }
 
-  const relatedCars = useMemo(() => (allCars ?? [])
-    .filter((c) => c.category === car.category && c.id !== car.id)
-    .slice(0, 3), [allCars, car.category, car.id]);
-
-  const days = useMemo(() => {
-    if (!startDate || !endDate) return 0;
-    const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }, [startDate, endDate]);
   const total = days * car.pricePerDay;
   const today = new Date().toISOString().split("T")[0];
-
-  // Live availability check
-  const dateConflict = useMemo(() => {
-    if (!startDate || !endDate) return false;
-    const reqStart = new Date(startDate).getTime();
-    const reqEnd = new Date(endDate).getTime();
-    const activeReservations = (allReservations ?? []).filter(
-      (r) => r.carId === car.id && r.status !== "Cancelled" && r.status !== "Completed"
-    );
-    return activeReservations.some((r) => {
-      const rStart = new Date(r.startDate).getTime();
-      const rEnd = new Date(r.endDate).getTime();
-      return reqStart < rEnd && reqEnd > rStart;
-    });
-  }, [startDate, endDate, allReservations, car.id]);
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
   const available = !carIsUnavailable && !dateConflict;
@@ -276,30 +300,6 @@ export default function CarDetailPage() {
     { icon: MapPin, label: t("carDetail.specs.category"), value: car.category },
     { icon: ShieldCheck, label: t("carDetail.specs.insurance"), value: t("carDetail.specs.insuranceValue") },
   ];
-
-  const carImages = useMemo(() => getCarImages(car.image), [car.image]);
-
-  // Reviews — prefer DB, fallback to i18n static
-  const reviews = useMemo(() => {
-    if (dbReviews && dbReviews.length > 0) {
-      return dbReviews.map((r) => ({
-        id: r.id,
-        authorName: r.authorName,
-        rating: r.rating,
-        text: r.text,
-        avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
-        date: new Date(r.createdAt).toLocaleDateString("sq-AL", { month: "long", year: "numeric" }),
-      }));
-    }
-    return (t("carDetail.staticReviews", { returnObjects: true }) as { authorName: string; rating: number; text: string; date: string }[]).map((r, i) => ({
-      id: `r${i + 1}`,
-      authorName: r.authorName,
-      rating: r.rating,
-      text: r.text,
-      avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
-      date: r.date,
-    }));
-  }, [dbReviews, t]);
 
   const avgRating = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
 
