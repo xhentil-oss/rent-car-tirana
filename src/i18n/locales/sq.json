@@ -394,5 +394,10 @@
     "viewAll": "Shiko të gjithë flotën",
     "perDay": "/ditë"
   },
-  "skipToContent": "Përmbajtja kryesore"
+  "skipToContent": "Përmbajtja kryesore",
+  "errors": {
+    "bookingFailed": "Rezervimi dështoi. Provoni përsëri.",
+    "loginFailed": "Email ose fjalëkalimi i gabuar",
+    "generic": "Ndodhi një gabim"
+  }
 }

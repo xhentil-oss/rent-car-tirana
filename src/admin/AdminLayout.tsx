@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, Outlet, Navigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Car,
   Users,
@@ -39,6 +40,7 @@ const navItems = [
   { label: "Cilësimet", href: "/admin/cilesimet", icon: Gear, group: "system" },  { label: "Blog", href: "/admin/blog", icon: Article, group: "system" },];
 
 function AdminLoginForm({ login }: { login: (email: string, password: string) => Promise<any> }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -51,7 +53,7 @@ function AdminLoginForm({ login }: { login: (email: string, password: string) =>
     try {
       await login(email, password);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Email ose fjalëkalimi i gabuar");
+      setError(err instanceof Error ? err.message : t("errors.loginFailed"));
     } finally {
       setLoading(false);
     }

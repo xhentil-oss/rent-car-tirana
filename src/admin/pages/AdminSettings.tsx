@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
@@ -89,6 +90,7 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
 ];
 
 export default function AdminSettings() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -135,7 +137,7 @@ export default function AdminSettings() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Ndodhi një gabim");
+      setError(err instanceof Error ? err.message : t("errors.generic"));
     } finally {
       setSaving(false);
     }

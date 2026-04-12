@@ -367,7 +367,7 @@ export default function BookingPage() {
         },
       });
     } catch (err: unknown) {
-      setBookingError(err instanceof Error ? err.message : "Rezervimi dështoi. Provoni përsëri.");
+      setBookingError(err instanceof Error ? err.message : t("errors.bookingFailed"));
     } finally {
       setSaving(false);
     }

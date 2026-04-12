@@ -394,5 +394,10 @@
     "viewAll": "View all fleet",
     "perDay": "/day"
   },
-  "skipToContent": "Skip to main content"
+  "skipToContent": "Skip to main content",
+  "errors": {
+    "bookingFailed": "Booking failed. Please try again.",
+    "loginFailed": "Incorrect email or password",
+    "generic": "An error occurred"
+  }
 }
