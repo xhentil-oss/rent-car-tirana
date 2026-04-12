@@ -34,8 +34,12 @@ app.use(helmet({
   },
 }));
 app.use(compression());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'https://rentcartiranaairport.com')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://rentcartiranaairport.com',
+  origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));

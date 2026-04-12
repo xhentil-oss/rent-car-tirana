@@ -1,8 +1,7 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, requireRole } = require('../middleware/auth');
-const { ADMIN_ROLES } = require('../middleware/auth');
+const { authenticate, requireRole, ADMIN_ROLES } = require('../middleware/auth');
 
 const toSnake = (r) => ({
   id: r.id, customerId: r.customer_id, type: r.type,
@@ -12,7 +11,9 @@ const toSnake = (r) => ({
 
 router.get('/', authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM communication_logs ORDER BY timestamp DESC');
+    const { limit = 200, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT * FROM communication_logs ORDER BY timestamp DESC LIMIT ? OFFSET ?',
+      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(toSnake));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

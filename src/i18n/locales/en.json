@@ -381,5 +381,17 @@
       "Completed": "Completed",
       "Cancelled": "Cancelled"
     }
+  },
+  "notFoundPage": {
+    "title": "Page not found!",
+    "description": "The page you are looking for does not exist or has been moved. Did you type the wrong address?",
+    "redirecting": "Automatically redirecting to homepage in",
+    "seconds": "seconds...",
+    "home": "Homepage",
+    "viewCars": "View cars",
+    "goBack": "Go back",
+    "recommended": "Recommended cars",
+    "viewAll": "View all fleet",
+    "perDay": "/day"
   }
 }

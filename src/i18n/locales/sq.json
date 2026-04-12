@@ -381,5 +381,17 @@
       "Completed": "Përfunduar",
       "Cancelled": "Anuluar"
     }
+  },
+  "notFoundPage": {
+    "title": "Faqja nuk u gjet!",
+    "description": "Faqja që po kërkoni nuk ekziston ose është zhvendosur. Ndoshta keni shtypur adresën gabim?",
+    "redirecting": "Duke u ridrejtuar automatikisht te kryefaqja pas",
+    "seconds": "sekondash...",
+    "home": "Kryefaqja",
+    "viewCars": "Shiko makinat",
+    "goBack": "Kthehu prapa",
+    "recommended": "Makina të rekomanduara",
+    "viewAll": "Shiko të gjithë flotën",
+    "perDay": "/ditë"
   }
 }

@@ -16,11 +16,13 @@ const fmt = (r) => ({
 router.get('/', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { conversationId, limit = 200, offset = 0 } = req.query;
+    const safeLim = Math.min(Math.max(1, Number(limit) || 200), 500);
+    const safeOff = Math.max(0, Number(offset) || 0);
     let sql = 'SELECT * FROM chat_messages WHERE 1=1';
     const params = [];
     if (conversationId) { sql += ' AND conversation_id = ?'; params.push(conversationId); }
     sql += ' ORDER BY created_at ASC LIMIT ? OFFSET ?';
-    params.push(Number(limit), Number(offset));
+    params.push(safeLim, safeOff);
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }

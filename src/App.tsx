@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LocaleProvider } from "./hooks/useLocale";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -7,37 +7,39 @@ import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
 import CarDetailPage from "./pages/CarDetailPage";
 import BookingPage from "./pages/BookingPage";
-import MyAccountPage from "./pages/MyAccountPage";
-import AdminLayout from "./admin/AdminLayout";
-import AdminDashboard from "./admin/pages/AdminDashboard";
-import AdminCars from "./admin/pages/AdminCars";
-import AdminCustomers from "./admin/pages/AdminCustomers";
-import AdminReservations from "./admin/pages/AdminReservations";
-import AdminCalendar from "./admin/pages/AdminCalendar";
-import AdminReports from "./admin/pages/AdminReports";
-import AdminFinance from "./admin/pages/AdminFinance";
-import AdminUsers from "./admin/pages/AdminUsers";
-import AdminFleetManagement from "./admin/pages/AdminFleetManagement";
-import AdminReviews from "./admin/pages/AdminReviews";
-import AdminPricingRules from "./admin/pages/AdminPricingRules";
-import AdminCarEdit from "./admin/pages/AdminCarEdit";
-import AdminMedia from "./admin/pages/AdminMedia";
-import AdminSettings from "./admin/pages/AdminSettings";
-import AdminBlog from "./admin/pages/AdminBlog";
-import ReviewsPage from "./pages/ReviewsPage";
-import MakinaQeraTirana from "./pages/seo/MakinaQeraTirana";
-import MakineAeroport from "./pages/seo/MakineAeroport";
-import MakinaSUV from "./pages/seo/MakinaSUV";
-import MakinaAutomatike from "./pages/seo/MakinaAutomatike";
-import MakinaLuksoze from "./pages/seo/MakinaLuksoze";
-import SitemapPage from "./pages/SitemapPage";
-import ContactPage from "./pages/ContactPage";
-import TermsPage from "./pages/TermsPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import ThankYouPage from "./pages/ThankYouPage";
-import BlogPage from "./pages/BlogPage";
-import BlogPostPage from "./pages/BlogPostPage";
+
+// Lazy-loaded pages (admin + low-traffic)
+const MyAccountPage = React.lazy(() => import("./pages/MyAccountPage"));
+const AdminLayout = React.lazy(() => import("./admin/AdminLayout"));
+const AdminDashboard = React.lazy(() => import("./admin/pages/AdminDashboard"));
+const AdminCars = React.lazy(() => import("./admin/pages/AdminCars"));
+const AdminCustomers = React.lazy(() => import("./admin/pages/AdminCustomers"));
+const AdminReservations = React.lazy(() => import("./admin/pages/AdminReservations"));
+const AdminCalendar = React.lazy(() => import("./admin/pages/AdminCalendar"));
+const AdminReports = React.lazy(() => import("./admin/pages/AdminReports"));
+const AdminFinance = React.lazy(() => import("./admin/pages/AdminFinance"));
+const AdminUsers = React.lazy(() => import("./admin/pages/AdminUsers"));
+const AdminFleetManagement = React.lazy(() => import("./admin/pages/AdminFleetManagement"));
+const AdminReviews = React.lazy(() => import("./admin/pages/AdminReviews"));
+const AdminPricingRules = React.lazy(() => import("./admin/pages/AdminPricingRules"));
+const AdminCarEdit = React.lazy(() => import("./admin/pages/AdminCarEdit"));
+const AdminMedia = React.lazy(() => import("./admin/pages/AdminMedia"));
+const AdminSettings = React.lazy(() => import("./admin/pages/AdminSettings"));
+const AdminBlog = React.lazy(() => import("./admin/pages/AdminBlog"));
+const ReviewsPage = React.lazy(() => import("./pages/ReviewsPage"));
+const MakinaQeraTirana = React.lazy(() => import("./pages/seo/MakinaQeraTirana"));
+const MakineAeroport = React.lazy(() => import("./pages/seo/MakineAeroport"));
+const MakinaSUV = React.lazy(() => import("./pages/seo/MakinaSUV"));
+const MakinaAutomatike = React.lazy(() => import("./pages/seo/MakinaAutomatike"));
+const MakinaLuksoze = React.lazy(() => import("./pages/seo/MakinaLuksoze"));
+const SitemapPage = React.lazy(() => import("./pages/SitemapPage"));
+const ContactPage = React.lazy(() => import("./pages/ContactPage"));
+const TermsPage = React.lazy(() => import("./pages/TermsPage"));
+const PrivacyPage = React.lazy(() => import("./pages/PrivacyPage"));
+const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
+const ThankYouPage = React.lazy(() => import("./pages/ThankYouPage"));
+const BlogPage = React.lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = React.lazy(() => import("./pages/BlogPostPage"));
 
 /* Route definition: [Albanian path, English path, Component] */
 const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
@@ -61,6 +63,14 @@ const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
   ["/blog/:slug",                "/en/blog/:slug",            BlogPostPage],
 ];
 
+function LazyFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -71,7 +81,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
         Përmbajtja kryesore
       </a>
       <Header />
-      <main id="main-content"><ErrorBoundary>{children}</ErrorBoundary></main>
+      <main id="main-content"><ErrorBoundary><Suspense fallback={<LazyFallback />}>{children}</Suspense></ErrorBoundary></main>
     </div>
   );
 }
@@ -90,7 +100,7 @@ export default function App() {
           ))}
 
           {/* Admin Routes (no language prefix) */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<Suspense fallback={<LazyFallback />}><AdminLayout /></Suspense>}>
             <Route index element={<AdminDashboard />} />
             <Route path="flota" element={<AdminCars />} />
             <Route path="klientet" element={<AdminCustomers />} />

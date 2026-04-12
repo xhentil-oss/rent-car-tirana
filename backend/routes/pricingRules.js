@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE is_active = 1 ORDER BY priority DESC, created_at DESC');
     // Hide promo codes and sensitive fields from public
+    res.set('Cache-Control', 'public, max-age=60');
     res.json(rows.map(r => ({
       id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
       discountValue: r.discount_value, startDate: r.start_date, endDate: r.end_date,
@@ -34,7 +35,9 @@ router.get('/', async (req, res) => {
 // Admin GET — full data including promo codes
 router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM pricing_rules ORDER BY priority DESC, created_at DESC');
+    const { limit = 200, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT * FROM pricing_rules ORDER BY priority DESC, created_at DESC LIMIT ? OFFSET ?',
+      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

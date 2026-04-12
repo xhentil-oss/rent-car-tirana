@@ -1,8 +1,9 @@
+import React from "react";
 import LLink from "./LLink";
 import { useTranslation } from "react-i18next";
 import { Car, FacebookLogo, InstagramLogo, MapPin, Phone, EnvelopeSimple } from "@phosphor-icons/react";
 
-export default function Footer() {
+function Footer() {
   const { t } = useTranslation();
 
   return (
@@ -145,3 +146,5 @@ export default function Footer() {
     </footer>
   );
 }
+
+export default React.memo(Footer);

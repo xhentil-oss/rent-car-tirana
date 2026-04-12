@@ -17,7 +17,9 @@ router.get('/', async (req, res) => {
 // Admin — all reviews (requires auth)
 router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+    const { limit = 200, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

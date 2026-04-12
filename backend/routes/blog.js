@@ -28,10 +28,12 @@ const fmt = (r) => ({
 // Public — published posts only
 router.get('/', async (req, res) => {
   try {
+    const { limit = 50, offset = 0 } = req.query;
     const [rows] = await pool.query(
-      'SELECT * FROM blog_posts WHERE status = ? ORDER BY published_at DESC',
-      ['published']
+      'SELECT * FROM blog_posts WHERE status = ? ORDER BY published_at DESC LIMIT ? OFFSET ?',
+      ['published', Math.min(Math.max(1, Number(limit) || 50), 500), Math.max(0, Number(offset) || 0)]
     );
+    res.set('Cache-Control', 'public, max-age=60');
     res.json(rows.map(fmt));
   } catch (err) {
     console.error(err);
@@ -47,6 +49,7 @@ router.get('/slug/:slug', async (req, res) => {
       [req.params.slug, 'published']
     );
     if (!rows.length) return res.status(404).json({ error: 'Postimi nuk u gjet.' });
+    res.set('Cache-Control', 'public, max-age=120');
     res.json(fmt(rows[0]));
   } catch (err) {
     console.error(err);
@@ -57,7 +60,9 @@ router.get('/slug/:slug', async (req, res) => {
 // Admin — all posts (drafts + published)
 router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM blog_posts ORDER BY created_at DESC');
+    const { limit = 100, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(fmt));
   } catch (err) {
     console.error(err);

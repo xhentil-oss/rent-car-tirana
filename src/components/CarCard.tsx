@@ -24,7 +24,7 @@ interface CarCardProps {
   className?: string;
 }
 
-export default function CarCard({ car, className = "" }: CarCardProps) {
+function CarCard({ car, className = "" }: CarCardProps) {
   const { t } = useTranslation();
 
   const statusColor =
@@ -147,3 +147,5 @@ export default function CarCard({ car, className = "" }: CarCardProps) {
     </article>
   );
 }
+
+export default React.memo(CarCard);

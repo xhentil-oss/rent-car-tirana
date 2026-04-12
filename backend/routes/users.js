@@ -8,7 +8,9 @@ const fmt = (r) => ({ id: r.id, email: r.email, name: r.name, role: r.role, isAc
 
 router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users ORDER BY created_at DESC');
+    const { limit = 200, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [Math.min(Math.max(1, Number(limit) || 200), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

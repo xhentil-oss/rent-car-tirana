@@ -64,6 +64,7 @@ router.get('/public', async (req, res) => {
     for (const row of rows) {
       data[row.setting_key] = row.setting_value;
     }
+    res.set('Cache-Control', 'public, max-age=300');
     res.json(data);
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });

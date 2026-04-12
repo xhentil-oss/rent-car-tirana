@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import LLink from "../components/LLink";
 import { useLocale } from "../hooks/useLocale";
 import { useQuery } from "../hooks/useApi";
@@ -17,6 +18,7 @@ import Header from "../components/Header";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { localePath } = useLocale();
   const { data: featuredCars } = useQuery("Car", {
     where: { featured: true, status: "Disponueshëm" },
@@ -59,18 +61,17 @@ export default function NotFoundPage() {
 
         {/* Message */}
         <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-3">
-          Faqja nuk u gjet!
+          {t("notFoundPage.title")}
         </h2>
         <p className="text-neutral-500 text-base max-w-md mx-auto mb-2 leading-relaxed">
-          Faqja që po kërkoni nuk ekziston ose është zhvendosur.
-          Ndoshta keni shtypur adresën gabim?
+          {t("notFoundPage.description")}
         </p>
         <p className="text-sm text-neutral-400 mb-8">
-          Duke u ridrejtuar automatikisht te kryefaqja pas{" "}
+          {t("notFoundPage.redirecting")}{" "}
           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold mx-1">
             {count}
           </span>{" "}
-          sekondash...
+          {t("notFoundPage.seconds")}
         </p>
 
         {/* Action buttons */}
@@ -80,14 +81,14 @@ export default function NotFoundPage() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-primary text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all duration-200 no-underline shadow-btn-primary"
           >
             <House size={18} weight="fill" />
-            Kryefaqja
+            {t("notFoundPage.home")}
           </LLink>
           <LLink
             to="/flota"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border text-neutral-700 font-semibold text-sm hover:bg-neutral-50 hover:border-primary/40 active:scale-[0.98] transition-all duration-200 no-underline"
           >
             <Car size={18} weight="duotone" className="text-primary" />
-            Shiko makinat
+            {t("notFoundPage.viewCars")}
             <ArrowRight size={15} weight="bold" className="text-primary" />
           </LLink>
           <button
@@ -95,7 +96,7 @@ export default function NotFoundPage() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border text-neutral-700 font-semibold text-sm hover:bg-neutral-50 active:scale-[0.98] transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft size={15} weight="bold" />
-            Kthehu prapa
+            {t("notFoundPage.goBack")}
           </button>
         </div>
 
@@ -105,7 +106,7 @@ export default function NotFoundPage() {
             <div className="flex items-center gap-2 justify-center mb-5">
               <Binoculars size={16} weight="bold" className="text-neutral-400" />
               <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">
-                Makina të rekomanduara
+                {t("notFoundPage.recommended")}
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -130,7 +131,7 @@ export default function NotFoundPage() {
                   </div>
                   <div className="p-3 flex items-center justify-between">
                     <span className="text-xs text-neutral-500">{car.category} · {car.year}</span>
-                    <span className="text-sm font-bold text-primary">€{car.pricePerDay}/ditë</span>
+                    <span className="text-sm font-bold text-primary">€{car.pricePerDay}{t("notFoundPage.perDay")}</span>
                   </div>
                 </LLink>
               ))}
@@ -140,7 +141,7 @@ export default function NotFoundPage() {
                 to="/flota"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary no-underline hover:gap-2.5 transition-all duration-200"
               >
-                Shiko të gjithë flotën
+                {t("notFoundPage.viewAll")}
                 <ArrowRight size={14} weight="bold" />
               </LLink>
             </div>

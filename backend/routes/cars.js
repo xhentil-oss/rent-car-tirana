@@ -29,6 +29,7 @@ router.get('/', async (req, res) => {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
     const [rows] = await pool.query(sql, params);
+    res.set('Cache-Control', 'public, max-age=30');
     res.json(rows.map(toSnake));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
