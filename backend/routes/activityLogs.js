@@ -14,7 +14,7 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
     if (action) { sql += ' AND al.action = ?'; p.push(action); }
     if (userId) { sql += ' AND al.user_id = ?'; p.push(userId); }
     sql += ' ORDER BY al.timestamp DESC LIMIT ? OFFSET ?';
-    p.push(Number(limit), Number(offset));
+    p.push(Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0));
     const [rows] = await pool.query(sql, p);
     res.json(rows);
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }

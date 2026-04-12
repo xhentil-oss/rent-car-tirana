@@ -8,7 +8,8 @@ const fmt = (r) => ({ id: r.id, rating: r.rating, text: r.text, authorName: r.au
 // Public — only approved
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM reviews WHERE approved = 1 ORDER BY created_at DESC');
+    const { limit = 100, offset = 0 } = req.query;
+    const [rows] = await pool.query('SELECT * FROM reviews WHERE approved = 1 ORDER BY created_at DESC LIMIT ? OFFSET ?', [Math.min(Math.max(1, Number(limit) || 100), 500), Math.max(0, Number(offset) || 0)]);
     res.json(rows.map(fmt));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
@@ -36,6 +37,8 @@ router.post('/', async (req, res) => {
     if (!authorName || !authorName.trim()) {
       return res.status(400).json({ error: 'Emri i autorit është i detyruar.' });
     }
+    if (text.length > 2000) return res.status(400).json({ error: 'Teksti shumë i gjatë (max 2000 karaktere).' });
+    if (authorName.length > 100) return res.status(400).json({ error: 'Emri shumë i gjatë (max 100 karaktere).' });
     const id = uuidv4();
     await pool.query('INSERT INTO reviews (id, rating, text, author_name, aspects, approved) VALUES (?,?,?,?,?,0)', [id, Number(rating), text, authorName, aspects || null]);
     const [rows] = await pool.query('SELECT * FROM reviews WHERE id = ?', [id]);

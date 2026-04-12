@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LocaleProvider } from "./hooks/useLocale";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
@@ -70,7 +71,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
         Përmbajtja kryesore
       </a>
       <Header />
-      <main id="main-content">{children}</main>
+      <main id="main-content"><ErrorBoundary>{children}</ErrorBoundary></main>
     </div>
   );
 }

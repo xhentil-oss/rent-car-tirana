@@ -55,7 +55,19 @@ const apiLimiter = rateLimit({
   message: { error: 'Shumë kërkesa. Provoni më vonë.' },
 });
 
+// Stricter limiter for public POST endpoints (booking, reviews, customers)
+const publicPostLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Shumë kërkesa. Provoni pas 15 minutash.' },
+});
+
 // ─── ROUTES ───────────────────────────────────────────────────
+// Stricter rate limits on public POST endpoints (booking spam, review flood)
+app.post('/api/customers', publicPostLimiter);
+app.post('/api/reservations', publicPostLimiter);
+app.post('/api/reviews', publicPostLimiter);
+
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/cars',          apiLimiter,  require('./routes/cars'));
 app.use('/api/customers',     apiLimiter,  require('./routes/customers'));

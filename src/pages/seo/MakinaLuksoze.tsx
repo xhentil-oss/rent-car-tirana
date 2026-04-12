@@ -90,11 +90,11 @@ export default function MakinaLuksoze() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               "Interier lëkure me ngrohje / freskësi",
-              "Ekran panoramik &amp; Head-Up Display",
-              "Sistem audio premium (Bang &amp; Olufsen / Harman)",
+              "Ekran panoramik & Head-Up Display",
+              "Sistem audio premium (Bang & Olufsen / Harman)",
               "Klimë 4-zonë automatike",
               "Sigurim komplete gjithëpërfshirës",
-              "Kamera 360° &amp; Park Assist",
+              "Kamera 360° & Park Assist",
               "Adaptive Cruise Control &amp; Lane Assist",
               "Wireless charging + 4 porte USB",
               "Marrje falas nga Aeroporti 24/7",
@@ -102,7 +102,7 @@ export default function MakinaLuksoze() {
             ].map((f) => (
               <div key={f} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-amber-100">
                 <CheckCircle size={16} weight="fill" className="text-amber-500 shrink-0" />
-                <span className="text-sm text-neutral-700" dangerouslySetInnerHTML={{ __html: f }} />
+                <span className="text-sm text-neutral-700">{f}</span>
               </div>
             ))}
           </div>

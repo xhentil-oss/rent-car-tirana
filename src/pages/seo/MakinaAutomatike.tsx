@@ -89,14 +89,14 @@ export default function MakinaAutomatike() {
               "Ideal për drejtues ndërkombëtarë",
               "Klimë automatike duale",
               "Adaptur për rrugë qyteti dhe autostradë",
-              "Bluetooth &amp; smartphone integration",
+              "Bluetooth & smartphone integration",
               "Sigurim i plotë bazik i përfshirë",
               "Marrje falas nga Aeroporti Nënë Tereza",
               "Disponueshëm 24/7 online",
             ].map((f) => (
               <div key={f} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border">
                 <CheckCircle size={16} weight="fill" className="text-emerald-500 shrink-0" />
-                <span className="text-sm text-neutral-700" dangerouslySetInnerHTML={{ __html: f }} />
+                <span className="text-sm text-neutral-700">{f}</span>
               </div>
             ))}
           </div>

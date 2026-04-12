@@ -38,13 +38,16 @@ router.post('/', async (req, res) => {
     // Honeypot bot protection
     if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!email || !email.trim()) return res.status(400).json({ error: 'Email është i detyrueshëm.' });
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ error: 'Email format i pavlefshëm.' });
+    if (name && name.length > 255) return res.status(400).json({ error: 'Emri shumë i gjatë.' });
     // Check if customer with this email already exists (match by email only, not OR phone)
     const [existing] = await pool.query(
-      'SELECT * FROM customers WHERE email = ?', [email]
+      'SELECT id FROM customers WHERE email = ?', [email]
     );
     if (existing.length) {
-      // Return existing customer without overwriting their data
-      return res.json(fmt(existing[0]));
+      // Return only id — do not leak PII to unauthenticated callers
+      return res.json({ id: existing[0].id });
     }
     const id = uuidv4();
     const createdBy = req.user ? req.user.id : null;

@@ -22,7 +22,9 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
     if (existing.length) return res.status(409).json({ error: 'Email ekziston.' });
     const hash = await bcrypt.hash(password, 12);
     const id = uuidv4();
-    await pool.query('INSERT INTO users (id, email, name, password, role, permissions) VALUES (?,?,?,?,?,?)', [id, email, name, hash, role || 'staff', permissions || '']);
+    const VALID_ROLES = ['admin', 'manager', 'staff', 'accountant'];
+    const safeRole = VALID_ROLES.includes(role) ? role : 'staff';
+    await pool.query('INSERT INTO users (id, email, name, password, role, permissions) VALUES (?,?,?,?,?,?)', [id, email, name, hash, safeRole, permissions || '']);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'User', entityId: id, description: `Përdorues i ri: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT id, email, name, role, is_active, two_factor_enabled, permissions, last_login, created_at FROM users WHERE id = ?', [id]);
     res.status(201).json(fmt(rows[0]));

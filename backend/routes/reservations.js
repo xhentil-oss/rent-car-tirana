@@ -142,15 +142,26 @@ router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff
 
 router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
-    const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : undefined;
+    const fmtDate = (d) => {
+      if (!d) return undefined;
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) throw new Error('Datë e pavlefshme.');
+      return dt.toISOString().slice(0, 10);
+    };
+    let sd, ed;
+    try {
+      sd = req.body.startDate ? fmtDate(req.body.startDate) : undefined;
+      ed = req.body.endDate ? fmtDate(req.body.endDate) : undefined;
+    } catch { return res.status(400).json({ error: 'Datat janë të pavlefshme.' }); }
+
     const fields = {
       car_id: req.body.carId,
       customer_id: req.body.customerId,
       pickup_location: req.body.pickupLocation,
       dropoff_location: req.body.dropoffLocation,
-      start_date: req.body.startDate ? fmtDate(req.body.startDate) : undefined,
+      start_date: sd,
       start_time: req.body.startTime,
-      end_date: req.body.endDate ? fmtDate(req.body.endDate) : undefined,
+      end_date: ed,
       end_time: req.body.endTime,
       notes: req.body.notes,
       source: req.body.source,
@@ -164,39 +175,55 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
     if (fields.status && !VALID_STATUSES.includes(fields.status)) {
       return res.status(400).json({ error: `Statusi duhet të jetë një nga: ${VALID_STATUSES.join(', ')}` });
     }
-    // If dates or car changed, recalculate price and check overlap
-    const [currentRows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
-    if (!currentRows.length) return res.status(404).json({ error: 'Rezervimi nuk u gjet.' });
-    const current = currentRows[0];
-    const newCarId = fields.car_id || current.car_id;
-    const newSd = fields.start_date || current.start_date;
-    const newEd = fields.end_date || current.end_date;
-    const datesOrCarChanged = fields.car_id || fields.start_date || fields.end_date;
 
-    if (datesOrCarChanged) {
-      // Double-booking check (exclude current reservation)
-      const [overlap] = await pool.query(
-        "SELECT id FROM reservations WHERE car_id = ? AND id != ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
-        [newCarId, req.params.id, fmtDate(newEd), fmtDate(newSd)]
-      );
-      if (overlap.length) {
-        return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
-      }
-      // Recalculate price server-side
-      const [carRows] = await pool.query('SELECT price_per_day FROM cars WHERE id = ?', [newCarId]);
-      if (carRows.length) {
+    // Transaction with row lock for date/car changes
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const [currentRows] = await conn.query('SELECT * FROM reservations WHERE id = ? FOR UPDATE', [req.params.id]);
+      if (!currentRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Rezervimi nuk u gjet.' }); }
+      const current = currentRows[0];
+      const newCarId = fields.car_id || current.car_id;
+      const newSd = fields.start_date || current.start_date;
+      const newEd = fields.end_date || current.end_date;
+      const datesOrCarChanged = fields.car_id || fields.start_date || fields.end_date;
+
+      if (datesOrCarChanged) {
+        // Lock car row and check overlap
+        const [carRows] = await conn.query('SELECT price_per_day, quantity FROM cars WHERE id = ? FOR UPDATE', [newCarId]);
+        if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
+        const carQuantity = Number(carRows[0].quantity) || 1;
+
+        const [overlap] = await conn.query(
+          "SELECT COUNT(*) AS cnt FROM reservations WHERE car_id = ? AND id != ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
+          [newCarId, req.params.id, newEd, newSd]
+        );
+        if (overlap[0].cnt >= carQuantity) {
+          await conn.rollback(); conn.release();
+          return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
+        }
+        // Recalculate price
         const msPerDay = 86400000;
         const days = Math.max(1, Math.ceil((new Date(newEd) - new Date(newSd)) / msPerDay));
         fields.total_price = +(Number(carRows[0].price_per_day) * days).toFixed(2);
       }
+
+      const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
+      if (!entries.length) { await conn.rollback(); conn.release(); return res.status(400).json({ error: 'Asnjë fushë për të ndryshuar.' }); }
+      const setClauses = entries.map(([k]) => `${k} = ?`).join(', ');
+      const values = entries.map(([, v]) => v);
+      values.push(req.params.id);
+      await conn.query(`UPDATE reservations SET ${setClauses} WHERE id = ?`, values);
+
+      await conn.commit();
+      conn.release();
+    } catch (txErr) {
+      await conn.rollback();
+      conn.release();
+      throw txErr;
     }
-    // Only update fields that were actually sent
-    const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
-    if (!entries.length) return res.status(400).json({ error: 'Asnjë fushë për të ndryshuar.' });
-    const setClauses = entries.map(([k]) => `${k} = ?`).join(', ');
-    const values = entries.map(([, v]) => v);
-    values.push(req.params.id);
-    await pool.query(`UPDATE reservations SET ${setClauses} WHERE id = ?`, values);
+
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u ndryshua`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));

@@ -1,7 +1,13 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
+const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity } = require('../middleware/auth');
+
+const VALID_CATEGORIES = ['Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Convertible'];
+const VALID_TRANSMISSIONS = ['Automatic', 'Manual'];
+const VALID_FUELS = ['Petrol', 'Diesel', 'Hybrid', 'Electric'];
+const VALID_STATUSES = ['Available', 'Rented', 'Maintenance', 'Out of Service'];
 
 const toSnake = (r) => ({
   id: r.id, brand: r.brand, model: r.model, year: r.year,
@@ -35,7 +41,20 @@ router.get('/:id', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+router.post('/', authenticate, requireRole('admin', 'manager'), [
+  body('brand').notEmpty().isLength({ max: 100 }),
+  body('model').notEmpty().isLength({ max: 100 }),
+  body('year').isInt({ min: 1990, max: new Date().getFullYear() + 2 }),
+  body('pricePerDay').isFloat({ min: 0, max: 99999 }),
+  body('seats').optional().isInt({ min: 1, max: 50 }),
+  body('category').optional().isIn(VALID_CATEGORIES),
+  body('transmission').optional().isIn(VALID_TRANSMISSIONS),
+  body('fuel').optional().isIn(VALID_FUELS),
+  body('status').optional().isIn(VALID_STATUSES),
+  body('quantity').optional().isInt({ min: 1, max: 100 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
     const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured, quantity, description } = req.body;
     const id = uuidv4();

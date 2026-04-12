@@ -1,7 +1,11 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
+const { body, validationResult } = require('express-validator');
 const pool = require('../database/db');
 const { authenticate, requireRole } = require('../middleware/auth');
+
+const VALID_TYPES = ['seasonal', 'duration', 'early_bird', 'last_minute', 'promo_code', 'loyalty'];
+const VALID_DISCOUNT_TYPES = ['percentage', 'fixed'];
 
 const fmt = (r) => ({
   id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
@@ -35,7 +39,14 @@ router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, 
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+router.post('/', authenticate, requireRole('admin', 'manager'), [
+  body('name').notEmpty().isLength({ max: 200 }),
+  body('type').optional().isIn(VALID_TYPES),
+  body('discountType').optional().isIn(VALID_DISCOUNT_TYPES),
+  body('discountValue').isFloat({ min: 0, max: 100 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
     const { name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
     const id = uuidv4();

@@ -154,7 +154,7 @@ export function useLazyQuery(entity: string) {
 
   const query = useCallback(async (filters?: Record<string, unknown>) => {
     const qs = buildQuery(filters);
-    const res = await fetch(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() });
+    const res = await fetchWithRefresh(`${API_BASE}${endpoint}${qs}`, { headers: getHeaders() });
     if (!res.ok) throw new Error(`${res.status}`);
     const json = await res.json();
     return Array.isArray(json) ? json : json.data ?? json.items ?? [json];

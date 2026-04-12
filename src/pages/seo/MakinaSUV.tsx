@@ -91,15 +91,15 @@ export default function MakinaSUV() {
               "Sigurim i plotë i përfshirë",
               "Kamera parkimi 360°",
               "Bluetooth & Apple CarPlay",
-              "Ngrohje ndenjëse parë &amp; prapa",
-              "Sensor parkimi para &amp; prapa",
+              "Ngrohje ndenjëse parë & prapa",
+              "Sensor parkimi para & prapa",
               "Airbag 6-8 të shumtë",
               "ABS + ESP + traction control",
               "Marrje nga Aeroporti falas",
             ].map((f) => (
               <div key={f} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border">
                 <CheckCircle size={16} weight="fill" className="text-emerald-500 shrink-0" />
-                <span className="text-sm text-neutral-700" dangerouslySetInnerHTML={{ __html: f }} />
+                <span className="text-sm text-neutral-700">{f}</span>
               </div>
             ))}
           </div>

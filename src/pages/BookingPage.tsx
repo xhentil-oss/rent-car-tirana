@@ -196,6 +196,7 @@ export default function BookingPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [contractDownloaded, setContractDownloaded] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   // Load pricing rules from DB
   const { data: pricingRules } = useQuery("PricingRule", { where: { isActive: true } });
@@ -308,6 +309,7 @@ export default function BookingPage() {
     if (!valid) return;
     if (!car) return;
     setSaving(true);
+    setBookingError(null);
     try {
       // 1. Criar ose gjej klientin
       const customer = await createCustomer({
@@ -364,8 +366,9 @@ export default function BookingPage() {
           total: String(total),
         },
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Booking error:", err);
+      setBookingError(err?.message || "Rezervimi dështoi. Provoni përsëri.");
     } finally {
       setSaving(false);
     }
@@ -1062,6 +1065,11 @@ export default function BookingPage() {
             >
               {saving ? t("booking.submitting") : !isCarAvailable ? t("booking.unavailableBtn") : t("booking.submit")}
             </button>
+            {bookingError && (
+              <div className="mt-3 p-3 rounded-md bg-error/10 border border-error/20">
+                <p className="text-sm text-error font-medium">{bookingError}</p>
+              </div>
+            )}
           </form>
 
           {/* Summary */}
