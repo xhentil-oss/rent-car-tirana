@@ -127,7 +127,7 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-accent/90 to-primary text-white py-2.5 px-4 text-center relative">
           <p className="text-sm font-medium">
             <Tag size={14} weight="fill" className="inline mr-1.5 -mt-0.5" />
-            <span>{t("home.promoBanner")}</span>{" "}
+            <span dangerouslySetInnerHTML={{ __html: t("home.promoBanner") }} />{" "}
             <span className="font-bold bg-white/20 px-1.5 py-0.5 rounded text-xs tracking-wide">TIRANA10</span>
           </p>
           <button
