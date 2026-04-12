@@ -252,7 +252,71 @@
       "support": "24/7 support",
       "insurance": "Insurance included"
     },
-    "floatingBtn": "Book {{brand}} {{model}}"
+    "floatingBtn": "Book {{brand}} {{model}}",
+    "aria": {
+      "closeGallery": "Close gallery",
+      "prevPhoto": "Previous photo",
+      "nextPhoto": "Next photo",
+      "openGallery": "Open photo gallery"
+    },
+    "seo": {
+      "title": "{{brand}} {{model}} {{year}} Car Rental Tirana — €{{price}}/day",
+      "description": "Rent {{brand}} {{model}} ({{year}}) in Tirana from €{{price}}/day. Category {{category}}, {{transmission}}, {{fuel}}. Available 24/7 — airport pickup.",
+      "keywords": "{{brand}} {{model}} rent tirana, {{category}} car rental albania, rent {{brand}} tirana",
+      "fallbackTitle": "Car Rental Tirana",
+      "fallbackDesc": "The #1 car rental service in Tirana."
+    },
+    "availability": {
+      "booked": "Reserved",
+      "maintenance": "In maintenance",
+      "dateTaken": "Taken on these dates",
+      "available": "Available"
+    },
+    "hero": {
+      "seats": "{{count}} seats",
+      "luggage": "{{count}} suitcases",
+      "gallery": "Gallery",
+      "morePhotos": "+photos",
+      "photoAlt": "{{brand}} {{model}} photo {{index}}"
+    },
+    "bookingCard": {
+      "fromLabel": "from",
+      "perDayShort": "/day"
+    },
+    "reviewsCount": "{{count}} reviews",
+    "featuresList": [
+      "Dual-zone A/C climate control",
+      "Radio/Bluetooth/USB",
+      "Heated seats",
+      "Parking camera",
+      "Parking sensors (front/rear)",
+      "Cruise control",
+      "Multiple airbags",
+      "ABS + ESP electronic",
+      "Navigation system",
+      "Electric windows",
+      "Heated electric mirrors"
+    ],
+    "luggageSize": "{{count}} suitcases size M",
+    "extrasLabels": {
+      "ac": "A/C Climate",
+      "cruise": "Cruise control",
+      "heating": "Heating",
+      "parking": "Parking Sensor"
+    },
+    "pickupLocations": [
+      { "value": "Tiranë - Qendër", "label": "Tirana - Center", "icon": "🏙️" },
+      { "value": "Aeroporti Ndërkombëtar", "label": "International Airport", "icon": "✈️" },
+      { "value": "Tiranë - Bulevardi Zogu I", "label": "Tirana - Zogu I Boulevard", "icon": "📍" },
+      { "value": "Durrës - Plazh", "label": "Durrës - Beach", "icon": "🏖️" },
+      { "value": "Shkodër", "label": "Shkodër", "icon": "🏔️" },
+      { "value": "Vlorë", "label": "Vlorë", "icon": "⛵" }
+    ],
+    "staticReviews": [
+      { "authorName": "Endri Muka", "rating": 5, "text": "Excellent service! The car was clean and the team was very friendly. Would definitely recommend.", "date": "2 weeks ago" },
+      { "authorName": "Sara Hoxha", "rating": 5, "text": "Booked online and everything went perfectly. Airport pickup was very easy.", "date": "1 month ago" },
+      { "authorName": "Arben Daci", "rating": 5, "text": "Reasonable prices and car in excellent condition. Unlimited mileage was a big plus!", "date": "3 weeks ago" }
+    ]
   },
   "booking": {
     "title": "Book your car",

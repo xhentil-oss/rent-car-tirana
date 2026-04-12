@@ -252,7 +252,71 @@
       "support": "Mbështetje 24/7",
       "insurance": "Sigurim i përfshirë"
     },
-    "floatingBtn": "Rezervo {{brand}} {{model}}"
+    "floatingBtn": "Rezervo {{brand}} {{model}}",
+    "aria": {
+      "closeGallery": "Mbyll galerinë",
+      "prevPhoto": "Foto e mëparshme",
+      "nextPhoto": "Foto tjetër",
+      "openGallery": "Hap galerinë e fotove"
+    },
+    "seo": {
+      "title": "{{brand}} {{model}} {{year}} me Qira Tiranë — €{{price}}/ditë",
+      "description": "Merre {{brand}} {{model}} ({{year}}) me qira në Tiranë nga €{{price}}/ditë. Kategoria {{category}}, {{transmission}}, {{fuel}}. Disponueshëm 24/7 — marrje nga aeroporti.",
+      "keywords": "{{brand}} {{model}} me qira tirane, {{category}} me qira shqiperi, rent {{brand}} tirana",
+      "fallbackTitle": "Makina me Qira Tiranë",
+      "fallbackDesc": "Shërbimi nr.1 i makinave me qira në Tiranë."
+    },
+    "availability": {
+      "booked": "I rezervuar",
+      "maintenance": "Në mirëmbajtje",
+      "dateTaken": "Zënë në këto data",
+      "available": "Në dispozicion"
+    },
+    "hero": {
+      "seats": "{{count}} vende",
+      "luggage": "{{count}} valixhe",
+      "gallery": "Galeri",
+      "morePhotos": "+foto",
+      "photoAlt": "{{brand}} {{model}} foto {{index}}"
+    },
+    "bookingCard": {
+      "fromLabel": "nga",
+      "perDayShort": "/ditë"
+    },
+    "reviewsCount": "{{count}} vlerësime",
+    "featuresList": [
+      "Klimë A/C me temperaturë duale",
+      "Radio/Bluetooth/USB",
+      "Ngrohje ndenjëse",
+      "Kamera parkimi",
+      "Sensor parkimi (para/prapa)",
+      "Tempomat (cruise control)",
+      "Airbag të shumtë",
+      "ABS + ESP elektronik",
+      "Sistemë navigacioni",
+      "Xhama elektrik",
+      "Pasqyra elektrike me ngrohje"
+    ],
+    "luggageSize": "{{count}} valixhe madhësi M",
+    "extrasLabels": {
+      "ac": "Klimë A/C",
+      "cruise": "Tempomat",
+      "heating": "Ngrohje",
+      "parking": "Parking Sensor"
+    },
+    "pickupLocations": [
+      { "value": "Tiranë - Qendër", "label": "Tiranë - Qendër", "icon": "🏙️" },
+      { "value": "Aeroporti Ndërkombëtar", "label": "Aeroporti Ndërkombëtar", "icon": "✈️" },
+      { "value": "Tiranë - Bulevardi Zogu I", "label": "Tiranë - Bulevardi Zogu I", "icon": "📍" },
+      { "value": "Durrës - Plazh", "label": "Durrës - Plazh", "icon": "🏖️" },
+      { "value": "Shkodër", "label": "Shkodër", "icon": "🏔️" },
+      { "value": "Vlorë", "label": "Vlorë", "icon": "⛵" }
+    ],
+    "staticReviews": [
+      { "authorName": "Endri Muka", "rating": 5, "text": "Shërbim i shkëlqyer! Makina ishte e pastër dhe ekipi shumë i sjellshëm. Do ta rekomandoj pa dyshim.", "date": "2 javë më parë" },
+      { "authorName": "Sara Hoxha", "rating": 5, "text": "Rezervova online dhe gjithçka shkoi perfekt. Pickup nga aeroporti ishte shumë i lehtë.", "date": "1 muaj më parë" },
+      { "authorName": "Arben Daci", "rating": 5, "text": "Çmime të arsyeshme dhe makinë në gjendje shumë të mirë. Kilometrazh pa limit ishte plus i madh!", "date": "3 javë më parë" }
+    ]
   },
   "booking": {
     "title": "Rezervo makinën",

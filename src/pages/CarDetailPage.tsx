@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LLink from "../components/LLink";
 import { useLocale } from "../hooks/useLocale";
@@ -39,73 +39,12 @@ import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import StatusBadge from "../components/StatusBadge";
 
-const faqItems = [
-  {
-    question: "A përfshihet sigurimi?",
-    answer:
-      "Po, të gjitha makinat tona vijnë me sigurim bazë të përfshirë. Mund të shtoni sigurim shtesë gjatë rezervimit.",
-  },
-  {
-    question: "Çfarë ndodh me dëmtimet?",
-    answer:
-      "Çdo makinë ka depozitë sigurie. Dëmtimet e vogla mbulohen nga sigurimi. Ju rekomandojmë sigurim të plotë.",
-  },
-  {
-    question: "A mund ta marr makinën nga aeroporti?",
-    answer:
-      "Po, ofrojmë shërbim pickup falas nga Aeroporti Ndërkombëtar Tirana. Rezervoni në faqen e rezervimit.",
-  },
-];
-
-const EXTRAS_PREVIEW = [
-  { icon: Wind, label: "Klimë A/C" },
-  { icon: Gauge, label: "Tempomat" },
-  { icon: Thermometer, label: "Ngrohje" },
-  { icon: CarSimple, label: "Parking Sensor" },
-];
-
-const TRUST_ITEMS = [
-  { icon: SealCheck, label: "Verifikuar & i pastër", color: "text-emerald-500" },
-  { icon: Lightning, label: "Konfirmim i menjëhershëm", color: "text-amber-500" },
-  { icon: Headset, label: "Mbështetje 24/7", color: "text-blue-500" },
-  { icon: ShieldCheck, label: "Sigurim i përfshirë", color: "text-primary" },
-];
-
-const PICKUP_LOCATIONS = [
-  { value: "Tiranë - Qendër", label: "Tiranë - Qendër", icon: "🏙️" },
-  { value: "Aeroporti Ndërkombëtar", label: "Aeroporti Ndërkombëtar", icon: "✈️" },
-  { value: "Tiranë - Bulevardi Zogu I", label: "Tiranë - Bulevardi Zogu I", icon: "📍" },
-  { value: "Durrës - Plazh", label: "Durrës - Plazh", icon: "🏖️" },
-  { value: "Shkodër", label: "Shkodër", icon: "🏔️" },
-  { value: "Vlorë", label: "Vlorë", icon: "⛵" },
-];
-
-// Static Google-style reviews fallback
-const STATIC_REVIEWS = [
-  {
-    id: "r1",
-    authorName: "Endri Muka",
-    rating: 5,
-    text: "Shërbim i shkëlqyer! Makina ishte e pastër dhe ekipi shumë i sjellshëm. Do ta rekomandoj pa dyshim.",
-    avatar: "EM",
-    date: "2 javë më parë",
-  },
-  {
-    id: "r2",
-    authorName: "Sara Hoxha",
-    rating: 5,
-    text: "Rezervova online dhe gjithçka shkoi perfekt. Pickup nga aeroporti ishte shumë i lehtë.",
-    avatar: "SH",
-    date: "1 muaj më parë",
-  },
-  {
-    id: "r3",
-    authorName: "Arben Daci",
-    rating: 5,
-    text: "Çmime të arsyeshme dhe makinë në gjendje shumë të mirë. Kilometrazh pa limit ishte plus i madh!",
-    avatar: "AD",
-    date: "3 javë më parë",
-  },
+// These constants use icon references; labels are resolved via t() at render time
+const EXTRAS_ICONS = [
+  { icon: Wind, key: "ac" },
+  { icon: Gauge, key: "cruise" },
+  { icon: Thermometer, key: "heating" },
+  { icon: CarSimple, key: "parking" },
 ];
 
 // Scroll-triggered animation hook
@@ -156,7 +95,7 @@ export default function CarDetailPage() {
   const [tab, setTab] = useState<Tab>("specs");
   const [heroVisible, setHeroVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(false);
-  const [pickupLocation, setPickupLocation] = useState(PICKUP_LOCATIONS[0].value);
+  const [pickupLocation, setPickupLocation] = useState("Tiranë - Qendër");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -190,24 +129,24 @@ export default function CarDetailPage() {
   useSEO(
     car
       ? {
-          title: `${car.brand} ${car.model} ${car.year} me Qira Tiranë — €${car.pricePerDay}/ditë`,
-          description: `Merre ${car.brand} ${car.model} (${car.year}) me qira në Tiranë nga €${car.pricePerDay}/ditë. Kategoria ${car.category}, ${car.transmission}, ${car.fuel}. Disponueshëm 24/7 — marrje nga aeroporti.`,
-          keywords: `${car.brand} ${car.model} me qira tirane, ${car.category.toLowerCase()} me qira shqiperi, rent ${car.brand} tirana`,
+          title: t("carDetail.seo.title", { brand: car.brand, model: car.model, year: car.year, price: car.pricePerDay }),
+          description: t("carDetail.seo.description", { brand: car.brand, model: car.model, year: car.year, price: car.pricePerDay, category: car.category, transmission: car.transmission, fuel: car.fuel }),
+          keywords: t("carDetail.seo.keywords", { brand: car.brand, model: car.model, category: car.category.toLowerCase() }),
           canonical: `/makina/${car.slug}`,
           ogImage: car.image,
           ogType: "product",
           structuredData: [
             buildCarProductSchema(car),
             buildBreadcrumbSchema([
-              { name: "Kryefaqja", url: "/" },
-              { name: "Flota", url: "/flota" },
+              { name: t("carDetail.back"), url: "/" },
+              { name: t("carDetail.tabs.specs"), url: "/flota" },
               { name: `${car.brand} ${car.model}`, url: `/makina/${car.slug}` },
             ]),
           ],
         }
       : {
-          title: "Makina me Qira Tiranë",
-          description: "Shërbimi nr.1 i makinave me qira në Tiranë.",
+          title: t("carDetail.seo.fallbackTitle"),
+          description: t("carDetail.seo.fallbackDesc"),
           canonical: "/flota",
         }
   );
@@ -236,22 +175,20 @@ export default function CarDetailPage() {
     );
   }
 
-  const relatedCars = (allCars ?? [])
+  const relatedCars = useMemo(() => (allCars ?? [])
     .filter((c) => c.category === car.category && c.id !== car.id)
-    .slice(0, 3);
+    .slice(0, 3), [allCars, car.category, car.id]);
 
-  const calcDays = () => {
+  const days = useMemo(() => {
     if (!startDate || !endDate) return 0;
     const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  };
-
-  const days = calcDays();
+  }, [startDate, endDate]);
   const total = days * car.pricePerDay;
   const today = new Date().toISOString().split("T")[0];
 
   // Live availability check
-  const isDateRangeConflict = () => {
+  const dateConflict = useMemo(() => {
     if (!startDate || !endDate) return false;
     const reqStart = new Date(startDate).getTime();
     const reqEnd = new Date(endDate).getTime();
@@ -263,42 +200,51 @@ export default function CarDetailPage() {
       const rEnd = new Date(r.endDate).getTime();
       return reqStart < rEnd && reqEnd > rStart;
     });
-  };
+  }, [startDate, endDate, allReservations, car.id]);
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
-  const dateConflict = isDateRangeConflict();
   const available = !carIsUnavailable && !dateConflict;
 
   const availabilityLabel = carIsUnavailable
-    ? car.status
+    ? (car.status === "I rezervuar" ? t("carDetail.availability.booked") : t("carDetail.availability.maintenance"))
     : dateConflict
-    ? "Zënë në këto data"
-    : "Në dispozicion";
+    ? t("carDetail.availability.dateTaken")
+    : t("carDetail.availability.available");
 
   const availableStatus = !carIsUnavailable && !dateConflict;
 
   const specs = [
     { icon: Gear, label: t("carDetail.specs.transmission"), value: car.transmission },
     { icon: GasPump, label: t("carDetail.specs.fuel"), value: car.fuel },
-    { icon: Users, label: t("carDetail.specs.seats"), value: `${car.seats} ${t("carCard.seats", { count: car.seats }).split(" ")[1] ?? "vende"}` },
-    { icon: Briefcase, label: t("carDetail.specs.luggage"), value: `${car.luggage} ${t("carCard.luggage", { count: car.luggage }).split(" ")[1] ?? "valixhe"}` },
+    { icon: Users, label: t("carDetail.specs.seats"), value: t("carDetail.hero.seats", { count: car.seats }) },
+    { icon: Briefcase, label: t("carDetail.specs.luggage"), value: t("carDetail.hero.luggage", { count: car.luggage }) },
     { icon: MapPin, label: t("carDetail.specs.category"), value: car.category },
     { icon: ShieldCheck, label: t("carDetail.specs.insurance"), value: t("carDetail.specs.insuranceValue") },
   ];
 
-  const carImages = getCarImages(car.image);
+  const carImages = useMemo(() => getCarImages(car.image), [car.image]);
 
-  // Reviews — prefer DB, fallback to static
-  const reviews = (dbReviews && dbReviews.length > 0)
-    ? dbReviews.map((r) => ({
+  // Reviews — prefer DB, fallback to i18n static
+  const reviews = useMemo(() => {
+    if (dbReviews && dbReviews.length > 0) {
+      return dbReviews.map((r) => ({
         id: r.id,
         authorName: r.authorName,
         rating: r.rating,
         text: r.text,
-        avatar: r.authorName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+        avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
         date: new Date(r.createdAt).toLocaleDateString("sq-AL", { month: "long", year: "numeric" }),
-      }))
-    : STATIC_REVIEWS;
+      }));
+    }
+    return (t("carDetail.staticReviews", { returnObjects: true }) as { authorName: string; rating: number; text: string; date: string }[]).map((r, i) => ({
+      id: `r${i + 1}`,
+      authorName: r.authorName,
+      rating: r.rating,
+      text: r.text,
+      avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+      date: r.date,
+    }));
+  }, [dbReviews, t]);
 
   const avgRating = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
 
@@ -326,11 +272,15 @@ export default function CarDetailPage() {
       {/* ── GALLERY LIGHTBOX ─────────────────────────────────── */}
       {galleryOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("carDetail.aria.openGallery")}
           className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center"
           onClick={() => setGalleryOpen(false)}
         >
           {/* Close */}
           <button
+            aria-label={t("carDetail.aria.closeGallery")}
             onClick={(e) => { e.stopPropagation(); setGalleryOpen(false); }}
             className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
           >
@@ -344,6 +294,7 @@ export default function CarDetailPage() {
           >
             {/* Prev arrow */}
             <button
+              aria-label={t("carDetail.aria.prevPhoto")}
               className="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer"
               onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex - 1 + carImages.length) % carImages.length); }}
             >
@@ -353,7 +304,7 @@ export default function CarDetailPage() {
             {/* Main image */}
             <img
               src={carImages[galleryIndex]}
-              alt={`${car.brand} ${car.model} foto ${galleryIndex + 1}`}
+              alt={t("carDetail.hero.photoAlt", { brand: car.brand, model: car.model, index: galleryIndex + 1 })}
               className="max-h-[80vh] max-w-[60vw] object-contain rounded-xl flex-shrink-0"
             />
 
@@ -361,6 +312,7 @@ export default function CarDetailPage() {
             <div className="flex flex-col items-center gap-3 shrink-0">
               {/* Next arrow */}
               <button
+                aria-label={t("carDetail.aria.nextPhoto")}
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex + 1) % carImages.length); }}
               >
@@ -443,7 +395,7 @@ export default function CarDetailPage() {
           className="md:hidden absolute top-[52px] right-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm border border-white/25 text-white text-[11px] font-medium hover:bg-black/70 transition cursor-pointer"
           style={{ opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.3s" }}
         >
-          📷 Galeri
+          📷 {t("carDetail.hero.gallery")}
         </button>
 
         {/* Desktop: thumbnail strip fixed bottom-right, stays above text because text is bottom-left */}
@@ -464,7 +416,7 @@ export default function CarDetailPage() {
             onClick={() => setGalleryOpen(true)}
             className="w-16 h-11 rounded-lg bg-black/50 backdrop-blur-sm border-2 border-white/30 text-white text-[11px] font-semibold flex items-center justify-center hover:bg-black/70 hover:border-white/60 transition-all cursor-pointer"
           >
-            +foto
+            {t("carDetail.hero.morePhotos")}
           </button>
         </div>
 
@@ -490,8 +442,8 @@ export default function CarDetailPage() {
             {[
               { icon: Gear, text: car.transmission },
               { icon: GasPump, text: car.fuel },
-              { icon: Users, text: `${car.seats} vende` },
-              { icon: Briefcase, text: `${car.luggage} valixhe` },
+              { icon: Users, text: t("carDetail.hero.seats", { count: car.seats }) },
+              { icon: Briefcase, text: t("carDetail.hero.luggage", { count: car.luggage }) },
             ].map(({ icon: Icon, text }) => (
               <span key={text} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/85 text-xs font-medium">
                 <Icon size={12} weight="fill" className="text-white/60" />
@@ -539,7 +491,7 @@ export default function CarDetailPage() {
             <div className="hidden md:flex items-center gap-2 shrink-0 ml-auto pl-4 border-l border-border">
               <Star size={14} weight="fill" className="text-amber-400" />
               <span className="text-xs font-semibold text-neutral-800">{avgRating.toFixed(1)}</span>
-              <span className="text-xs text-neutral-500">({reviews.length} vlerësime)</span>
+              <span className="text-xs text-neutral-500">({t("carDetail.reviewsCount", { count: reviews.length })})</span>
             </div>
           </div>
         </div>
@@ -553,10 +505,12 @@ export default function CarDetailPage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Tab Navigation */}
-            <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg w-fit">
+            <div role="tablist" className="flex gap-1 p-1 bg-neutral-100 rounded-lg w-fit">
               {(["specs", "features", "policy"] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
+                  role="tab"
+                  aria-selected={tab === tabKey}
                   onClick={() => setTab(tabKey)}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
                     tab === tabKey
@@ -571,7 +525,7 @@ export default function CarDetailPage() {
 
             {/* TAB: Specs — compact rows */}
             {tab === "specs" && (
-              <div ref={specsRef} key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
+              <div role="tabpanel" ref={specsRef} key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
                 {specs.map(({ icon: Icon, label, value }, i) => (
                   <div
                     key={label}
@@ -595,6 +549,7 @@ export default function CarDetailPage() {
             {/* TAB: Features */}
             {tab === "features" && (
               <div
+                role="tabpanel"
                 key="features"
                 className="bg-white rounded-xl border border-border/80 p-6"
                 style={{ animation: "fadeIn 0.3s ease-out" }}
@@ -603,20 +558,7 @@ export default function CarDetailPage() {
                   {t("carDetail.features.title", { brand: car.brand, model: car.model })}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    "Klimë A/C me temperaturë duale",
-                    "Radio/Bluetooth/USB",
-                    "Ngrohje ndenjëse",
-                    "Kamera parkimi",
-                    "Sensor parkimi (para/prapa)",
-                    "Tempomat (cruise control)",
-                    "Airbag të shumtë",
-                    "ABS + ESP elektronik",
-                    "Sistemë navigacioni",
-                    "Xhama elektrik",
-                    "Pasqyra elektrike me ngrohje",
-                    `${car.luggage} valixhe madhësi M`,
-                  ].map((feat) => (
+                  {[...(t("carDetail.featuresList", { returnObjects: true }) as string[]), t("carDetail.luggageSize", { count: car.luggage })].map((feat) => (
                     <div key={feat} className="flex items-start gap-2.5">
                       <CheckCircle size={16} weight="fill" className="text-emerald-500 mt-0.5 shrink-0" />
                       <span className="text-sm text-neutral-700">{feat}</span>
@@ -627,10 +569,10 @@ export default function CarDetailPage() {
                 <div className="mt-6 pt-5 border-t border-border/60">
                   <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">{t("carDetail.features.extras")}</p>
                   <div className="flex flex-wrap gap-3">
-                    {EXTRAS_PREVIEW.map(({ icon: Icon, label }) => (
-                      <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-neutral-300 text-xs text-neutral-500">
+                    {EXTRAS_ICONS.map(({ icon: Icon, key }) => (
+                      <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-neutral-300 text-xs text-neutral-500">
                         <Icon size={13} weight="duotone" />
-                        {label}
+                        {t(`carDetail.extrasLabels.${key}`)}
                       </div>
                     ))}
                   </div>
@@ -645,6 +587,7 @@ export default function CarDetailPage() {
             {/* TAB: Policy */}
             {tab === "policy" && (
               <div
+                role="tabpanel"
                 key="policy"
                 className="bg-white rounded-xl border border-border/80 p-6 space-y-5"
                 style={{ animation: "fadeIn 0.3s ease-out" }}
@@ -793,9 +736,9 @@ export default function CarDetailPage() {
                       <p className="text-white/60 text-xs mt-0.5">{car.category} · {car.year}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-white/60 text-xs block mb-0.5">nga</span>
+                      <span className="text-white/60 text-xs block mb-0.5">{t("carDetail.bookingCard.fromLabel")}</span>
                       <span className="text-3xl font-bold text-white">€{car.pricePerDay}</span>
-                      <span className="text-white/60 text-xs">/ditë</span>
+                      <span className="text-white/60 text-xs">{t("carDetail.bookingCard.perDayShort")}</span>
                     </div>
                   </div>
                 </div>
@@ -840,7 +783,7 @@ export default function CarDetailPage() {
                           onChange={(e) => setPickupLocation(e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 appearance-none cursor-pointer pr-8"
                         >
-                          {PICKUP_LOCATIONS.map((loc) => (
+                          {(t("carDetail.pickupLocations", { returnObjects: true }) as { value: string; label: string; icon: string }[]).map((loc) => (
                             <option key={loc.value} value={loc.value}>
                               {loc.icon} {loc.label}
                             </option>
@@ -988,7 +931,7 @@ export default function CarDetailPage() {
                   key={c.id}
                   style={{ animation: `fadeIn 0.4s ease-out ${i * 100}ms both` }}
                 >
-                  <CarCard car={c as any} />
+                  <CarCard car={c} />
                 </div>
               ))}
             </div>
