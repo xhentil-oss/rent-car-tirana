@@ -237,7 +237,14 @@
     "pricing": {
       "daily": "Daily",
       "weekly": "Weekly",
-      "monthly": "Monthly"
+      "monthly": "Monthly",
+      "daysAt": "days ×",
+      "youSave": "You save"
+    },
+    "share": {
+      "label": "Share",
+      "text": "Check out {{brand}} {{model}} — from €{{price}}/day at Rent Car Tirana!",
+      "copied": "Link copied!"
     },
     "related": {
       "title": "Similar cars",
@@ -261,7 +268,9 @@
       "closeGallery": "Close gallery",
       "prevPhoto": "Previous photo",
       "nextPhoto": "Next photo",
-      "openGallery": "Open photo gallery"
+      "openGallery": "Open photo gallery",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
     },
     "seo": {
       "title": "{{brand}} {{model}} {{year}} Car Rental Tirana — €{{price}}/day",

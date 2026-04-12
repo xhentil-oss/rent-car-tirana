@@ -32,12 +32,20 @@ import {
   CaretRight as CaretRightIcon,
   GoogleLogo,
   X,
+  ShareNetwork,
+  LinkSimple,
+  MagnifyingGlassPlus,
+  MagnifyingGlassMinus,
+  Tag,
 } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import StatusBadge from "../components/StatusBadge";
+import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
+import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
+import type { PricingRule, PricingResult } from "../lib/pricingRules";
 
 // These constants use icon references; labels are resolved via t() at render time
 const EXTRAS_ICONS = [
@@ -89,6 +97,7 @@ export default function CarDetailPage() {
   const { data: allCars, isPending } = useQuery("Car");
   const { data: allReservations } = useQuery("ReservationAvailability");
   const { data: dbReviews } = useQuery("Review", { where: { approved: true }, orderBy: { createdAt: "desc" }, limit: 6 });
+  const { data: pricingRulesRaw } = useQuery("PricingRule");
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -98,6 +107,7 @@ export default function CarDetailPage() {
   const [pickupLocation, setPickupLocation] = useState("Tiranë - Qendër");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryZoom, setGalleryZoom] = useState(1);
   const galleryRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const bookingCardRef = useRef<HTMLDivElement>(null);
@@ -136,9 +146,11 @@ export default function CarDetailPage() {
     document.body.style.overflow = "hidden";
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setGalleryOpen(false); return; }
-      if (e.key === "ArrowLeft") { setGalleryIndex((prev) => (prev - 1 + carImages.length) % carImages.length); return; }
-      if (e.key === "ArrowRight") { setGalleryIndex((prev) => (prev + 1) % carImages.length); return; }
+      if (e.key === "Escape") { setGalleryOpen(false); setGalleryZoom(1); return; }
+      if (e.key === "ArrowLeft") { setGalleryIndex((prev) => (prev - 1 + carImages.length) % carImages.length); setGalleryZoom(1); return; }
+      if (e.key === "ArrowRight") { setGalleryIndex((prev) => (prev + 1) % carImages.length); setGalleryZoom(1); return; }
+      if (e.key === "+" || e.key === "=") { setGalleryZoom((z) => Math.min(z + 0.5, 3)); return; }
+      if (e.key === "-") { setGalleryZoom((z) => Math.max(z - 0.5, 1)); return; }
       // Focus trap
       if (e.key === "Tab" && dialog) {
         const focusable = dialog.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])');
@@ -229,6 +241,54 @@ export default function CarDetailPage() {
     }));
   }, [dbReviews, t]);
 
+  // Current season for hero display
+  const currentSeason = useMemo(() => getSeasonForDate(new Date()), []);
+
+  // Seasonal price per day for today
+  const seasonalPricePerDay = useMemo(
+    () => car ? getSeasonalPricePerDay(car.pricePerDay) : 0,
+    [car?.pricePerDay]
+  );
+
+  // Smart pricing: seasonal total + pricing rules when dates selected
+  const smartPricing = useMemo<PricingResult | null>(() => {
+    if (!car || !startDate || !endDate || days === 0) return null;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const seasonalCalc = calculateSeasonalTotal(car.pricePerDay, start, end);
+    const rules = (pricingRulesRaw ?? []) as PricingRule[];
+    return applyPricingRules(rules, seasonalCalc.total, {
+      carId: car.id,
+      carCategory: car.category,
+      startDate: start,
+      endDate: end,
+      days,
+      bookingDate: new Date(),
+    });
+  }, [car?.id, car?.category, car?.pricePerDay, startDate, endDate, days, pricingRulesRaw]);
+
+  // Seasonal breakdown for display
+  const seasonalBreakdown = useMemo(() => {
+    if (!car || !startDate || !endDate) return null;
+    return calculateSeasonalTotal(car.pricePerDay, new Date(startDate), new Date(endDate));
+  }, [car?.pricePerDay, startDate, endDate]);
+
+  // Social share handler
+  const handleShare = useCallback(async () => {
+    if (!car) return;
+    const url = window.location.href;
+    const text = t("carDetail.share.text", { brand: car.brand, model: car.model, price: seasonalPricePerDay });
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${car.brand} ${car.model}`, text, url });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      // Simple feedback — could be enhanced with toast
+      alert(t("carDetail.share.copied"));
+    }
+  }, [car, t, seasonalPricePerDay]);
+
   if (isPending) {
     return (
       <div className="min-h-screen bg-background">
@@ -278,7 +338,8 @@ export default function CarDetailPage() {
     );
   }
 
-  const total = days * car.pricePerDay;
+  const total = smartPricing ? smartPricing.finalPrice : days * car.pricePerDay;
+  const baseTotal = smartPricing ? smartPricing.basePrice : days * car.pricePerDay;
   const today = new Date().toISOString().split("T")[0];
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
@@ -338,11 +399,35 @@ export default function CarDetailPage() {
           {/* Close */}
           <button
             aria-label={t("carDetail.aria.closeGallery")}
-            onClick={(e) => { e.stopPropagation(); setGalleryOpen(false); }}
+            onClick={(e) => { e.stopPropagation(); setGalleryOpen(false); setGalleryZoom(1); }}
             className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
           >
             <X size={18} weight="bold" />
           </button>
+
+          {/* Zoom controls */}
+          <div className="absolute top-4 left-4 flex gap-2">
+            <button
+              aria-label={t("carDetail.aria.zoomIn")}
+              onClick={(e) => { e.stopPropagation(); setGalleryZoom((z) => Math.min(z + 0.5, 3)); }}
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
+            >
+              <MagnifyingGlassPlus size={16} weight="bold" />
+            </button>
+            <button
+              aria-label={t("carDetail.aria.zoomOut")}
+              onClick={(e) => { e.stopPropagation(); setGalleryZoom((z) => Math.max(z - 0.5, 1)); }}
+              disabled={galleryZoom <= 1}
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer disabled:opacity-30"
+            >
+              <MagnifyingGlassMinus size={16} weight="bold" />
+            </button>
+            {galleryZoom > 1 && (
+              <span className="h-9 flex items-center px-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/25 text-white text-xs font-medium">
+                {galleryZoom.toFixed(1)}x
+              </span>
+            )}
+          </div>
 
           {/* Inner layout: [prev] [image] [next + thumbnails-column] */}
           <div
@@ -353,17 +438,21 @@ export default function CarDetailPage() {
             <button
               aria-label={t("carDetail.aria.prevPhoto")}
               className="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex - 1 + carImages.length) % carImages.length); }}
+              onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex - 1 + carImages.length) % carImages.length); setGalleryZoom(1); }}
             >
               <CaretLeft size={20} weight="bold" />
             </button>
 
-            {/* Main image */}
-            <img
-              src={carImages[galleryIndex]}
-              alt={t("carDetail.hero.photoAlt", { brand: car.brand, model: car.model, index: galleryIndex + 1 })}
-              className="max-h-[80vh] max-w-[60vw] object-contain rounded-xl flex-shrink-0"
-            />
+            {/* Main image with zoom */}
+            <div className="overflow-hidden rounded-xl flex-shrink-0 max-h-[80vh] max-w-[60vw]">
+              <img
+                src={carImages[galleryIndex]}
+                alt={t("carDetail.hero.photoAlt", { brand: car.brand, model: car.model, index: galleryIndex + 1 })}
+                className="max-h-[80vh] max-w-[60vw] object-contain transition-transform duration-300 ease-out"
+                style={{ transform: `scale(${galleryZoom})`, cursor: galleryZoom > 1 ? "zoom-out" : "zoom-in" }}
+                onClick={(e) => { e.stopPropagation(); setGalleryZoom((z) => z > 1 ? 1 : 2); }}
+              />
+            </div>
 
             {/* Right column: next arrow + thumbnail strip */}
             <div className="flex flex-col items-center gap-3 shrink-0">
@@ -371,7 +460,7 @@ export default function CarDetailPage() {
               <button
                 aria-label={t("carDetail.aria.nextPhoto")}
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer"
-                onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex + 1) % carImages.length); }}
+                onClick={(e) => { e.stopPropagation(); setGalleryIndex((galleryIndex + 1) % carImages.length); setGalleryZoom(1); }}
               >
                 <CaretRightIcon size={20} weight="bold" />
               </button>
@@ -381,7 +470,7 @@ export default function CarDetailPage() {
                 {carImages.map((img, i) => (
                   <button
                     key={i}
-                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(i); }}
+                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(i); setGalleryZoom(1); }}
                     className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                       i === galleryIndex
                         ? "border-white scale-105 shadow-lg"
@@ -525,23 +614,42 @@ export default function CarDetailPage() {
             ))}
           </div>
 
-          {/* Price row */}
-            <div className="flex items-end gap-4">
+          {/* Price row + season badge + share */}
+            <div className="flex items-end gap-4 flex-wrap">
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.from")}</span>
-              <span className="text-4xl font-bold text-white">€{car.pricePerDay}</span>
-              <span className="text-white/50 text-sm ml-1">{t("carDetail.perDay")}</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">€{seasonalPricePerDay}</span>
+                <span className="text-white/50 text-sm">{t("carDetail.perDay")}</span>
+                {seasonalPricePerDay !== car.pricePerDay && (
+                  <span className="text-white/35 text-sm line-through">€{car.pricePerDay}</span>
+                )}
+              </div>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.weekly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{car.pricePerDay * 7}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(seasonalPricePerDay * 7)}</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.monthly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{car.pricePerDay * 28}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(seasonalPricePerDay * 28)}</span>
             </div>
+            <div className="h-8 w-px bg-white/20 hidden md:block" />
+            {/* Season badge */}
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm ${currentSeason.badgeColor}`}>
+              {currentSeason.emoji} {currentSeason.label}
+            </span>
+            {/* Share button */}
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-xs font-medium hover:bg-white/20 transition-all cursor-pointer"
+              aria-label={t("carDetail.share.label")}
+            >
+              <ShareNetwork size={14} weight="bold" />
+              <span className="hidden sm:inline">{t("carDetail.share.label")}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -810,8 +918,11 @@ export default function CarDetailPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-white/60 text-xs block mb-0.5">{t("carDetail.bookingCard.fromLabel")}</span>
-                      <span className="text-3xl font-bold text-white">€{car.pricePerDay}</span>
+                      <span className="text-3xl font-bold text-white">€{seasonalPricePerDay}</span>
                       <span className="text-white/60 text-xs">{t("carDetail.bookingCard.perDayShort")}</span>
+                      {seasonalPricePerDay !== car.pricePerDay && (
+                        <span className="text-white/40 text-xs line-through block">€{car.pricePerDay}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -890,14 +1001,43 @@ export default function CarDetailPage() {
                   {/* Price breakdown — animated */}
                   <div
                     className="overflow-hidden transition-all duration-400"
-                    style={{ maxHeight: days > 0 ? "200px" : "0px", opacity: days > 0 ? 1 : 0 }}
+                    style={{ maxHeight: days > 0 ? "400px" : "0px", opacity: days > 0 ? 1 : 0 }}
                   >
                     <div className="bg-secondary/40 rounded-xl p-4 mb-4 border border-secondary">
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between text-neutral-600">
-                          <span>{t("carDetail.booking.basePrice", { price: car.pricePerDay, days })}</span>
-                          <span className="font-medium">€{total}</span>
-                        </div>
+                        {/* Seasonal breakdown */}
+                        {seasonalBreakdown && seasonalBreakdown.breakdown.length > 1 ? (
+                          seasonalBreakdown.breakdown.map((seg, i) => (
+                            <div key={i} className="flex justify-between text-neutral-600">
+                              <span className="flex items-center gap-1">
+                                <span>{seg.season.emoji}</span>
+                                <span>{seg.days} {t("carDetail.pricing.daysAt")} €{seg.pricePerDay}</span>
+                              </span>
+                              <span className="font-medium">€{seg.subtotal}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex justify-between text-neutral-600">
+                            <span>{t("carDetail.booking.basePrice", { price: seasonalPricePerDay, days })}</span>
+                            <span className="font-medium">€{baseTotal}</span>
+                          </div>
+                        )}
+
+                        {/* Applied discounts from pricing rules */}
+                        {smartPricing && smartPricing.appliedDiscounts.length > 0 && (
+                          <>
+                            {smartPricing.appliedDiscounts.map((d, i) => (
+                              <div key={i} className="flex justify-between text-emerald-600">
+                                <span className="flex items-center gap-1">
+                                  <Tag size={12} weight="fill" />
+                                  {d.label}
+                                </span>
+                                <span className="font-medium">-€{d.discountAmount.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+
                         <div className="flex justify-between text-neutral-600">
                           <span>{t("carDetail.booking.insurance")}</span>
                           <span className="text-emerald-600 font-medium">{t("carDetail.booking.insuranceFree")}</span>
@@ -908,8 +1048,14 @@ export default function CarDetailPage() {
                         </div>
                         <div className="pt-2 border-t border-secondary flex justify-between font-bold text-neutral-900 text-base">
                           <span>{t("carDetail.booking.totalLabel")}</span>
-                          <span className="text-primary">€{total}</span>
+                          <span className="text-primary">€{total.toFixed(2)}</span>
                         </div>
+                        {smartPricing && smartPricing.savings > 0 && (
+                          <div className="flex justify-between text-emerald-600 text-xs font-semibold pt-1">
+                            <span>{t("carDetail.pricing.youSave")}</span>
+                            <span>-€{smartPricing.savings.toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -967,13 +1113,16 @@ export default function CarDetailPage() {
               {/* Price breakdown cards */}
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {[
-                  { period: t("carDetail.pricing.daily"), amount: car.pricePerDay, unit: t("carDetail.perDay") },
-                  { period: t("carDetail.pricing.weekly"), amount: car.pricePerDay * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
-                  { period: t("carDetail.pricing.monthly"), amount: car.pricePerDay * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
-                ].map(({ period, amount, unit }) => (
+                  { period: t("carDetail.pricing.daily"), amount: seasonalPricePerDay, base: car.pricePerDay, unit: t("carDetail.perDay") },
+                  { period: t("carDetail.pricing.weekly"), amount: Math.round(seasonalPricePerDay * 7), base: car.pricePerDay * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
+                  { period: t("carDetail.pricing.monthly"), amount: Math.round(seasonalPricePerDay * 28), base: car.pricePerDay * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
+                ].map(({ period, amount, base, unit }) => (
                   <div key={period} className="bg-white rounded-xl border border-border p-3 text-center">
                     <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-1">{period}</p>
                     <p className="text-base font-bold text-neutral-900">€{amount}</p>
+                    {amount !== base && (
+                      <p className="text-[10px] text-neutral-300 line-through">€{base}</p>
+                    )}
                     <p className="text-[10px] text-neutral-400">{unit}</p>
                   </div>
                 ))}

@@ -237,7 +237,14 @@
     "pricing": {
       "daily": "Ditor",
       "weekly": "Javor",
-      "monthly": "Mujor"
+      "monthly": "Mujor",
+      "daysAt": "ditë ×",
+      "youSave": "Kurseni"
+    },
+    "share": {
+      "label": "Ndaj",
+      "text": "Shiko {{brand}} {{model}} — nga €{{price}}/ditë te Rent Car Tirana!",
+      "copied": "Linku u kopjua!"
     },
     "related": {
       "title": "Makina të ngjashme",
@@ -261,7 +268,9 @@
       "closeGallery": "Mbyll galerinë",
       "prevPhoto": "Foto e mëparshme",
       "nextPhoto": "Foto tjetër",
-      "openGallery": "Hap galerinë e fotove"
+      "openGallery": "Hap galerinë e fotove",
+      "zoomIn": "Zmadho foton",
+      "zoomOut": "Zvogëlo foton"
     },
     "seo": {
       "title": "{{brand}} {{model}} {{year}} me Qira Tiranë — €{{price}}/ditë",
