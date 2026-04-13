@@ -499,7 +499,7 @@ export default function CarDetailPage() {
       )}
 
       {/* ── HERO FULLSCREEN ─────────────────────────────────── */}
-      <div ref={heroRef} className="relative w-full overflow-hidden" style={{ height: "72vh", minHeight: 520 }}>
+      <div ref={heroRef} className="relative w-full overflow-hidden h-[55vh] min-h-[400px] md:h-[72vh] md:min-h-[520px]">
         {/* Background image — click to open gallery */}
         <button
           onClick={() => setGalleryOpen(true)}
@@ -509,7 +509,7 @@ export default function CarDetailPage() {
           <img
             src={carImages[galleryIndex]}
             alt={`${car.brand} ${car.model}`}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700"
+            className="absolute inset-0 w-full h-full object-contain md:object-cover object-center transition-all duration-700"
             style={{ transform: heroVisible ? "scale(1)" : "scale(1.05)" }}
           />
         </button>
