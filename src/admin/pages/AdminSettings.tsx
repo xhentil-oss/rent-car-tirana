@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
 
@@ -85,6 +85,16 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
       { key: "booking_pickup_locations", label: "Vendndodhjet e tërheqjes (me presje)", type: "textarea", placeholder: "Aeroport Nënë Tereza, Tiranë Qendër, Durrës..." },
       { key: "booking_cancellation_hours", label: "Orë pa tarifë anulimi", type: "number", placeholder: "48" },
       { key: "booking_deposit_percent", label: "Depozitë % ", type: "number", placeholder: "0" },
+    ],
+  },
+  {
+    id: "banners",
+    title: "Banerat e Faqes",
+    icon: Image,
+    description: "Vendosni URL-të e imazheve kryesore (hero) për faqet e ndryshme.",
+    fields: [
+      { key: "banner_hero", label: "Hero i Faqes Kryesore", placeholder: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80" },
+      { key: "banner_about", label: "Seksioni 'Rreth Nesh'", placeholder: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80" },
     ],
   },
   {
@@ -298,7 +308,7 @@ export default function AdminSettings() {
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSection.fields.map((field) => (
-              <div key={field.key} className={field.type === "textarea" ? "md:col-span-2" : ""}>
+              <div key={field.key} className={field.type === "textarea" || field.key.startsWith("banner_") ? "md:col-span-2" : ""}>
                 <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1.5">
                   {field.label}
                 </label>
@@ -318,6 +328,11 @@ export default function AdminSettings() {
                     placeholder={field.placeholder}
                     className="w-full px-3 py-2.5 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
                   />
+                )}
+                {field.key.startsWith("banner_") && settings[field.key] && (
+                  <div className="mt-2 rounded-lg overflow-hidden border border-border" style={{ maxHeight: 180 }}>
+                    <img src={settings[field.key]} alt={field.label} className="w-full h-full object-cover" style={{ maxHeight: 180 }} />
+                  </div>
                 )}
               </div>
             ))}

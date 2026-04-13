@@ -82,6 +82,8 @@ export default function HomePage() {
 
   const { data: allCars } = useQuery("Car");
   const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
+  const [bannerHero, setBannerHero] = useState("https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80");
+  const [bannerAbout, setBannerAbout] = useState("https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80");
 
   useEffect(() => {
     fetch("/api/settings/public")
@@ -91,6 +93,8 @@ export default function HomePage() {
           .split(",")
           .filter(Boolean);
         setFeaturedCarIds(ids);
+        if (data.banner_hero) setBannerHero(data.banner_hero);
+        if (data.banner_about) setBannerAbout(data.banner_about);
       })
       .catch(() => {});
   }, []);
@@ -165,7 +169,7 @@ export default function HomePage() {
       >
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80"
+            src={bannerHero}
             alt="Rental car in Tirana city street"
             className="w-full h-full object-cover"
             loading="eager"
@@ -434,7 +438,7 @@ export default function HomePage() {
               style={{ height: "400px" }}
             >
               <img
-                src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80"
+                src={bannerAbout}
                 alt="Happy customer standing by rented car"
                 loading="lazy"
                 className="w-full h-full object-cover"

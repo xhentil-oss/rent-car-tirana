@@ -58,7 +58,7 @@ router.put('/', authenticate, requireRole('admin'), async (req, res) => {
 router.get('/public', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT setting_key, setting_value FROM settings WHERE category = 'company' OR category = 'homepage' OR setting_key IN ('company_name','company_phone','company_email','company_address','company_website','social_facebook','social_instagram','social_tiktok','homepage_featured_cars')"
+      "SELECT setting_key, setting_value FROM settings WHERE category IN ('company','homepage','banner') OR setting_key IN ('company_name','company_phone','company_email','company_address','company_website','social_facebook','social_instagram','social_tiktok','homepage_featured_cars','banner_hero','banner_about')"
     );
     const data = {};
     for (const row of rows) {
