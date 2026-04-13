@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
 
@@ -87,6 +87,13 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
       { key: "booking_deposit_percent", label: "Depozitë % ", type: "number", placeholder: "0" },
     ],
   },
+  {
+    id: "homepage",
+    title: "Faqja Kryesore",
+    icon: House,
+    description: "Zgjidhni cilat makina do të shfaqen në faqen kryesore.",
+    fields: [],
+  },
 ];
 
 export default function AdminSettings() {
@@ -97,6 +104,7 @@ export default function AdminSettings() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("company");
+  const [cars, setCars] = useState<{ id: number; brand: string; model: string; imageUrl?: string }[]>([]);
 
   useEffect(() => {
     fetch(`${API_BASE}/settings`, { headers: getHeaders() })
@@ -113,11 +121,32 @@ export default function AdminSettings() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    // Fetch cars for homepage selector
+    fetch(`${API_BASE}/cars`, { headers: getHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.cars || [];
+        setCars(list.map((c: any) => ({ id: c.id, brand: c.brand, model: c.model, imageUrl: c.imageUrl })));
+      })
+      .catch(() => {});
   }, []);
 
   const handleChange = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
+  };
+
+  const selectedCarIds = (settings["homepage_featured_cars"] || "").split(",").filter(Boolean).map(Number);
+
+  const toggleCar = (carId: number) => {
+    const current = new Set(selectedCarIds);
+    if (current.has(carId)) {
+      current.delete(carId);
+    } else {
+      current.add(carId);
+    }
+    handleChange("homepage_featured_cars", Array.from(current).join(","));
   };
 
   const handleSave = async () => {
@@ -219,6 +248,53 @@ export default function AdminSettings() {
             <p className="text-sm text-neutral-500 mt-1">{activeSection.description}</p>
           </div>
 
+          {activeSection.id === "homepage" ? (
+            <div>
+              <p className="text-sm text-neutral-600 mb-3">
+                Zgjidhni makinat që doni të shfaqen në faqen kryesore ({selectedCarIds.length} të zgjedhura):
+              </p>
+              {cars.length === 0 ? (
+                <p className="text-sm text-neutral-400 italic">Nuk u gjetën makina.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {cars.map((car) => {
+                    const isSelected = selectedCarIds.includes(car.id);
+                    return (
+                      <button
+                        key={car.id}
+                        type="button"
+                        onClick={() => toggleCar(car.id)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                            : "border-border bg-white hover:border-neutral-300"
+                        }`}
+                      >
+                        {car.imageUrl ? (
+                          <img src={car.imageUrl} alt="" className="w-14 h-10 object-cover rounded" />
+                        ) : (
+                          <div className="w-14 h-10 rounded bg-neutral-100 flex items-center justify-center">
+                            <Car size={18} className="text-neutral-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-neutral-900 truncate">
+                            {car.brand} {car.model}
+                          </p>
+                          <p className="text-xs text-neutral-400">ID: {car.id}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          isSelected ? "border-primary bg-primary" : "border-neutral-300"
+                        }`}>
+                          {isSelected && <CheckCircle size={14} weight="fill" className="text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSection.fields.map((field) => (
               <div key={field.key} className={field.type === "textarea" ? "md:col-span-2" : ""}>
@@ -245,6 +321,7 @@ export default function AdminSettings() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </div>
     </div>

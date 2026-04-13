@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import LLink from "../components/LLink";
 import { useLocale } from "../hooks/useLocale";
@@ -80,8 +80,27 @@ export default function HomePage() {
   const [endDate, setEndDate] = useState("");
   const [promoDismissed, setPromoDismissed] = useState(false);
 
-  const { data: allCars } = useQuery("Car", { where: { featured: true }, limit: 4 });
-  const featuredCars = allCars ?? [];
+  const { data: allCars } = useQuery("Car");
+  const [featuredCarIds, setFeaturedCarIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    fetch("/api/settings/public")
+      .then((r) => r.json())
+      .then((data) => {
+        const ids = (data.homepage_featured_cars || "")
+          .split(",")
+          .filter(Boolean)
+          .map(Number);
+        setFeaturedCarIds(ids);
+      })
+      .catch(() => {});
+  }, []);
+
+  const featuredCars = allCars
+    ? featuredCarIds.length > 0
+      ? allCars.filter((c: any) => featuredCarIds.includes(c.id))
+      : allCars
+    : [];
 
   const { data: dbReviews } = useQuery("Review", {
     where: { approved: true },
@@ -297,9 +316,9 @@ export default function HomePage() {
             </LLink>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {featuredCars.map((car, i) => (
-              <div key={car.id} className={`animate-fade-in stagger-${i + 1}`}>
+              <div key={car.id} className={`animate-fade-in stagger-${Math.min(i + 1, 4)}`}>
                 <CarCard car={car} />
               </div>
             ))}
