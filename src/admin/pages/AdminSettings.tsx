@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
 
@@ -114,7 +114,10 @@ export default function AdminSettings() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("company");
-  const [cars, setCars] = useState<{ id: number; brand: string; model: string; imageUrl?: string }[]>([]);
+  const [cars, setCars] = useState<{ id: string; brand: string; model: string; image?: string }[]>([]);
+  const [mediaPickerFor, setMediaPickerFor] = useState<string | null>(null);
+  const [mediaTab, setMediaTab] = useState<"gallery" | "upload" | "url">("gallery");
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/settings`, { headers: getHeaders() })
@@ -137,7 +140,7 @@ export default function AdminSettings() {
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data) ? data : data.cars || [];
-        setCars(list.map((c: any) => ({ id: c.id, brand: c.brand, model: c.model, imageUrl: c.imageUrl })));
+        setCars(list.map((c: any) => ({ id: c.id, brand: c.brand, model: c.model, image: c.image })));
       })
       .catch(() => {});
   }, []);
@@ -159,6 +162,32 @@ export default function AdminSettings() {
     }
     handleChange("homepage_featured_cars", Array.from(current).join(","));
   };
+
+  const openMediaPicker = (fieldKey: string) => {
+    setMediaPickerFor(fieldKey);
+    setMediaTab("gallery");
+    setUploadPreview(null);
+  };
+
+  const selectMedia = (url: string) => {
+    if (mediaPickerFor) {
+      handleChange(mediaPickerFor, url);
+    }
+    setMediaPickerFor(null);
+    setUploadPreview(null);
+  };
+
+  const handleFileUpload = (file: File | null) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setUploadPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  // All available images from car gallery
+  const galleryImages = cars
+    .filter((c) => c.image && !c.image.includes("placeholder"))
+    .map((c) => ({ url: c.image!, label: `${c.brand} ${c.model}` }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -281,8 +310,8 @@ export default function AdminSettings() {
                             : "border-border bg-white hover:border-neutral-300"
                         }`}
                       >
-                        {car.imageUrl ? (
-                          <img src={car.imageUrl} alt="" className="w-14 h-10 object-cover rounded" />
+                        {car.image ? (
+                          <img src={car.image} alt="" className="w-14 h-10 object-cover rounded" />
                         ) : (
                           <div className="w-14 h-10 rounded bg-neutral-100 flex items-center justify-center">
                             <Car size={18} className="text-neutral-400" />
@@ -312,7 +341,39 @@ export default function AdminSettings() {
                 <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1.5">
                   {field.label}
                 </label>
-                {field.type === "textarea" ? (
+                {field.key.startsWith("banner_") ? (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={settings[field.key] || ""}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="flex-1 px-3 py-2.5 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => openMediaPicker(field.key)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-md text-sm font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors cursor-pointer border border-border"
+                      >
+                        <FolderOpen size={15} weight="bold" />
+                        Zgjidh
+                      </button>
+                    </div>
+                    {settings[field.key] && (
+                      <div className="mt-2 rounded-lg overflow-hidden border border-border relative group" style={{ maxHeight: 180 }}>
+                        <img src={settings[field.key]} alt={field.label} className="w-full h-full object-cover" style={{ maxHeight: 180 }} />
+                        <button
+                          type="button"
+                          onClick={() => handleChange(field.key, "")}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                          <XIcon size={14} weight="bold" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : field.type === "textarea" ? (
                   <textarea
                     value={settings[field.key] || ""}
                     onChange={(e) => handleChange(field.key, e.target.value)}
@@ -329,17 +390,125 @@ export default function AdminSettings() {
                     className="w-full px-3 py-2.5 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
                   />
                 )}
-                {field.key.startsWith("banner_") && settings[field.key] && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-border" style={{ maxHeight: 180 }}>
-                    <img src={settings[field.key]} alt={field.label} className="w-full h-full object-cover" style={{ maxHeight: 180 }} />
-                  </div>
-                )}
               </div>
             ))}
           </div>
           )}
         </div>
       </div>
+
+      {/* ── MEDIA PICKER MODAL ─────────────────────────────── */}
+      {mediaPickerFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setMediaPickerFor(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="text-base font-semibold text-neutral-900">Zgjidh Imazhin</h3>
+              <button onClick={() => setMediaPickerFor(null)} className="p-1.5 rounded-md text-neutral-400 hover:bg-neutral-100 transition-colors cursor-pointer">
+                <XIcon size={18} weight="bold" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 px-5 pt-3 pb-2">
+              {([
+                { id: "gallery" as const, label: "Galeria", icon: Image },
+                { id: "upload" as const, label: "Ngarko", icon: UploadSimple },
+                { id: "url" as const, label: "URL", icon: LinkIcon },
+              ]).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => { setMediaTab(t.id); setUploadPreview(null); }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                    mediaTab === t.id ? "bg-primary/10 text-primary" : "text-neutral-500 hover:bg-neutral-100"
+                  }`}
+                >
+                  <t.icon size={14} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-3">
+              {mediaTab === "gallery" && (
+                galleryImages.length === 0 ? (
+                  <p className="text-sm text-neutral-400 italic text-center py-8">Nuk ka imazhe në galeri.</p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {galleryImages.map((img, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => selectMedia(img.url)}
+                        className="group relative rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all cursor-pointer aspect-[4/3]"
+                      >
+                        <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <CheckCircle size={24} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                        </div>
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-2 py-1 truncate">{img.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {mediaTab === "upload" && (
+                <div className="space-y-4">
+                  <label
+                    className="flex flex-col items-center justify-center h-44 rounded-xl border-2 border-dashed border-neutral-200 hover:border-primary/50 hover:bg-neutral-50 transition-colors cursor-pointer"
+                  >
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e.target.files?.[0] ?? null)} />
+                    {uploadPreview ? (
+                      <img src={uploadPreview} alt="preview" className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <>
+                        <UploadSimple size={32} className="text-neutral-300 mb-2" />
+                        <p className="text-sm text-neutral-400">Kliko ose tërhiq imazhin këtu</p>
+                        <p className="text-xs text-neutral-300 mt-1">JPG, PNG, WebP</p>
+                      </>
+                    )}
+                  </label>
+                  {uploadPreview && (
+                    <button
+                      onClick={() => selectMedia(uploadPreview)}
+                      className="w-full py-2.5 rounded-lg bg-gradient-primary text-white text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      Përdor këtë imazh
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {mediaTab === "url" && (
+                <div className="space-y-4">
+                  <input
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={uploadPreview || ""}
+                    onChange={(e) => setUploadPreview(e.target.value || null)}
+                    className="w-full px-3 py-2.5 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+                  />
+                  {uploadPreview && (
+                    <>
+                      <div className="rounded-lg overflow-hidden border border-border" style={{ maxHeight: 200 }}>
+                        <img src={uploadPreview} alt="preview" className="w-full object-cover" style={{ maxHeight: 200 }} />
+                      </div>
+                      <button
+                        onClick={() => selectMedia(uploadPreview)}
+                        className="w-full py-2.5 rounded-lg bg-gradient-primary text-white text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                      >
+                        Përdor këtë URL
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
