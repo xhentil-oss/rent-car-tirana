@@ -596,7 +596,7 @@ export default function CarDetailPage() {
 
           {/* Car name */}
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-2 drop-shadow-lg">
-            {car.brand} <span className="font-light">{car.model}</span>
+            {car.brand} <span className="font-normal text-white">{car.model}</span>
           </h1>
 
           {/* Quick pills */}
