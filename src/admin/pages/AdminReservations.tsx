@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Check, X, Eye, Plus, MagnifyingGlass, Calendar, Car, User, MapPin, CurrencyEur, Note, UserPlus, Phone, Envelope, Tag } from "@phosphor-icons/react";
+import { Check, X, Eye, Plus, MagnifyingGlass, Calendar, Car, User, MapPin, CurrencyEur, Note, UserPlus, Phone, Envelope, Tag, PencilSimple, Trash, CheckSquare, Square } from "@phosphor-icons/react";
 import { useQuery, useMutation, useLazyQuery } from "../../hooks/useApi";
 import { calculateSeasonalTotal, getDominantSeason } from "../../lib/seasonalPricing";
 import { TableSkeleton } from "../../components/ui/Skeleton";
@@ -68,6 +68,9 @@ export default function AdminReservations() {
   const [sendingReminder, setSendingReminder] = useState(false);
   const [emailSending, setEmailSending] = useState<Record<string, boolean>>({});
   const [emailFeedback, setEmailFeedback] = useState<Record<string, "confirmed" | "cancelled" | null>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [editResId, setEditResId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ status: string; pickupLocation: string; dropoffLocation: string; startDate: string; endDate: string; startTime: string; endTime: string; notes: string; totalPrice: string }>({ status: "", pickupLocation: "", dropoffLocation: "", startDate: "", endDate: "", startTime: "09:00", endTime: "09:00", notes: "", totalPrice: "" });
 
   const selectedRes = (reservations ?? []).find(r => r.id === selectedResId) ?? null;
 
@@ -287,6 +290,72 @@ export default function AdminReservations() {
     return c ? `${c.brand} ${c.model}` : carId;
   };
 
+  const allFilteredIds = filtered.map((r) => r.id);
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allFilteredIds));
+    }
+  };
+
+  const bulkUpdateStatus = async (status: string) => {
+    for (const id of selectedIds) {
+      await updateReservation(id, { status });
+      const res = (reservations ?? []).find((r) => r.id === id);
+      const customerName = res ? getCustomerName(res.customerId) : id;
+      await log("UPDATE", "Reservation", id, `Bulk: Statusi → ${status}: ${customerName}`);
+    }
+    setSelectedIds(new Set());
+    await refetchReservations();
+  };
+
+  const openEdit = (resId: string) => {
+    const res = (reservations ?? []).find((r) => r.id === resId);
+    if (!res) return;
+    setEditResId(resId);
+    setEditForm({
+      status: res.status,
+      pickupLocation: res.pickupLocation || "Tiranë Qendër",
+      dropoffLocation: res.dropoffLocation || "Tiranë Qendër",
+      startDate: res.startDate ? new Date(res.startDate).toISOString().split("T")[0] : "",
+      endDate: res.endDate ? new Date(res.endDate).toISOString().split("T")[0] : "",
+      startTime: res.startTime || "09:00",
+      endTime: res.endTime || "09:00",
+      notes: res.notes || "",
+      totalPrice: String(res.totalPrice ?? ""),
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editResId) return;
+    await updateReservation(editResId, {
+      status: editForm.status,
+      pickupLocation: editForm.pickupLocation,
+      dropoffLocation: editForm.dropoffLocation,
+      startDate: new Date(editForm.startDate),
+      endDate: new Date(editForm.endDate),
+      startTime: editForm.startTime,
+      endTime: editForm.endTime,
+      notes: editForm.notes,
+      totalPrice: parseFloat(editForm.totalPrice) || 0,
+    });
+    await log("UPDATE", "Reservation", editResId, `Përditësohet rezervimi: ${getCustomerName((reservations ?? []).find((r) => r.id === editResId)?.customerId ?? "")}`);
+    setEditResId(null);
+    await refetchReservations();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -340,11 +409,42 @@ export default function AdminReservations() {
         </div>
       )}
 
+      {/* Bulk Actions Bar */}
+      {someSelected && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-center justify-between gap-4 animate-fade-in">
+          <p className="text-sm font-medium text-neutral-800">
+            <span className="text-primary font-bold">{selectedIds.size}</span> rezervim{selectedIds.size > 1 ? "e" : ""} të zgjedhura
+          </p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => bulkUpdateStatus("Confirmed")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors cursor-pointer">
+              <Check size={13} weight="bold" /> Konfirmo
+            </button>
+            <button onClick={() => bulkUpdateStatus("Active")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
+              <Car size={13} weight="bold" /> Aktivo
+            </button>
+            <button onClick={() => bulkUpdateStatus("Completed")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer">
+              <Check size={13} weight="bold" /> Përfundo
+            </button>
+            <button onClick={() => bulkUpdateStatus("Cancelled")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error border border-error/20 hover:bg-error/20 transition-colors cursor-pointer">
+              <X size={13} weight="bold" /> Anulo
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 transition-colors cursor-pointer">
+              Hiq zgjedhjen
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
               <tr className="border-b border-border bg-neutral-50">
+                <th className="w-10 px-3 py-3">
+                  <button onClick={toggleSelectAll} className="p-0.5 cursor-pointer text-neutral-400 hover:text-primary transition-colors" aria-label="Zgjidh të gjitha">
+                    {allSelected ? <CheckSquare size={18} weight="fill" className="text-primary" /> : <Square size={18} />}
+                  </button>
+                </th>
                 {["Klienti","Makina","Datat","Totali","Statusi","Pagesa","Veprimet"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wide">{h}</th>
                 ))}
@@ -354,9 +454,14 @@ export default function AdminReservations() {
               {resLoading ? (
                 <TableSkeleton rows={5} columns={6} />
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6}><EmptyState type={searchQuery || filterStatus ? "search" : "reservations"} actionLabel={!searchQuery && !filterStatus ? "Shto rezervim" : undefined} onAction={!searchQuery && !filterStatus ? () => setShowNewForm(true) : undefined} /></td></tr>
+                <tr><td colSpan={8}><EmptyState type={searchQuery || filterStatus ? "search" : "reservations"} actionLabel={!searchQuery && !filterStatus ? "Shto rezervim" : undefined} onAction={!searchQuery && !filterStatus ? () => setShowNewForm(true) : undefined} /></td></tr>
               ) : filtered.map((res) => (
-                <tr key={res.id} className="border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150">
+                <tr key={res.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${selectedIds.has(res.id) ? "bg-primary/5" : ""}`}>
+                  <td className="w-10 px-3 py-3">
+                    <button onClick={() => toggleSelect(res.id)} className="p-0.5 cursor-pointer text-neutral-400 hover:text-primary transition-colors" aria-label="Zgjidh">
+                      {selectedIds.has(res.id) ? <CheckSquare size={18} weight="fill" className="text-primary" /> : <Square size={18} />}
+                    </button>
+                  </td>
                   <td className="px-4 py-3 text-sm font-medium text-neutral-800">{getCustomerName(res.customerId)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-700">{getCarName(res.carId)}</td>
                   <td className="px-4 py-3 text-xs text-neutral-600">
@@ -391,6 +496,9 @@ export default function AdminReservations() {
                     <div className="flex items-center gap-2">
                       <button onClick={() => setSelectedResId(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-primary hover:bg-secondary transition-colors duration-200 cursor-pointer" aria-label="Shiko detajet">
                         <Eye size={16} weight="regular" />
+                      </button>
+                      <button onClick={() => openEdit(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 transition-colors duration-200 cursor-pointer" aria-label="Modifiko">
+                        <PencilSimple size={16} weight="regular" />
                       </button>
                       {emailFeedback[res.id] === "confirmed" && (
                         <span className="flex items-center gap-1 text-xs text-success font-medium px-2 py-1 bg-success/10 rounded-full">
@@ -696,6 +804,88 @@ export default function AdminReservations() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Reservation Drawer */}
+      {editResId && (
+        <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setEditResId(null)} />
+          <div className="relative bg-white w-full max-w-xl h-full overflow-y-auto animate-slide-in-right">
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-lg font-medium text-neutral-900">Modifiko rezervimin</h2>
+                <p className="text-sm text-neutral-500">ID: {editResId.slice(0, 8)}...</p>
+              </div>
+              <button onClick={() => setEditResId(null)} className="p-2 rounded-md text-neutral-500 hover:bg-secondary transition-colors duration-200 cursor-pointer"><X size={20} /></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2">Statusi</label>
+                <select value={editForm.status} onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                  {["Pending", "Confirmed", "Active", "Completed", "Cancelled"].map((s) => (
+                    <option key={s} value={s}>{s === "Pending" ? "Në pritje" : s === "Confirmed" ? "Konfirmuar" : s === "Active" ? "Aktive" : s === "Completed" ? "Përfunduar" : "Anuluar"}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e nisjes</label>
+                  <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((prev) => ({ ...prev, startDate: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 mb-2 block">Ora e nisjes</label>
+                  <select value={editForm.startTime} onChange={(e) => setEditForm((prev) => ({ ...prev, startTime: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    {timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e kthimit</label>
+                  <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((prev) => ({ ...prev, endDate: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 mb-2 block">Ora e kthimit</label>
+                  <select value={editForm.endTime} onChange={(e) => setEditForm((prev) => ({ ...prev, endTime: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    {timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><MapPin size={16} className="text-neutral-400" />Merre nga</label>
+                  <select value={editForm.pickupLocation} onChange={(e) => setEditForm((prev) => ({ ...prev, pickupLocation: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    {locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><MapPin size={16} className="text-neutral-400" />Ktheje në</label>
+                  <select value={editForm.dropoffLocation} onChange={(e) => setEditForm((prev) => ({ ...prev, dropoffLocation: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    {locations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><CurrencyEur size={16} className="text-neutral-400" />Çmimi total (€)</label>
+                <input type="number" min="0" step="0.01" value={editForm.totalPrice} onChange={(e) => setEditForm((prev) => ({ ...prev, totalPrice: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Note size={16} className="text-neutral-400" />Shënime</label>
+                <textarea value={editForm.notes} onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))} rows={3} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" />
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t border-border px-6 py-4 flex gap-3">
+              <button onClick={() => setEditResId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">Anulo</button>
+              <button onClick={handleSaveEdit} disabled={isMutating} className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">Ruaj ndryshimet</button>
+            </div>
           </div>
         </div>
       )}
