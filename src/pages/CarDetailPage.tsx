@@ -250,6 +250,13 @@ export default function CarDetailPage() {
     [car?.pricePerDay]
   );
 
+  // "List price" — always higher than actual to show discount visual
+  const listPrice = useMemo(
+    () => car ? Math.round(car.pricePerDay * 1.2) : 0,
+    [car?.pricePerDay]
+  );
+  const discount = listPrice > 0 ? Math.round(((listPrice - seasonalPricePerDay) / listPrice) * 100) : 0;
+
   // Smart pricing: seasonal total + pricing rules when dates selected
   const smartPricing = useMemo<PricingResult | null>(() => {
     if (!car || !startDate || !endDate || days === 0) return null;
@@ -621,8 +628,9 @@ export default function CarDetailPage() {
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-white">€{seasonalPricePerDay}</span>
                 <span className="text-white/50 text-sm">{t("carDetail.perDay")}</span>
-                {seasonalPricePerDay !== car.pricePerDay && (
-                  <span className="text-white/35 text-sm line-through">€{car.pricePerDay}</span>
+                <span className="text-white/40 text-base line-through decoration-red-400/70">€{listPrice}</span>
+                {discount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/90 text-white text-[10px] font-bold">-{discount}%</span>
                 )}
               </div>
             </div>
@@ -930,11 +938,11 @@ export default function CarDetailPage() {
                       <p className="text-white/60 text-xs mt-0.5">{car.category} · {car.year}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-white/60 text-xs block mb-0.5">{t("carDetail.bookingCard.fromLabel")}</span>
+                      <span className="text-white/40 text-xs line-through decoration-red-400/70 block">€{listPrice}/{t("carDetail.bookingCard.perDayShort")}</span>
                       <span className="text-3xl font-bold text-white">€{seasonalPricePerDay}</span>
                       <span className="text-white/60 text-xs">{t("carDetail.bookingCard.perDayShort")}</span>
-                      {seasonalPricePerDay !== car.pricePerDay && (
-                        <span className="text-white/40 text-xs line-through block">€{car.pricePerDay}</span>
+                      {discount > 0 && (
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/90 text-white text-[10px] font-bold">-{discount}%</span>
                       )}
                     </div>
                   </div>
@@ -1132,16 +1140,14 @@ export default function CarDetailPage() {
               {/* Price breakdown cards */}
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {[
-                  { period: t("carDetail.pricing.daily"), amount: seasonalPricePerDay, base: car.pricePerDay, unit: t("carDetail.perDay") },
-                  { period: t("carDetail.pricing.weekly"), amount: Math.round(seasonalPricePerDay * 7), base: car.pricePerDay * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
-                  { period: t("carDetail.pricing.monthly"), amount: Math.round(seasonalPricePerDay * 28), base: car.pricePerDay * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
-                ].map(({ period, amount, base, unit }) => (
+                  { period: t("carDetail.pricing.daily"), amount: seasonalPricePerDay, list: listPrice, unit: t("carDetail.perDay") },
+                  { period: t("carDetail.pricing.weekly"), amount: Math.round(seasonalPricePerDay * 7), list: listPrice * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
+                  { period: t("carDetail.pricing.monthly"), amount: Math.round(seasonalPricePerDay * 28), list: listPrice * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
+                ].map(({ period, amount, list, unit }) => (
                   <div key={period} className="bg-white rounded-xl border border-border p-3 text-center">
                     <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-1">{period}</p>
-                    <p className="text-base font-bold text-neutral-900">€{amount}</p>
-                    {amount !== base && (
-                      <p className="text-[10px] text-neutral-300 line-through">€{base}</p>
-                    )}
+                    <p className="text-[10px] text-neutral-400 line-through decoration-red-400/60">€{list}</p>
+                    <p className="text-base font-bold text-emerald-600">€{amount}</p>
                     <p className="text-[10px] text-neutral-400">{unit}</p>
                   </div>
                 ))}
