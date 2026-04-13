@@ -117,11 +117,22 @@ export default function CarDetailPage() {
   // Scroll-triggered refs
   const { ref: reviewsRef, inView: reviewsInView } = useInView();
 
+  // Reset state when slug changes (navigating to a different car)
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    setTab("specs");
+    setGalleryIndex(0);
+    setGalleryOpen(false);
+    setGalleryZoom(1);
+    setHeroVisible(false);
+    setCardVisible(false);
+    setStartDate("");
+    setEndDate("");
+    setShowFloatingBtn(false);
     const t1 = setTimeout(() => setHeroVisible(true), 80);
     const t2 = setTimeout(() => setCardVisible(true), 280);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  }, [slug]);
 
   // Show floating CTA when booking card is out of view
   useEffect(() => {
