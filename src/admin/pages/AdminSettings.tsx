@@ -137,14 +137,15 @@ export default function AdminSettings() {
     setSaved(false);
   };
 
-  const selectedCarIds = (settings["homepage_featured_cars"] || "").split(",").filter(Boolean).map(Number);
+  const selectedCarIds = (settings["homepage_featured_cars"] || "").split(",").filter(Boolean);
 
-  const toggleCar = (carId: number) => {
+  const toggleCar = (carId: string | number) => {
+    const id = String(carId);
     const current = new Set(selectedCarIds);
-    if (current.has(carId)) {
-      current.delete(carId);
+    if (current.has(id)) {
+      current.delete(id);
     } else {
-      current.add(carId);
+      current.add(id);
     }
     handleChange("homepage_featured_cars", Array.from(current).join(","));
   };
@@ -258,7 +259,7 @@ export default function AdminSettings() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {cars.map((car) => {
-                    const isSelected = selectedCarIds.includes(car.id);
+                    const isSelected = selectedCarIds.includes(String(car.id));
                     return (
                       <button
                         key={car.id}

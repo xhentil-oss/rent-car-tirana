@@ -81,7 +81,7 @@ export default function HomePage() {
   const [promoDismissed, setPromoDismissed] = useState(false);
 
   const { data: allCars } = useQuery("Car");
-  const [featuredCarIds, setFeaturedCarIds] = useState<number[]>([]);
+  const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/settings/public")
@@ -89,8 +89,7 @@ export default function HomePage() {
       .then((data) => {
         const ids = (data.homepage_featured_cars || "")
           .split(",")
-          .filter(Boolean)
-          .map(Number);
+          .filter(Boolean);
         setFeaturedCarIds(ids);
       })
       .catch(() => {});
@@ -98,7 +97,7 @@ export default function HomePage() {
 
   const featuredCars = allCars
     ? featuredCarIds.length > 0
-      ? allCars.filter((c: any) => featuredCarIds.includes(c.id))
+      ? allCars.filter((c: any) => featuredCarIds.includes(String(c.id)))
       : allCars
     : [];
 
