@@ -37,6 +37,7 @@ import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   Tag,
+  Eye,
 } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
 import CarCard from "../components/CarCard";
@@ -114,7 +115,6 @@ export default function CarDetailPage() {
   const [showFloatingBtn, setShowFloatingBtn] = useState(false);
 
   // Scroll-triggered refs
-  const { ref: specsRef, inView: specsInView } = useInView();
   const { ref: reviewsRef, inView: reviewsInView } = useInView();
 
   useEffect(() => {
@@ -687,34 +687,42 @@ export default function CarDetailPage() {
 
             {/* Tab Navigation */}
             <div role="tablist" className="flex gap-1 p-1 bg-neutral-100 rounded-lg w-fit">
-              {(["specs", "features", "policy"] as Tab[]).map((tabKey) => (
-                <button
-                  key={tabKey}
-                  role="tab"
-                  aria-selected={tab === tabKey}
-                  onClick={() => setTab(tabKey)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
-                    tab === tabKey
-                      ? "bg-white text-neutral-900 shadow-sm"
-                      : "text-neutral-500 hover:text-neutral-700"
-                  }`}
-                >
-                  {t(`carDetail.tabs.${tabKey}`)}
-                </button>
-              ))}
+              {(["specs", "features", "policy"] as Tab[]).map((tabKey) => {
+                const count = tabKey === "specs" ? specs.length : undefined;
+                return (
+                  <button
+                    key={tabKey}
+                    role="tab"
+                    aria-selected={tab === tabKey}
+                    onClick={() => setTab(tabKey)}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      tab === tabKey
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-500 hover:text-neutral-700"
+                    }`}
+                  >
+                    {t(`carDetail.tabs.${tabKey}`)}
+                    {count != null && (
+                      <span className={`text-[10px] font-bold w-4.5 h-4.5 rounded-full inline-flex items-center justify-center ${
+                        tab === tabKey ? "bg-primary text-white" : "bg-neutral-300 text-neutral-600"
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* TAB: Specs — compact rows */}
             {tab === "specs" && (
-              <div role="tabpanel" ref={specsRef} key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
+              <div role="tabpanel" key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
                 {specs.map(({ icon: Icon, label, value }, i) => (
                   <div
                     key={label}
                     className="flex items-center gap-4 px-5 py-3.5 hover:bg-secondary/40 transition-colors duration-200"
                     style={{
-                      opacity: specsInView ? 1 : 0,
-                      transform: specsInView ? "translateX(0)" : "translateX(-12px)",
-                      transition: `opacity 0.35s ease ${i * 50}ms, transform 0.35s ease ${i * 50}ms`,
+                      animation: `slideIn 0.35s ease-out ${i * 50}ms both`,
                     }}
                   >
                     <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
@@ -789,10 +797,15 @@ export default function CarDetailPage() {
             )}
 
             {/* Description Card */}
-            <div className="bg-gradient-to-br from-secondary/60 to-secondary/30 rounded-xl border border-secondary/80 p-6">
-              <h2 className="text-base font-semibold text-neutral-800 mb-2">
-                {t("carDetail.about.title")}
-              </h2>
+            <div className="bg-white rounded-xl border border-border/80 p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                  <Info size={16} weight="fill" className="text-primary" />
+                </div>
+                <h2 className="text-base font-semibold text-neutral-800">
+                  {t("carDetail.about.title")}
+                </h2>
+              </div>
               {car.description ? (
                 <p className="text-sm text-neutral-600 leading-relaxed whitespace-pre-line">{car.description}</p>
               ) : (
@@ -1058,6 +1071,12 @@ export default function CarDetailPage() {
                         )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Urgency / social proof */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200/60 text-xs text-amber-700 mb-3">
+                    <Eye size={14} weight="fill" className="text-amber-500 shrink-0" />
+                    <span className="font-medium">{t("carDetail.booking.urgency")}</span>
                   </div>
 
                   {/* CTA Button */}

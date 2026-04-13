@@ -228,7 +228,8 @@
       "insurance": "Basic insurance",
       "serviceFee": "Service fee",
       "freeDays": "Car is free — {{days}} days",
-      "dateTaken": "Car is taken on the selected dates"
+      "dateTaken": "Car is taken on the selected dates",
+      "urgency": "This car is viewed often — book before it's taken!"
     },
     "support2": {
       "title": "Immediate help",

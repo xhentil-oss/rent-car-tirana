@@ -228,7 +228,8 @@
       "insurance": "Sigurimi bazë",
       "serviceFee": "Tarifa shërbimi",
       "freeDays": "Makina është e lirë — {{days}} ditë",
-      "dateTaken": "Makina është e zënë në datat e zgjedhura"
+      "dateTaken": "Makina është e zënë në datat e zgjedhura",
+      "urgency": "Kjo makinë shikohet shpesh — rezervo para se të merret!"
     },
     "support2": {
       "title": "Ndihmë e menjëhershme",
