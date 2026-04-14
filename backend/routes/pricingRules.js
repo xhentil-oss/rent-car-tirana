@@ -63,7 +63,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { console.error('POST /pricing-rules error:', err.message, err.code, JSON.stringify(req.body)); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+  } catch (err) { console.error('POST /pricing-rules error:', err.message, err.code, JSON.stringify(req.body)); res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message }); }
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
