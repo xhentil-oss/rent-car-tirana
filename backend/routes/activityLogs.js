@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
@@ -27,11 +28,12 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
   try {
     const { action, entity, entityId, description } = req.body;
     if (!action || !entity) return res.status(400).json({ error: 'action dhe entity janë të detyrueshme.' });
-    const [result] = await pool.query(
-      'INSERT INTO activity_logs (user_id, action, entity, entity_id, description, ip_address, timestamp) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      [req.user.id, action, entity, entityId || null, description || null, req.ip]
+    const id = uuidv4();
+    await pool.query(
+      'INSERT INTO activity_logs (id, user_id, action, entity, entity_id, description, ip_address, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [id, req.user.id, action, entity, entityId || null, description || null, req.ip]
     );
-    res.status(201).json({ id: result.insertId, message: 'Log u krijua.' });
+    res.status(201).json({ id, message: 'Log u krijua.' });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 

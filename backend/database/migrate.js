@@ -413,6 +413,21 @@ const ALTERS = [
   // Add quantity and description to cars
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS quantity SMALLINT NOT NULL DEFAULT 1`,
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL`,
+  // ── pricing_rules: make dates nullable and add missing columns ──
+  `ALTER TABLE pricing_rules MODIFY COLUMN start_date DATE DEFAULT NULL`,
+  `ALTER TABLE pricing_rules MODIFY COLUMN end_date DATE DEFAULT NULL`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS advance_booking_days INT DEFAULT NULL`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS last_minute_hours INT DEFAULT NULL`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50) DEFAULT NULL`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS applicable_to VARCHAR(100) DEFAULT 'all'`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS is_active TINYINT(1) DEFAULT 1`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS priority TINYINT DEFAULT 0`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS usage_count INT DEFAULT 0`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS max_usages INT DEFAULT 0`,
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS created_by CHAR(36) DEFAULT NULL`,
+  // ── reservations: add location_fee column ──
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS location_fee DECIMAL(10,2) DEFAULT 0`,
   // ── Performance indexes ──
   'CREATE INDEX idx_res_overlap ON reservations (car_id, status, start_date, end_date)',
   'CREATE INDEX idx_res_status ON reservations (status)',

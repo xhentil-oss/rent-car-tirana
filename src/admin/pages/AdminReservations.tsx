@@ -41,7 +41,7 @@ const initialFormState: NewReservationForm = {
   endDate: "", endTime: "09:00", notes: "", source: "Telefon",
 };
 
-const locations = ["Tiranë Qendër","Aeroporti Nënë Tereza","Durrës","Vlorë","Sarandë"];
+const locations = ["Tiranë Qendër","Aeroporti Nënë Tereza","Durrës","Vlorë","Sarandë","Shkodër"];
 const timeOptions = Array.from({ length: 24 }, (_, i) => {
   const hour = i.toString().padStart(2, "0");
   return [`${hour}:00`, `${hour}:30`];
@@ -51,7 +51,7 @@ export default function AdminReservations() {
   const { data: reservations, isPending: resLoading, refetch: refetchReservations } = useQuery("Reservation", { orderBy: { createdAt: "desc" } });
   const { data: customers, refetch: refetchCustomers } = useQuery("Customer");
   const { data: cars } = useQuery("Car");
-  const { create: createReservation, update: updateReservation, isPending: isMutating } = useMutation("Reservation");
+  const { create: createReservation, update: updateReservation, remove: removeReservation, isPending: isMutating } = useMutation("Reservation");
   const { create: createCustomer } = useMutation("Customer");
   const log = useActivityLog();
 
@@ -71,6 +71,7 @@ export default function AdminReservations() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editResId, setEditResId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ status: string; pickupLocation: string; dropoffLocation: string; startDate: string; endDate: string; startTime: string; endTime: string; notes: string; totalPrice: string }>({ status: "", pickupLocation: "", dropoffLocation: "", startDate: "", endDate: "", startTime: "09:00", endTime: "09:00", notes: "", totalPrice: "" });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const selectedRes = (reservations ?? []).find(r => r.id === selectedResId) ?? null;
 
@@ -356,6 +357,18 @@ export default function AdminReservations() {
     await refetchReservations();
   };
 
+  const handleDeleteReservation = async (id: string) => {
+    try {
+      const res = (reservations ?? []).find((r) => r.id === id);
+      const customerName = res ? getCustomerName(res.customerId) : id;
+      await removeReservation(id);
+      await log("DELETE", "Reservation", id, `Rezervim u fshi: ${customerName}`);
+      setDeleteConfirmId(null);
+      if (selectedResId === id) setSelectedResId(null);
+      await refetchReservations();
+    } catch (e) { console.error(e); }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -428,6 +441,15 @@ export default function AdminReservations() {
             <button onClick={() => bulkUpdateStatus("Cancelled")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error border border-error/20 hover:bg-error/20 transition-colors cursor-pointer">
               <X size={13} weight="bold" /> Anulo
             </button>
+            <button
+              onClick={async () => {
+                for (const id of selectedIds) await handleDeleteReservation(id);
+                setSelectedIds(new Set());
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error border border-error/20 hover:bg-error/20 transition-colors cursor-pointer"
+            >
+              <Trash size={13} weight="bold" /> Fshi
+            </button>
             <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 transition-colors cursor-pointer">
               Hiq zgjedhjen
             </button>
@@ -499,6 +521,9 @@ export default function AdminReservations() {
                       </button>
                       <button onClick={() => openEdit(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 transition-colors duration-200 cursor-pointer" aria-label="Modifiko">
                         <PencilSimple size={16} weight="regular" />
+                      </button>
+                      <button onClick={() => setDeleteConfirmId(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 transition-colors duration-200 cursor-pointer" aria-label="Fshi">
+                        <Trash size={16} weight="regular" />
                       </button>
                       {emailFeedback[res.id] === "confirmed" && (
                         <span className="flex items-center gap-1 text-xs text-success font-medium px-2 py-1 bg-success/10 rounded-full">
@@ -885,6 +910,41 @@ export default function AdminReservations() {
             <div className="sticky bottom-0 bg-white border-t border-border px-6 py-4 flex gap-3">
               <button onClick={() => setEditResId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">Anulo</button>
               <button onClick={handleSaveEdit} disabled={isMutating} className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">Ruaj ndryshimet</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+                <Trash size={20} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900">Fshi rezervimin</h3>
+                <p className="text-xs text-neutral-500">Ky veprim është i pakthyeshëm</p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600 mb-5">
+              A jeni të sigurt që dëshironi të fshini rezervimin e{" "}
+              <span className="font-semibold">{getCustomerName((reservations ?? []).find(r => r.id === deleteConfirmId)?.customerId ?? "")}</span>?
+              Të gjitha të dhënat do të fshihen përgjithmonë.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">
+                Anulo
+              </button>
+              <button
+                onClick={() => handleDeleteReservation(deleteConfirmId)}
+                disabled={isMutating}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-error text-error-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+              >
+                Po, fshi
+              </button>
             </div>
           </div>
         </div>

@@ -54,9 +54,11 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
   try {
     const { name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
     const id = uuidv4();
+    const sd = startDate && startDate !== '' ? startDate : null;
+    const ed = endDate && endDate !== '' ? endDate : null;
     await pool.query(
       'INSERT INTO pricing_rules (id, name, type, discount_type, discount_value, start_date, end_date, min_days, max_days, advance_booking_days, last_minute_hours, promo_code, applicable_to, is_active, priority, description, max_usages, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description, maxUsages || 0, req.user.id]
+      [id, name, type, discountType, discountValue, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.user.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
@@ -67,9 +69,11 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const { name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
+    const sd = startDate && startDate !== '' ? startDate : null;
+    const ed = endDate && endDate !== '' ? endDate : null;
     await pool.query(
       'UPDATE pricing_rules SET name=?, type=?, discount_type=?, discount_value=?, start_date=?, end_date=?, min_days=?, max_days=?, advance_booking_days=?, last_minute_hours=?, promo_code=?, applicable_to=?, is_active=?, priority=?, description=?, max_usages=? WHERE id=?',
-      [name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive ? 1 : 0, priority, description, maxUsages, req.params.id]
+      [name, type, discountType, discountValue, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.params.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'PricingRule', entityId: req.params.id, description: `Rregull çmimi u ndryshua: ${name}`, ipAddress: req.ip });

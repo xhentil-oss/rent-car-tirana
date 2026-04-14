@@ -106,6 +106,7 @@ export default function CarDetailPage() {
   const [heroVisible, setHeroVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(false);
   const [pickupLocation, setPickupLocation] = useState("Tiranë - Qendër");
+  const [dropoffLocation, setDropoffLocation] = useState("Tiranë - Qendër");
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryZoom, setGalleryZoom] = useState(1);
@@ -128,6 +129,8 @@ export default function CarDetailPage() {
     setCardVisible(false);
     setStartDate("");
     setEndDate("");
+    setPickupLocation("Tiranë - Qendër");
+    setDropoffLocation("Tiranë - Qendër");
     setShowFloatingBtn(false);
     const t1 = setTimeout(() => setHeroVisible(true), 80);
     const t2 = setTimeout(() => setCardVisible(true), 280);
@@ -356,7 +359,19 @@ export default function CarDetailPage() {
     );
   }
 
-  const total = smartPricing ? smartPricing.finalPrice : days * car.pricePerDay;
+  const LOCATION_FEES: Record<string, number> = {
+    "Aeroporti Nënë Tereza": 10,
+    "Aeroporti Ndërkombëtar": 10,
+    "Durrës": 15,
+    "Vlorë": 20,
+    "Sarandë": 25,
+    "Shkodër": 20,
+  };
+  const pickupFee = LOCATION_FEES[pickupLocation] ?? 0;
+  const dropoffFee = pickupLocation === dropoffLocation ? 0 : (LOCATION_FEES[dropoffLocation] ?? 0);
+  const locationFee = pickupFee + dropoffFee;
+
+  const total = (smartPricing ? smartPricing.finalPrice : days * car.pricePerDay) + (days > 0 ? locationFee : 0);
   const baseTotal = smartPricing ? smartPricing.basePrice : days * car.pricePerDay;
   const today = new Date().toISOString().split("T")[0];
 
@@ -393,7 +408,7 @@ export default function CarDetailPage() {
       >
         <button
           onClick={() =>
-            navigate(localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}`))
+            navigate(localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}&dropoff=${encodeURIComponent(dropoffLocation)}`))
           }
           className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-primary text-white font-bold text-sm shadow-2xl shadow-primary/40 hover:opacity-90 active:scale-[0.97] transition-all duration-200 cursor-pointer"
         >
@@ -735,22 +750,62 @@ export default function CarDetailPage() {
 
             {/* TAB: Specs — compact rows */}
             {tab === "specs" && (
-              <div role="tabpanel" key="specs" className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
-                {specs.map(({ icon: Icon, label, value }, i) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-secondary/40 transition-colors duration-200"
-                    style={{
-                      animation: `slideIn 0.35s ease-out ${i * 50}ms both`,
-                    }}
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <Icon size={18} weight="fill" className="text-primary" />
+              <div role="tabpanel" key="specs" className="space-y-3">
+                {/* Unavailability banner with similar car suggestion */}
+                {(carIsUnavailable || dateConflict) && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <Info size={18} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-amber-800 mb-0.5">
+                          {carIsUnavailable
+                            ? t("carDetail.availability.booked")
+                            : t("carDetail.availability.dateTaken")}
+                        </p>
+                        <p className="text-xs text-amber-700 mb-3">
+                          {t("carDetail.similarCar.suggestion", "Ky model nuk është i disponueshëm. Mund të gjeni diçka të ngjashme tek makina e mëposhtme:")}
+                        </p>
+                        {relatedCars.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {relatedCars.slice(0, 3).map((rc) => (
+                              <LLink
+                                key={rc.id}
+                                to={`/makina/${rc.slug}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs font-medium text-amber-800 hover:bg-amber-100 transition-colors no-underline"
+                              >
+                                <CarSimple size={12} />
+                                {rc.brand} {rc.model} — €{rc.pricePerDay}/ditë
+                                <ArrowRight size={11} weight="bold" />
+                              </LLink>
+                            ))}
+                          </div>
+                        ) : (
+                          <LLink to="/flota" className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:underline no-underline">
+                            {t("carDetail.backToFleet")} <ArrowRight size={12} weight="bold" />
+                          </LLink>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-sm text-neutral-500 flex-1">{label}</span>
-                    <span className="text-sm font-semibold text-neutral-800">{value}</span>
                   </div>
-                ))}
+                )}
+
+                <div className="bg-white rounded-xl border border-border/80 overflow-hidden divide-y divide-border/60">
+                  {specs.map(({ icon: Icon, label, value }, i) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-4 px-5 py-3.5 hover:bg-secondary/40 transition-colors duration-200"
+                      style={{
+                        animation: `slideIn 0.35s ease-out ${i * 50}ms both`,
+                      }}
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                        <Icon size={18} weight="fill" className="text-primary" />
+                      </div>
+                      <span className="text-sm text-neutral-500 flex-1">{label}</span>
+                      <span className="text-sm font-semibold text-neutral-800">{value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1001,16 +1056,44 @@ export default function CarDetailPage() {
                         >
                           {(t("carDetail.pickupLocations", { returnObjects: true }) as { value: string; label: string; icon: string }[]).map((loc) => (
                             <option key={loc.value} value={loc.value}>
-                              {loc.icon} {loc.label}
+                              {loc.icon} {loc.label}{LOCATION_FEES[loc.value] ? ` (+€${LOCATION_FEES[loc.value]})` : ""}
                             </option>
                           ))}
                         </select>
                         <CaretRightIcon size={14} weight="bold" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 rotate-90 pointer-events-none" />
                       </div>
-                      {pickupLocation === "Aeroporti Ndërkombëtar" && (
-                        <p className="text-[11px] text-emerald-600 mt-1 flex items-center gap-1">
-                          <CheckCircle size={11} weight="fill" />
-                          {t("carDetail.booking.airportFree")}
+                      {pickupFee > 0 && (
+                        <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                          <MapPin size={11} weight="fill" />
+                          Tarifë dërgese: +€{pickupFee}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Dropoff Location Selector */}
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
+                        <MapPin size={11} weight="fill" className="inline mr-1" />
+                        {t("carDetail.booking.dropoffLocation", "Ktheje në")}
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={dropoffLocation}
+                          onChange={(e) => setDropoffLocation(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 appearance-none cursor-pointer pr-8"
+                        >
+                          {(t("carDetail.pickupLocations", { returnObjects: true }) as { value: string; label: string; icon: string }[]).map((loc) => (
+                            <option key={loc.value} value={loc.value}>
+                              {loc.icon} {loc.label}{LOCATION_FEES[loc.value] ? ` (+€${LOCATION_FEES[loc.value]})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <CaretRightIcon size={14} weight="bold" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 rotate-90 pointer-events-none" />
+                      </div>
+                      {dropoffFee > 0 && (
+                        <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                          <MapPin size={11} weight="fill" />
+                          Tarifë kthimi: +€{dropoffFee}
                         </p>
                       )}
                     </div>
@@ -1070,6 +1153,15 @@ export default function CarDetailPage() {
                           </>
                         )}
 
+                        {locationFee > 0 && (
+                          <div className="flex justify-between text-amber-600">
+                            <span className="flex items-center gap-1">
+                              <MapPin size={12} weight="fill" />
+                              Tarifë lokacioni
+                            </span>
+                            <span className="font-medium">+€{locationFee}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-neutral-600">
                           <span>{t("carDetail.booking.insurance")}</span>
                           <span className="text-emerald-600 font-medium">{t("carDetail.booking.insuranceFree")}</span>
@@ -1102,7 +1194,7 @@ export default function CarDetailPage() {
                   <button
                     onClick={() =>
                       navigate(
-                        localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}`),
+                        localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}&dropoff=${encodeURIComponent(dropoffLocation)}`),
                       )
                     }
                     disabled={!available || (!!startDate && !!endDate && dateConflict)}

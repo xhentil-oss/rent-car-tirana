@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   MagnifyingGlass, X, ChatCircle, FileText, Phone, Envelope,
   Warning, Star, Buildings, Plus, PaperPlaneRight, Shield, ShieldSlash,
-  Upload, Clock, Crown, Certificate,
+  Upload, Clock, Crown, Certificate, Trash,
 } from "@phosphor-icons/react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { TableSkeleton } from "../../components/ui/Skeleton";
@@ -38,7 +38,7 @@ export default function AdminCustomers() {
   const { data: documents, refetch: refetchDocs } = useQuery("CustomerDocument");
   const { data: communications, refetch: refetchComms } = useQuery("CommunicationLog");
   const { data: chatMessages, refetch: refetchChats } = useQuery("ChatMessage");
-  const { update: updateCustomer, create: createCustomer, isPending: isMutating } = useMutation("Customer");
+  const { update: updateCustomer, create: createCustomer, remove: removeCustomer, isPending: isMutating } = useMutation("Customer");
   const log = useActivityLog();
   const { create: createDoc } = useMutation("CustomerDocument");
   const { create: createComm } = useMutation("CommunicationLog");
@@ -49,6 +49,7 @@ export default function AdminCustomers() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Chat
   const [chatInput, setChatInput] = useState("");
@@ -151,6 +152,17 @@ export default function AdminCustomers() {
     } catch (e) { console.error(e); }
   };
 
+  const handleDeleteCustomer = async (id: string) => {
+    const customer = (customers ?? []).find(c => c.id === id);
+    try {
+      await removeCustomer(id);
+      await log("DELETE", "Customer", id, `Klient u fshi: ${customer?.name ?? id}`);
+      setDeleteConfirmId(null);
+      if (selectedCustomerId === id) setSelectedCustomerId(null);
+      await refetchCustomers();
+    } catch (e) { console.error(e); }
+  };
+
   const openCustomer = (id: string) => { setSelectedCustomerId(id); setActiveTab("overview"); };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -232,7 +244,12 @@ export default function AdminCustomers() {
                       : <span className="text-xs font-medium text-success flex items-center gap-1"><Shield size={12} />Aktiv</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => openCustomer(customer.id)} className="text-xs font-medium text-primary hover:underline cursor-pointer">Shiko</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openCustomer(customer.id)} className="text-xs font-medium text-primary hover:underline cursor-pointer">Shiko</button>
+                      <button onClick={() => setDeleteConfirmId(customer.id)} className="p-1 rounded text-neutral-400 hover:text-error hover:bg-error/10 transition-colors cursor-pointer" aria-label="Fshi klientin">
+                        <Trash size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -355,6 +372,23 @@ export default function AdminCustomers() {
                       </div>
                       <button onClick={() => handleToggleBlacklist(selectedCustomer)} disabled={isMutating} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${selectedCustomer.isBlacklisted ? "bg-success text-success-foreground hover:bg-success/90" : "bg-error text-error-foreground hover:bg-error/90"}`}>
                         {selectedCustomer.isBlacklisted ? <><Shield size={15} />Zhblloko</> : <><ShieldSlash size={15} />Blloko</>}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Delete customer */}
+                  <div className="rounded-lg p-4 border border-error/20 bg-error/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-neutral-800">Fshi klientin</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">Fshini përgjithmonë të dhënat e këtij klienti</p>
+                      </div>
+                      <button
+                        onClick={() => setDeleteConfirmId(selectedCustomer.id)}
+                        disabled={isMutating}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-error text-error-foreground hover:bg-error/90 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Trash size={15} />Fshi
                       </button>
                     </div>
                   </div>
@@ -493,6 +527,41 @@ export default function AdminCustomers() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+                <Trash size={20} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900">Fshi klientin</h3>
+                <p className="text-xs text-neutral-500">Ky veprim është i pakthyeshëm</p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600 mb-5">
+              A jeni të sigurt që dëshironi të fshini klientin{" "}
+              <span className="font-semibold">{(customers ?? []).find(c => c.id === deleteConfirmId)?.name}</span>?
+              Të gjitha rezervimet dhe dokumentet e lidhura mund të preken.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">
+                Anulo
+              </button>
+              <button
+                onClick={() => handleDeleteCustomer(deleteConfirmId)}
+                disabled={isMutating}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-error text-error-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+              >
+                Po, fshi
+              </button>
             </div>
           </div>
         </div>

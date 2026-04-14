@@ -232,6 +232,18 @@ export default function BookingPage() {
     return getDominantSeason(start, end);
   }, [form.startDate, form.endDate]);
 
+  const LOCATION_FEES: Record<string, number> = {
+    "Aeroporti Nënë Tereza": 10,
+    "Aeroporti Ndërkombëtar": 10,
+    "Durrës": 15,
+    "Vlorë": 20,
+    "Sarandë": 25,
+    "Shkodër": 20,
+  };
+  const pickupFee = LOCATION_FEES[form.pickup] ?? 0;
+  const dropoffFee = form.pickup === form.dropoff ? 0 : (LOCATION_FEES[form.dropoff] ?? 0);
+  const locationFeeTotal = pickupFee + dropoffFee;
+
   const extrasTotal = form.extras.reduce((sum, id) => {
     const opt = extraOptions.find((e) => e.id === id);
     return sum + (opt ? opt.price * days : 0);
@@ -269,7 +281,7 @@ export default function BookingPage() {
       ? Math.round(basePrice * 0.1)
       : 0;
   const discount = ruleDiscount + legacyDiscount;
-  const total = basePrice + extrasTotal + insuranceTotal - discount;
+  const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - discount;
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
@@ -501,10 +513,20 @@ export default function BookingPage() {
                       className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                     >
                       <option value="">{t("booking.selectPlace")}</option>
-                      <option value="Tiranë Qendër">{t("booking.centerTirana")}</option>
-                      <option value="Aeroporti">{t("booking.airport")}</option>
+                      <option value="Tiranë Qendër">Tiranë Qendër</option>
+                      <option value="Aeroporti Nënë Tereza">✈ Aeroporti Nënë Tereza (+€10)</option>
+                      <option value="Durrës">Durrës (+€15)</option>
+                      <option value="Vlorë">Vlorë (+€20)</option>
+                      <option value="Sarandë">Sarandë (+€25)</option>
+                      <option value="Shkodër">Shkodër (+€20)</option>
                     </select>
                   </div>
+                  {pickupFee > 0 && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <MapPin size={11} weight="fill" />
+                      Tarifë dërgese: +€{pickupFee}
+                    </p>
+                  )}
                   {errors.pickup && (
                     <p className="text-xs text-error mt-1">{errors.pickup}</p>
                   )}
@@ -532,10 +554,20 @@ export default function BookingPage() {
                       className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                     >
                       <option value="">{t("booking.selectPlace")}</option>
-                      <option value="Tiranë Qendër">{t("booking.centerTirana")}</option>
-                      <option value="Aeroporti">{t("booking.airport")}</option>
+                      <option value="Tiranë Qendër">Tiranë Qendër</option>
+                      <option value="Aeroporti Nënë Tereza">✈ Aeroporti Nënë Tereza (+€10)</option>
+                      <option value="Durrës">Durrës (+€15)</option>
+                      <option value="Vlorë">Vlorë (+€20)</option>
+                      <option value="Sarandë">Sarandë (+€25)</option>
+                      <option value="Shkodër">Shkodër (+€20)</option>
                     </select>
                   </div>
+                  {dropoffFee > 0 && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <MapPin size={11} weight="fill" />
+                      Tarifë kthimi: +€{dropoffFee}
+                    </p>
+                  )}
                   {errors.dropoff && (
                     <p className="text-xs text-error mt-1">{errors.dropoff}</p>
                   )}
@@ -1165,6 +1197,16 @@ export default function BookingPage() {
                     <div className={`text-xs px-2 py-1 rounded-md border inline-flex items-center gap-1 ${dominantSeason.badgeColor}`}>
                       <Tag size={11} weight="bold" />
                       {dominantSeason.label}
+                    </div>
+                  )}
+                  {locationFeeTotal > 0 && (
+                    <div className="flex justify-between text-sm text-amber-700">
+                      <span className="flex items-center gap-1">
+                        <MapPin size={13} weight="fill" />
+                        Tarifë lokacioni
+                        {pickupFee > 0 && dropoffFee > 0 ? ` (tërhiqje + kthim)` : ""}
+                      </span>
+                      <span>+€{locationFeeTotal}</span>
                     </div>
                   )}
                   {extrasTotal > 0 && (

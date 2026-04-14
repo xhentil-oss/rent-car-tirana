@@ -4,13 +4,30 @@ const pool = require('../database/db');
 const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
 
+// Location fees (pickup or dropoff at these locations incur a surcharge)
+const LOCATION_FEES = {
+  'Aeroporti Nënë Tereza': 10,
+  'Durrës': 15,
+  'Vlorë': 20,
+  'Sarandë': 25,
+  'Shkodër': 20,
+};
+
+function getLocationFee(pickup, dropoff) {
+  const pFee = LOCATION_FEES[pickup] || 0;
+  const dFee = LOCATION_FEES[dropoff] || 0;
+  // If same location for pickup and dropoff, charge once; otherwise charge both
+  return pickup === dropoff ? pFee : pFee + dFee;
+}
+
 const fmt = (r) => ({
   id: r.id, carId: r.car_id, customerId: r.customer_id,
   pickupLocation: r.pickup_location, dropoffLocation: r.dropoff_location,
   startDate: r.start_date, startTime: r.start_time,
   endDate: r.end_date, endTime: r.end_time,
   notes: r.notes, source: r.source, status: r.status,
-  totalPrice: r.total_price, insurance: r.insurance, extras: r.extras,
+  totalPrice: r.total_price, locationFee: r.location_fee || 0,
+  insurance: r.insurance, extras: r.extras,
   discountCode: r.discount_code, paymentStatus: r.payment_status,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
@@ -95,7 +112,8 @@ router.post('/', async (req, res) => {
 
       const msPerDay = 86400000;
       const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
-      const totalPrice = +(pricePerDay * days).toFixed(2);
+      const locationFee = getLocationFee(pickupLocation, dropoffLocation);
+      const totalPrice = +(pricePerDay * days + locationFee).toFixed(2);
 
       // Count overlapping reservations vs car quantity
       const [overlap] = await conn.query(
@@ -109,8 +127,8 @@ router.post('/', async (req, res) => {
 
       const id = uuidv4();
       await conn.query(
-        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, insurance || null, extras || '', discountCode || null, null]
+        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, locationFee, insurance || null, extras || '', discountCode || null, null]
       );
 
       await conn.commit();
