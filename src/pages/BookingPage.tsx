@@ -29,7 +29,7 @@ import {
   getDominantSeason,
   getAllSeasonPrices,
 } from "../lib/seasonalPricing";
-import { applyPricingRules, absorbSurchargesToPricePerDay, RULE_TYPE_LABELS } from "../lib/pricingRules";
+import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { sendBookingConfirmation } from "../lib/emailService";
 
@@ -215,28 +215,14 @@ export default function BookingPage() {
     return { days: billableDays, hours: Math.round(totalHours) };
   })();
 
-  // Pre-pass: absorb surcharge rules into pricePerDay so customers see a single
-  // adjusted daily rate (e.g. €70/day) instead of a separate surcharge line.
-  const { adjustedPricePerDay, absorbedIds: absorbedSurchargeIds } = React.useMemo(() => {
-    if (!car || !form.startDate || !form.endDate || days === 0)
-      return { adjustedPricePerDay: car?.pricePerDay ?? 0, absorbedIds: [] as string[] };
-    const ctx = {
-      carId: car.id, carCategory: car.category,
-      startDate: new Date(form.startDate), endDate: new Date(form.endDate),
-      days, bookingDate: new Date(),
-    };
-    return absorbSurchargesToPricePerDay((pricingRules ?? []) as PricingRule[], car.pricePerDay, ctx);
-  }, [pricingRules, car, form.startDate, form.endDate, days]);
-
-  // Seasonal pricing calculation — uses adjustedPricePerDay so surcharges are visible
-  // only through the higher daily rate, not as a separate line item.
+  // Seasonal pricing calculation
   const seasonalData = React.useMemo(() => {
     if (!form.startDate || !form.endDate || !car) return null;
     const start = new Date(form.startDate);
     const end = new Date(form.endDate);
     if (end <= start) return null;
-    return calculateSeasonalTotal(adjustedPricePerDay || car.pricePerDay, start, end);
-  }, [form.startDate, form.endDate, car, adjustedPricePerDay]);
+    return calculateSeasonalTotal(car.pricePerDay, start, end);
+  }, [form.startDate, form.endDate, car]);
 
   const dominantSeason = React.useMemo(() => {
     if (!form.startDate || !form.endDate) return getSeasonForDate(new Date());
@@ -269,12 +255,10 @@ export default function BookingPage() {
   const basePrice = seasonalData ? seasonalData.total : days * (car?.pricePerDay ?? 0);
   const insuranceTotal = insurancePrice * days;
 
-  // Apply admin pricing rules — surcharge rules already absorbed above are excluded.
+  // Apply admin pricing rules on top of seasonal price — must be after basePrice declaration
   const pricingRuleResult = React.useMemo(() => {
     if (!car || !form.startDate || !form.endDate || days === 0 || basePrice === 0) return null;
-    const activeRules = ((pricingRules ?? []) as PricingRule[]).filter(
-      (r) => !absorbedSurchargeIds.includes(r.id)
-    );
+    const activeRules = (pricingRules ?? []) as PricingRule[];
     if (activeRules.length === 0) return null;
     const ctx = {
       carId: car.id,
@@ -288,7 +272,7 @@ export default function BookingPage() {
     const result = applyPricingRules(activeRules, basePrice, ctx);
     return result.appliedDiscounts.length > 0 ? result : null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, basePrice, absorbedSurchargeIds]);
+  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, basePrice]);
 
   // Rule-based discounts replace the old hardcoded TIRANA10 logic
   const ruleDiscount = pricingRuleResult ? pricingRuleResult.totalDiscount : 0;
@@ -298,6 +282,14 @@ export default function BookingPage() {
       : 0;
   const discount = ruleDiscount + legacyDiscount;
   const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - discount;
+
+  // Effective car subtotal (base ± rule adjustments, no extras/insurance/location).
+  // For surcharges ruleDiscount < 0, so carSubtotal > basePrice — shown as the daily rate.
+  const carSubtotal = Math.round((basePrice - ruleDiscount - legacyDiscount) * 100) / 100;
+  // Effective per-day rate shown to customer — includes surcharges folded in
+  const effectiveDailyRate = days > 0
+    ? Math.round(carSubtotal / days * 100) / 100
+    : (car?.pricePerDay ?? 0);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
@@ -1185,23 +1177,30 @@ export default function BookingPage() {
                   })}
                   {seasonalData && seasonalData.breakdown.length > 1 ? (
                     <>
-                      {seasonalData.breakdown.map((b) => (
+                      {seasonalData.breakdown.map((b) => {
+                        // Scale each season's per-day price by the effective rate ratio
+                        // so multi-season breakdowns also reflect surcharges silently
+                        const ratio = basePrice > 0 ? carSubtotal / basePrice : 1;
+                        const effectivePPD = Math.round(b.pricePerDay * ratio * 100) / 100;
+                        const effectiveSubtotal = Math.round(b.subtotal * ratio * 100) / 100;
+                        return (
                         <div key={b.season.id} className="flex justify-between text-sm text-neutral-700">
-                          <span>{b.season.emoji} {b.days} ditë × €{b.pricePerDay}</span>
-                          <span>€{b.subtotal}</span>
+                          <span>{b.season.emoji} {b.days} ditë × €{effectivePPD}</span>
+                          <span>€{effectiveSubtotal}</span>
                         </div>
-                      ))}
+                        );
+                      })}
                     </>
                   ) : (
                     <div className="flex justify-between text-sm text-neutral-700">
                       <span>
                         {days > 0 && seasonalData
-                          ? `${dominantSeason.emoji} ${days} ${t("booking.days")} × €${Math.round(adjustedPricePerDay * dominantSeason.multiplier * 100) / 100}`
+                          ? `${dominantSeason.emoji} ${days} ${t("booking.days")} × €${effectiveDailyRate}`
                           : days > 0
-                          ? `${days} ${t("booking.days")} × €${adjustedPricePerDay}`
+                          ? `${days} ${t("booking.days")} × €${effectiveDailyRate}`
                           : t("booking.discountCode")}
                       </span>
-                      <span>€{basePrice}</span>
+                      <span>€{carSubtotal}</span>
                     </div>
                   )}
                   {days > 0 && hours > 0 && (
@@ -1237,15 +1236,14 @@ export default function BookingPage() {
                       <span>€{insuranceTotal}</span>
                     </div>
                   )}
-                  {pricingRuleResult && pricingRuleResult.appliedDiscounts.map((disc) => {
-                    const isSurcharge = disc.discountAmount < 0;
-                    return (
-                    <div key={disc.rule.id} className={`flex justify-between text-sm ${isSurcharge ? "text-red-600" : "text-success"}`}>
+                  {pricingRuleResult && pricingRuleResult.appliedDiscounts
+                    .filter((disc) => disc.discountAmount > 0) // surcharges are folded into the rate above
+                    .map((disc) => (
+                    <div key={disc.rule.id} className="flex justify-between text-sm text-success">
                       <span>{disc.label}</span>
-                      <span>{isSurcharge ? `+€${Math.abs(disc.discountAmount)}` : `-€${disc.discountAmount}`}</span>
+                      <span>-€{disc.discountAmount}</span>
                     </div>
-                    );
-                  })}
+                  ))}
                   {legacyDiscount > 0 && (
                     <div className="flex justify-between text-sm text-success">
                       <span>{t("booking.discount")}</span>
