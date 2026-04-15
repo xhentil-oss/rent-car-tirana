@@ -47,6 +47,8 @@ import StatusBadge from "../components/StatusBadge";
 import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
 import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
+import { resolveMonthlyRate, calcTotalWithMonthlyRates } from "../lib/monthlyRates";
+import type { MonthlyRate } from "../lib/monthlyRates";
 
 // These constants use icon references; labels are resolved via t() at render time
 const EXTRAS_ICONS = [
@@ -99,6 +101,7 @@ export default function CarDetailPage() {
   const { data: allReservations } = useQuery("ReservationAvailability");
   const { data: dbReviews } = useQuery("Review", { where: { approved: true }, orderBy: { createdAt: "desc" }, limit: 6 });
   const { data: pricingRulesRaw } = useQuery("PricingRule");
+  const { data: monthlyRatesPublic } = useQuery("MonthlyRatePublic", { where: { year: new Date().getFullYear() } });
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -264,23 +267,18 @@ export default function CarDetailPage() {
     [car?.pricePerDay]
   );
 
-  // Effective price per day — surcharge rules applied on top of BASE price (not seasonal)
+  // Effective price per day — monthly rate for current month > seasonal
   const effectivePricePerDay = useMemo(() => {
     if (!car) return seasonalPricePerDay;
-    const rules = (pricingRulesRaw ?? []) as PricingRule[];
-    const surcharges = rules.filter(r => r.direction === 'surcharge');
-    if (surcharges.length === 0) return seasonalPricePerDay;
-    const today = new Date();
-    const ctx = {
-      carId: car.id, carCategory: car.category,
-      startDate: today, endDate: new Date(today.getTime() + 86400000),
-      days: 1, bookingDate: today,
-    };
-    const res = applyPricingRules(surcharges, car.pricePerDay, ctx);
-    if (res.appliedDiscounts.length === 0) return seasonalPricePerDay;
-    // surcharge totalDiscount is negative → subtract to add the surcharge
-    return Math.round((car.pricePerDay - res.totalDiscount) * 100) / 100;
-  }, [car?.pricePerDay, pricingRulesRaw, seasonalPricePerDay]);
+    const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
+    if (rates.length > 0) {
+      const month = new Date().getMonth() + 1;
+      const year = new Date().getFullYear();
+      const monthly = resolveMonthlyRate(rates, car.id, car.category, month, year);
+      if (monthly !== null) return monthly;
+    }
+    return seasonalPricePerDay;
+  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay]);
 
   // "List price" — always higher than actual to show discount visual
   const listPrice = useMemo(
@@ -289,14 +287,19 @@ export default function CarDetailPage() {
   );
   const discount = listPrice > 0 ? Math.round(((listPrice - effectivePricePerDay) / listPrice) * 100) : 0;
 
-  // Smart pricing: seasonal total + pricing rules when dates selected
+  // Smart pricing: monthly rates (priority) or seasonal + discount rules only
   const smartPricing = useMemo<PricingResult | null>(() => {
     if (!car || !startDate || !endDate || days === 0) return null;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const seasonalCalc = calculateSeasonalTotal(car.pricePerDay, start, end);
-    const rules = (pricingRulesRaw ?? []) as PricingRule[];
-    return applyPricingRules(rules, seasonalCalc.total, {
+    const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
+    const priceBase = rates.length > 0
+      ? calcTotalWithMonthlyRates(rates, car.id, car.category, car.pricePerDay, start, end).total
+      : calculateSeasonalTotal(car.pricePerDay, start, end).total;
+    // Only discount rules (no surcharges) on top of base
+    const rules = ((pricingRulesRaw ?? []) as PricingRule[])
+      .filter(r => !r.direction || r.direction === "discount");
+    return applyPricingRules(rules, priceBase, {
       carId: car.id,
       carCategory: car.category,
       startDate: start,
@@ -304,7 +307,7 @@ export default function CarDetailPage() {
       days,
       bookingDate: new Date(),
     });
-  }, [car?.id, car?.category, car?.pricePerDay, startDate, endDate, days, pricingRulesRaw]);
+  }, [car?.id, car?.category, car?.pricePerDay, startDate, endDate, days, pricingRulesRaw, monthlyRatesPublic]);
 
   // Seasonal breakdown for display
   const seasonalBreakdown = useMemo(() => {
@@ -389,8 +392,8 @@ export default function CarDetailPage() {
   const dropoffFee = pickupLocation === dropoffLocation ? 0 : (LOCATION_FEES[dropoffLocation] ?? 0);
   const locationFee = pickupFee + dropoffFee;
 
-  const total = (smartPricing ? smartPricing.finalPrice : days * car.pricePerDay) + (days > 0 ? locationFee : 0);
-  const baseTotal = smartPricing ? smartPricing.basePrice : days * car.pricePerDay;
+  const total = (smartPricing ? smartPricing.finalPrice : days * effectivePricePerDay) + (days > 0 ? locationFee : 0);
+  const baseTotal = smartPricing ? smartPricing.basePrice : days * effectivePricePerDay;
   const today = new Date().toISOString().split("T")[0];
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
@@ -1023,7 +1026,7 @@ export default function CarDetailPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-white/40 text-xs line-through decoration-red-400/70 block">€{listPrice}/{t("carDetail.bookingCard.perDayShort")}</span>
-                      <span className="text-3xl font-bold text-white">€{seasonalPricePerDay}</span>
+                      <span className="text-3xl font-bold text-white">€{effectivePricePerDay}</span>
                       <span className="text-white/60 text-xs">{t("carDetail.bookingCard.perDayShort")}</span>
                       {discount > 0 && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/90 text-white text-[10px] font-bold">-{discount}%</span>
@@ -1261,9 +1264,9 @@ export default function CarDetailPage() {
               {/* Price breakdown cards */}
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {[
-                  { period: t("carDetail.pricing.daily"), amount: seasonalPricePerDay, list: listPrice, unit: t("carDetail.perDay") },
-                  { period: t("carDetail.pricing.weekly"), amount: Math.round(seasonalPricePerDay * 7), list: listPrice * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
-                  { period: t("carDetail.pricing.monthly"), amount: Math.round(seasonalPricePerDay * 28), list: listPrice * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
+                  { period: t("carDetail.pricing.daily"), amount: effectivePricePerDay, list: listPrice, unit: t("carDetail.perDay") },
+                  { period: t("carDetail.pricing.weekly"), amount: Math.round(effectivePricePerDay * 7), list: listPrice * 7, unit: `/${t("carDetail.weekly").split(" ")[0].toLowerCase()}` },
+                  { period: t("carDetail.pricing.monthly"), amount: Math.round(effectivePricePerDay * 28), list: listPrice * 28, unit: `/${t("carDetail.monthly").split(" ")[0].toLowerCase()}` },
                 ].map(({ period, amount, list, unit }) => (
                   <div key={period} className="bg-white rounded-xl border border-border p-3 text-center">
                     <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-1">{period}</p>

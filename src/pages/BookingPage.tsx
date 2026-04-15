@@ -296,7 +296,7 @@ export default function BookingPage() {
     ? pricingRuleResult.finalPrice
     : preDiscountBase;
 
-  const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal;
+  const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - legacyDiscount;
 
   // Effective per-day rate shown to customer
   const effectiveDailyRate = days > 0
