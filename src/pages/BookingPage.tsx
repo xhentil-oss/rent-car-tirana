@@ -1164,9 +1164,10 @@ export default function BookingPage() {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                    {/* Seasonal base price breakdown in summary */}
-                  {/* Active pricing rule discounts */}
-                  {pricingRuleResult && pricingRuleResult.appliedDiscounts.map((disc) => {
+                  {/* Active pricing rule discounts — surcharges hidden (folded into daily rate) */}
+                  {pricingRuleResult && pricingRuleResult.appliedDiscounts
+                    .filter((disc) => disc.discountAmount > 0)
+                    .map((disc) => {
                     const meta = RULE_TYPE_LABELS[disc.rule.type] ?? { emoji: "🏷️", color: "bg-green-100 text-green-700 border-green-200" };
                     return (
                       <div key={disc.rule.id} className={`text-xs px-2 py-1 rounded-md border inline-flex items-center gap-1 ${meta.color}`}>
