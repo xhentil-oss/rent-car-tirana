@@ -264,12 +264,30 @@ export default function CarDetailPage() {
     [car?.pricePerDay]
   );
 
+  // Effective price per day — surcharge rules applied on top of BASE price (not seasonal)
+  const effectivePricePerDay = useMemo(() => {
+    if (!car) return seasonalPricePerDay;
+    const rules = (pricingRulesRaw ?? []) as PricingRule[];
+    const surcharges = rules.filter(r => r.direction === 'surcharge');
+    if (surcharges.length === 0) return seasonalPricePerDay;
+    const today = new Date();
+    const ctx = {
+      carId: car.id, carCategory: car.category,
+      startDate: today, endDate: new Date(today.getTime() + 86400000),
+      days: 1, bookingDate: today,
+    };
+    const res = applyPricingRules(surcharges, car.pricePerDay, ctx);
+    if (res.appliedDiscounts.length === 0) return seasonalPricePerDay;
+    // surcharge totalDiscount is negative → subtract to add the surcharge
+    return Math.round((car.pricePerDay - res.totalDiscount) * 100) / 100;
+  }, [car?.pricePerDay, pricingRulesRaw, seasonalPricePerDay]);
+
   // "List price" — always higher than actual to show discount visual
   const listPrice = useMemo(
     () => car ? Math.round(car.pricePerDay * 1.2) : 0,
     [car?.pricePerDay]
   );
-  const discount = listPrice > 0 ? Math.round(((listPrice - seasonalPricePerDay) / listPrice) * 100) : 0;
+  const discount = listPrice > 0 ? Math.round(((listPrice - effectivePricePerDay) / listPrice) * 100) : 0;
 
   // Smart pricing: seasonal total + pricing rules when dates selected
   const smartPricing = useMemo<PricingResult | null>(() => {
@@ -652,7 +670,7 @@ export default function CarDetailPage() {
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.from")}</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-white">€{seasonalPricePerDay}</span>
+                <span className="text-4xl font-bold text-white">€{effectivePricePerDay}</span>
                 <span className="text-white/50 text-sm">{t("carDetail.perDay")}</span>
                 <span className="text-white/40 text-base line-through decoration-red-400/70">€{listPrice}</span>
                 {discount > 0 && (
@@ -663,12 +681,12 @@ export default function CarDetailPage() {
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.weekly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{Math.round(seasonalPricePerDay * 7)}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(effectivePricePerDay * 7)}</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.monthly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{Math.round(seasonalPricePerDay * 28)}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(effectivePricePerDay * 28)}</span>
             </div>
             <div className="h-8 w-px bg-white/20 hidden md:block" />
             {/* Season badge */}
