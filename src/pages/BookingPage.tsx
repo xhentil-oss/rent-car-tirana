@@ -31,6 +31,8 @@ import {
 } from "../lib/seasonalPricing";
 import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
+import { calcTotalWithMonthlyRates } from "../lib/monthlyRates";
+import type { MonthlyRate } from "../lib/monthlyRates";
 import { sendBookingConfirmation } from "../lib/emailService";
 
 interface BookingForm {
@@ -198,8 +200,9 @@ export default function BookingPage() {
   const [contractDownloaded, setContractDownloaded] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  // Load pricing rules from DB
+  // Load pricing rules and monthly rates from DB
   const { data: pricingRules } = useQuery("PricingRule", { where: { isActive: true } });
+  const { data: monthlyRatesRaw } = useQuery("MonthlyRatePublic", { where: { year: new Date().getFullYear() } });
 
   const { days, hours } = (() => {
     if (!form.startDate || !form.endDate) return { days: 0, hours: 0 };
@@ -253,53 +256,45 @@ export default function BookingPage() {
     insuranceOptions.find((i) => i.id === form.insurance)?.price || 0;
   const flatBasePrice = days * (car?.pricePerDay ?? 0);
 
-  // Run ALL pricing rules against the FLAT base price (not seasonal).
-  // This ensures surcharges apply on €60, not €72.
-  // Works regardless of whether the `direction` DB column exists.
-  const flatRulesResult = React.useMemo(() => {
-    if (!car || !form.startDate || !form.endDate || days === 0 || flatBasePrice === 0) return null;
-    const rules = (pricingRules ?? []) as PricingRule[];
-    if (rules.length === 0) return null;
-    const ctx = {
-      carId: car.id, carCategory: car.category,
-      startDate: new Date(form.startDate), endDate: new Date(form.endDate),
-      days, bookingDate: new Date(), promoCode: form.discountCode || undefined,
-    };
-    const res = applyPricingRules(rules, flatBasePrice, ctx);
-    return res.appliedDiscounts.length > 0 ? res : null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, flatBasePrice]);
-
-  // A surcharge is active if any rule produced a NEGATIVE discountAmount
-  const hasSurcharge = (flatRulesResult?.appliedDiscounts ?? []).some(d => d.discountAmount < 0);
-
-  // When surcharge active: use flatRulesResult.finalPrice (bypasses seasonal)
-  // When no surcharge: use seasonal base (normal behavior), then apply discounts
-  const pricingRuleResult = React.useMemo(() => {
+  // Monthly rates as primary price source (priority 1 over seasonal)
+  const monthlyRatesCalc = React.useMemo(() => {
     if (!car || !form.startDate || !form.endDate || days === 0) return null;
-    if (hasSurcharge) return flatRulesResult; // surcharge already computed on flat base
-    // No surcharge — apply rules on seasonal base
-    const seasonalBase = seasonalData?.total ?? flatBasePrice;
-    if (seasonalBase === 0) return null;
-    const rules = (pricingRules ?? []) as PricingRule[];
+    const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
+    if (rates.length === 0) return null;
+    return calcTotalWithMonthlyRates(
+      rates, car.id, car.category, car.pricePerDay,
+      new Date(form.startDate), new Date(form.endDate)
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthlyRatesRaw, car, form.startDate, form.endDate, days]);
+
+  // Pre-discount base: monthly rates → seasonal → flat
+  const preDiscountBase = monthlyRatesCalc
+    ? monthlyRatesCalc.total
+    : (seasonalData ? seasonalData.total : flatBasePrice);
+
+  // Apply only DISCOUNT (not surcharge) pricing rules on top of pre-discount base
+  const pricingRuleResult = React.useMemo(() => {
+    if (!car || !form.startDate || !form.endDate || days === 0 || preDiscountBase === 0) return null;
+    const rules = ((pricingRules ?? []) as PricingRule[])
+      .filter(r => !r.direction || r.direction === "discount");
     if (rules.length === 0) return null;
     const ctx = {
       carId: car.id, carCategory: car.category,
       startDate: new Date(form.startDate), endDate: new Date(form.endDate),
       days, bookingDate: new Date(), promoCode: form.discountCode || undefined,
     };
-    const res = applyPricingRules(rules, seasonalBase, ctx);
+    const res = applyPricingRules(rules, preDiscountBase, ctx);
     return res.appliedDiscounts.length > 0 ? res : null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSurcharge, flatRulesResult, seasonalData, pricingRules, car, form.startDate, form.endDate, form.discountCode, days, flatBasePrice]);
+  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, preDiscountBase]);
 
   const insuranceTotal = insurancePrice * days;
 
-  // basePrice: finalPrice from rules (surcharge+discounts already factored in)
-  // or seasonal (no rules) or flat (no dates)
+  // basePrice: after discounts applied (or pre-discount base if no discounts)
   const basePrice = pricingRuleResult
     ? pricingRuleResult.finalPrice
-    : (seasonalData ? seasonalData.total : flatBasePrice);
+    : preDiscountBase;
 
   const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal;
 
@@ -895,8 +890,8 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Seasonal Pricing Banner — hidden when a surcharge rule is active for this period */}
-            {form.startDate && form.endDate && days > 0 && !activeSurcharge && (
+            {/* Seasonal Pricing Banner — hidden when monthly rates are active */}
+            {form.startDate && form.endDate && days > 0 && !monthlyRatesCalc?.usedMonthlyRate && (
               <div className={`rounded-lg border p-4 ${dominantSeason.badgeColor}`}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl leading-none mt-0.5">{dominantSeason.emoji}</span>
@@ -1187,9 +1182,9 @@ export default function BookingPage() {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                  {/* Active pricing rule discounts — surcharges hidden (folded into daily rate) */}
+                  {/* Active pricing rule discounts */}
                   {pricingRuleResult && pricingRuleResult.appliedDiscounts
-                    .filter((disc) => disc.discountAmount > 0 && disc.rule.direction !== "surcharge")
+                    .filter((disc) => disc.discountAmount > 0)
                     .map((disc) => {
                     const meta = RULE_TYPE_LABELS[disc.rule.type] ?? { emoji: "🏷️", color: "bg-green-100 text-green-700 border-green-200" };
                     return (
@@ -1199,7 +1194,7 @@ export default function BookingPage() {
                       </div>
                     );
                   })}
-                  {!activeSurcharge && seasonalData && seasonalData.breakdown.length > 1 ? (
+                  {!monthlyRatesCalc?.usedMonthlyRate && seasonalData && seasonalData.breakdown.length > 1 ? (
                     <>
                       {seasonalData.breakdown.map((b) => (
                         <div key={b.season.id} className="flex justify-between text-sm text-neutral-700">
@@ -1211,7 +1206,7 @@ export default function BookingPage() {
                   ) : (
                     <div className="flex justify-between text-sm text-neutral-700">
                       <span>
-                        {days > 0 && seasonalData && !activeSurcharge
+                        {days > 0 && seasonalData && !monthlyRatesCalc?.usedMonthlyRate
                           ? `${dominantSeason.emoji} ${days} ${t("booking.days")} × €${effectiveDailyRate}`
                           : days > 0
                           ? `${days} ${t("booking.days")} × €${effectiveDailyRate}`
@@ -1225,7 +1220,7 @@ export default function BookingPage() {
                       {hours} {t("booking.hours")}
                     </div>
                   )}
-                  {!activeSurcharge && dominantSeason.multiplier !== 1 && days > 0 && (
+                  {!monthlyRatesCalc?.usedMonthlyRate && dominantSeason.multiplier !== 1 && days > 0 && (
                     <div className={`text-xs px-2 py-1 rounded-md border inline-flex items-center gap-1 ${dominantSeason.badgeColor}`}>
                       <Tag size={11} weight="bold" />
                       {dominantSeason.label}
@@ -1254,7 +1249,7 @@ export default function BookingPage() {
                     </div>
                   )}
                   {pricingRuleResult && pricingRuleResult.appliedDiscounts
-                    .filter((disc) => disc.discountAmount > 0 && disc.rule.direction !== "surcharge") // surcharges are folded into the rate above
+                    .filter((disc) => disc.discountAmount > 0)
                     .map((disc) => (
                     <div key={disc.rule.id} className="flex justify-between text-sm text-success">
                       <span>{disc.label}</span>
