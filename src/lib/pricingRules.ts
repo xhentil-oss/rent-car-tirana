@@ -143,12 +143,14 @@ function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean {
  * Returns a positive number; caller determines if it's added or subtracted.
  */
 export function calcRuleDiscount(rule: PricingRule, basePrice: number): number {
+  // MySQL DECIMAL columns return as strings — always coerce to number first
+  const value = Number(rule.discountValue);
   if (rule.discountType === "percent") {
-    return Math.round(basePrice * (rule.discountValue / 100) * 100) / 100;
+    return Math.round(basePrice * (value / 100) * 100) / 100;
   }
-  // fixed — for surcharge, the full amount; for discount, capped at basePrice
-  if (rule.direction === "surcharge") return rule.discountValue;
-  return Math.min(rule.discountValue, basePrice);
+  // fixed — for surcharge, full amount; for discount, capped at basePrice
+  if (rule.direction === "surcharge") return value;
+  return Math.min(value, basePrice);
 }
 
 /**

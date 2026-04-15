@@ -1221,12 +1221,15 @@ export default function BookingPage() {
                       <span>€{insuranceTotal}</span>
                     </div>
                   )}
-                  {ruleDiscount > 0 && pricingRuleResult && pricingRuleResult.appliedDiscounts.map((disc) => (
-                    <div key={disc.rule.id} className="flex justify-between text-sm text-success">
+                  {pricingRuleResult && pricingRuleResult.appliedDiscounts.map((disc) => {
+                    const isSurcharge = disc.discountAmount < 0;
+                    return (
+                    <div key={disc.rule.id} className={`flex justify-between text-sm ${isSurcharge ? "text-red-600" : "text-success"}`}>
                       <span>{disc.label}</span>
-                      <span>-€{disc.discountAmount}</span>
+                      <span>{isSurcharge ? `+€${Math.abs(disc.discountAmount)}` : `-€${disc.discountAmount}`}</span>
                     </div>
-                  ))}
+                    );
+                  })}
                   {legacyDiscount > 0 && (
                     <div className="flex justify-between text-sm text-success">
                       <span>{t("booking.discount")}</span>
