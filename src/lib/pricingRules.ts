@@ -90,7 +90,7 @@ function isUsageAvailable(rule: PricingRule): boolean {
 /**
  * Check if a rule's specific conditions are met for a booking context
  */
-function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean {
+export function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean {
   if (!rule.isActive) return false;
   if (!isDateWindowActive(rule, ctx.startDate, ctx.endDate)) return false;
   if (!isApplicableTocar(rule, ctx.carId, ctx.carCategory)) return false;
@@ -136,6 +136,43 @@ function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * Pre-apply surcharge rules directly to pricePerDay so the customer sees a single
+ * higher daily rate instead of a separate surcharge line.
+ *
+ * Only the highest-priority surcharge rule (non-promo) wins, same logic as the
+ * main engine.  Returns the adjusted pricePerDay and the IDs of absorbed rules
+ * so the main engine can skip them.
+ */
+export function absorbSurchargesToPricePerDay(
+  rules: PricingRule[],
+  pricePerDay: number,
+  ctx: RuleMatchContext
+): { adjustedPricePerDay: number; absorbedIds: string[] } {
+  if (ctx.days === 0) return { adjustedPricePerDay: pricePerDay, absorbedIds: [] };
+
+  const matching = rules
+    .filter((r) => doesRuleMatch(r, ctx) && r.direction === "surcharge" && r.type !== "promo_code")
+    .sort((a, b) => b.priority - a.priority);
+
+  if (matching.length === 0) return { adjustedPricePerDay: pricePerDay, absorbedIds: [] };
+
+  const top = matching[0];
+  const value = Number(top.discountValue);
+  let delta: number;
+  if (top.discountType === "percent") {
+    delta = Math.round(pricePerDay * (value / 100) * 100) / 100;
+  } else {
+    // fixed amount is total — spread over days to get per-day delta
+    delta = Math.round((value / ctx.days) * 100) / 100;
+  }
+
+  return {
+    adjustedPricePerDay: Math.round((pricePerDay + delta) * 100) / 100,
+    absorbedIds: [top.id],
+  };
 }
 
 /**
