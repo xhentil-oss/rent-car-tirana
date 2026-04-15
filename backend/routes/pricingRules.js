@@ -10,7 +10,8 @@ const VALID_DISCOUNT_TYPES = ['percentage', 'percent', 'fixed'];
 
 const fmt = (r) => ({
   id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
-  discountValue: r.discount_value, startDate: r.start_date, endDate: r.end_date,
+  discountValue: r.discount_value, direction: r.direction || 'discount',
+  startDate: r.start_date, endDate: r.end_date,
   minDays: r.min_days, maxDays: r.max_days, advanceBookingDays: r.advance_booking_days,
   lastMinuteHours: r.last_minute_hours, promoCode: r.promo_code,
   applicableTo: r.applicable_to, isActive: !!r.is_active, priority: r.priority,
@@ -25,7 +26,8 @@ router.get('/', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=60');
     res.json(rows.map(r => ({
       id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
-      discountValue: r.discount_value, startDate: r.start_date, endDate: r.end_date,
+      discountValue: r.discount_value, direction: r.direction || 'discount',
+      startDate: r.start_date, endDate: r.end_date,
       minDays: r.min_days, maxDays: r.max_days,
       applicableTo: r.applicable_to, isActive: !!r.is_active, priority: r.priority,
       description: r.description,
@@ -52,13 +54,14 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const { name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
+    const { name, type, discountType, discountValue, direction, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
     const id = uuidv4();
     const sd = startDate && startDate !== '' ? startDate : null;
     const ed = endDate && endDate !== '' ? endDate : null;
+    const dir = direction === 'surcharge' ? 'surcharge' : 'discount';
     await pool.query(
-      'INSERT INTO pricing_rules (id, name, type, discount_type, discount_value, start_date, end_date, min_days, max_days, advance_booking_days, last_minute_hours, promo_code, applicable_to, is_active, priority, description, max_usages, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, name, type, discountType, discountValue, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.user.id]
+      'INSERT INTO pricing_rules (id, name, type, discount_type, discount_value, direction, start_date, end_date, min_days, max_days, advance_booking_days, last_minute_hours, promo_code, applicable_to, is_active, priority, description, max_usages, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [id, name, type, discountType, discountValue, dir, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.user.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
@@ -68,12 +71,13 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
 
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const { name, type, discountType, discountValue, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
+    const { name, type, discountType, discountValue, direction, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
     const sd = startDate && startDate !== '' ? startDate : null;
     const ed = endDate && endDate !== '' ? endDate : null;
+    const dir = direction === 'surcharge' ? 'surcharge' : 'discount';
     await pool.query(
-      'UPDATE pricing_rules SET name=?, type=?, discount_type=?, discount_value=?, start_date=?, end_date=?, min_days=?, max_days=?, advance_booking_days=?, last_minute_hours=?, promo_code=?, applicable_to=?, is_active=?, priority=?, description=?, max_usages=? WHERE id=?',
-      [name, type, discountType, discountValue, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.params.id]
+      'UPDATE pricing_rules SET name=?, type=?, discount_type=?, discount_value=?, direction=?, start_date=?, end_date=?, min_days=?, max_days=?, advance_booking_days=?, last_minute_hours=?, promo_code=?, applicable_to=?, is_active=?, priority=?, description=?, max_usages=? WHERE id=?',
+      [name, type, discountType, discountValue, dir, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.params.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'PricingRule', entityId: req.params.id, description: `Rregull çmimi u ndryshua: ${name}`, ipAddress: req.ip });

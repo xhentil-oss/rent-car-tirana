@@ -17,6 +17,7 @@ function useActivityLog() {
 interface RuleForm {
   name: string;
   type: string;
+  direction: "discount" | "surcharge";
   discountType: "percent" | "fixed";
   discountValue: number;
   startDate: string;
@@ -34,7 +35,7 @@ interface RuleForm {
 }
 
 const emptyForm: RuleForm = {
-  name: "", type: "seasonal", discountType: "percent", discountValue: 10,
+  name: "", type: "seasonal", direction: "discount", discountType: "percent", discountValue: 10,
   startDate: "", endDate: "", minDays: "", maxDays: "",
   advanceBookingDays: "", lastMinuteHours: "", promoCode: "",
   applicableTo: "all", priority: 50, description: "", maxUsages: "", isActive: true,
@@ -114,6 +115,7 @@ export default function AdminPricingRules() {
     setForm({
       name: rule.name,
       type: rule.type,
+      direction: (rule.direction ?? "discount") as "discount" | "surcharge",
       discountType: rule.discountType as "percent" | "fixed",
       discountValue: rule.discountValue,
       startDate: rule.startDate ? new Date(rule.startDate).toISOString().split("T")[0] : "",
@@ -155,6 +157,7 @@ export default function AdminPricingRules() {
     const payload = {
       name: form.name.trim(),
       type: form.type,
+      direction: form.direction,
       discountType: form.discountType,
       discountValue: Number(form.discountValue),
       startDate: form.startDate || undefined,
@@ -177,7 +180,7 @@ export default function AdminPricingRules() {
         await log("UPDATE", "PricingRule", editId, `Rregull i çmimit u ndryshua: ${form.name}`);
       } else {
         const created = await create(payload);
-        await log("CREATE", "PricingRule", created.id, `Rregull i ri çmimi: ${form.name} (${form.type}, ${form.discountValue}${form.discountType === "percent" ? "%" : "€"})`);
+        await log("CREATE", "PricingRule", created.id, `Rregull i ri çmimi: ${form.name} (${form.type}, ${form.direction === "surcharge" ? "+" : "-"}${form.discountValue}${form.discountType === "percent" ? "%" : "€"})`);
       }
       await refetch();
       setShowForm(false);
@@ -337,9 +340,11 @@ export default function AdminPricingRules() {
 
                         <div className="flex flex-wrap items-center gap-3">
                           {/* Discount badge */}
-                          <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-3 py-1.5">
+                          <div className={`flex items-center gap-1 rounded-lg px-3 py-1.5 border ${rule.direction === "surcharge" ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
                             <span className="text-base font-bold">
-                              {rule.discountType === "percent" ? `-${rule.discountValue}%` : `-€${rule.discountValue}`}
+                              {rule.direction === "surcharge"
+                                ? (rule.discountType === "percent" ? `+${rule.discountValue}%` : `+€${rule.discountValue}`)
+                                : (rule.discountType === "percent" ? `-${rule.discountValue}%` : `-€${rule.discountValue}`)}
                             </span>
                           </div>
 
@@ -499,9 +504,22 @@ export default function AdminPricingRules() {
                 </div>
               </div>
 
-              {/* Discount */}
+              {/* Direction: discount or surcharge */}
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Zbritja *</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Lloji i efektit *</label>
+                <div className="flex border border-border rounded-lg overflow-hidden">
+                  <button type="button" onClick={() => setForm(f => ({ ...f, direction: "discount" }))} className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${form.direction === "discount" ? "bg-emerald-600 text-white" : "bg-white text-neutral-700 hover:bg-secondary"}`}>
+                    ↓ Ulje çmimi
+                  </button>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, direction: "surcharge" }))} className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${form.direction === "surcharge" ? "bg-red-500 text-white" : "bg-white text-neutral-700 hover:bg-secondary"}`}>
+                    ↑ Rritje çmimi
+                  </button>
+                </div>
+              </div>
+
+              {/* Discount/Surcharge value */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">{form.direction === "surcharge" ? "Rritja *" : "Zbritja *"}</label>
                 <div className="flex gap-2">
                   <div className="flex border border-border rounded-lg overflow-hidden">
                     {(["percent", "fixed"] as const).map((dt) => (

@@ -14,6 +14,7 @@ export interface PricingRule {
   type: string; // seasonal | early_bird | last_minute | promo_code | length_of_stay | weekend
   discountType: string; // percent | fixed
   discountValue: number;
+  direction?: string;   // "discount" (default) | "surcharge"
   startDate: Date;
   endDate: Date;
   minDays?: number;
@@ -136,13 +137,15 @@ function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean {
 }
 
 /**
- * Calculate the discount amount for a single rule applied to a base price
+ * Calculate the adjustment amount for a single rule applied to a base price.
+ * Returns a positive number; caller determines if it's added or subtracted.
  */
 export function calcRuleDiscount(rule: PricingRule, basePrice: number): number {
   if (rule.discountType === "percent") {
     return Math.round(basePrice * (rule.discountValue / 100) * 100) / 100;
   }
-  // fixed: multiply by days? No — fixed is a flat off the total
+  // fixed — for surcharge, the full amount; for discount, capped at basePrice
+  if (rule.direction === "surcharge") return rule.discountValue;
   return Math.min(rule.discountValue, basePrice);
 }
 
@@ -171,11 +174,12 @@ export function applyPricingRules(
   if (regularRules.length > 0) {
     const top = regularRules[0];
     const amount = calcRuleDiscount(top, basePrice);
-    priceAfterRegular = basePrice - amount;
+    const isSurcharge = top.direction === "surcharge";
+    priceAfterRegular = isSurcharge ? basePrice + amount : basePrice - amount;
     const meta = RULE_TYPE_LABELS[top.type] ?? { label: top.type, emoji: "🏷️", color: "" };
     appliedDiscounts.push({
       rule: top,
-      discountAmount: amount,
+      discountAmount: isSurcharge ? -amount : amount,
       label: `${meta.emoji} ${top.name}`,
     });
   }
@@ -185,10 +189,11 @@ export function applyPricingRules(
   const promoRules = matching.filter((r) => r.type === "promo_code");
   for (const promo of promoRules) {
     const amount = calcRuleDiscount(promo, priceAfterRegular);
-    finalPrice -= amount;
+    const isSurcharge = promo.direction === "surcharge";
+    finalPrice = isSurcharge ? finalPrice + amount : finalPrice - amount;
     appliedDiscounts.push({
       rule: promo,
-      discountAmount: amount,
+      discountAmount: isSurcharge ? -amount : amount,
       label: `🎟️ ${promo.name}`,
     });
   }
