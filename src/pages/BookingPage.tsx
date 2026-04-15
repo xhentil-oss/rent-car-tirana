@@ -31,7 +31,7 @@ import {
 } from "../lib/seasonalPricing";
 import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
-import { calcTotalWithMonthlyRates } from "../lib/monthlyRates";
+import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
 import { sendBookingConfirmation } from "../lib/emailService";
 
@@ -308,6 +308,17 @@ export default function BookingPage() {
     !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
       ? Math.round(basePrice * 0.1)
       : 0;
+
+  // Price per day shown as car info label (uses monthly rate for current month if available)
+  const displayPricePerDay = React.useMemo(() => {
+    if (!car) return 0;
+    const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
+    if (rates.length > 0) {
+      const monthly = resolveMonthlyRate(rates, car.id, car.category, new Date().getMonth() + 1, new Date().getFullYear());
+      if (monthly !== null) return monthly;
+    }
+    return car.pricePerDay;
+  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay]);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
@@ -1176,7 +1187,7 @@ export default function BookingPage() {
                       {car.category} · {car.transmission}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      €{car.pricePerDay}/ditë
+                      €{displayPricePerDay}/ditë
                     </p>
                   </div>
                 </div>
