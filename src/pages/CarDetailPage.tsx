@@ -261,24 +261,25 @@ export default function CarDetailPage() {
   // Current season for hero display
   const currentSeason = useMemo(() => getSeasonForDate(new Date()), []);
 
-  // Seasonal price per day for today
+  // Seasonal price per day — uses startDate month if selected, else today
   const seasonalPricePerDay = useMemo(
-    () => car ? getSeasonalPricePerDay(car.pricePerDay) : 0,
-    [car?.pricePerDay]
+    () => car ? getSeasonalPricePerDay(car.pricePerDay, startDate ? new Date(startDate) : undefined) : 0,
+    [car?.pricePerDay, startDate]
   );
 
-  // Effective price per day — monthly rate for current month > seasonal
+  // Effective price per day — monthly rate for selected/current month > seasonal
   const effectivePricePerDay = useMemo(() => {
     if (!car) return seasonalPricePerDay;
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
     if (rates.length > 0) {
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
+      const ref = startDate ? new Date(startDate) : new Date();
+      const month = ref.getMonth() + 1;
+      const year = ref.getFullYear();
       const monthly = resolveMonthlyRate(rates, car.id, car.category, month, year);
       if (monthly !== null) return monthly;
     }
     return seasonalPricePerDay;
-  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay]);
+  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay, startDate]);
 
   // "List price" — always higher than actual to show discount visual
   const listPrice = useMemo(
