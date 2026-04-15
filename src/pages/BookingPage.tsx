@@ -253,64 +253,66 @@ export default function BookingPage() {
     insuranceOptions.find((i) => i.id === form.insurance)?.price || 0;
   const flatBasePrice = days * (car?.pricePerDay ?? 0);
 
-  // Surcharge rules use the FLAT base price (car.pricePerDay × days), not the seasonal total.
-  // This ensures "+€10/day for May" means €60+€10=€70, not €72+€10=€82.
-  const activeSurcharge = React.useMemo(() => {
+  // Run ALL pricing rules against the FLAT base price (not seasonal).
+  // This ensures surcharges apply on €60, not €72.
+  // Works regardless of whether the `direction` DB column exists.
+  const flatRulesResult = React.useMemo(() => {
     if (!car || !form.startDate || !form.endDate || days === 0 || flatBasePrice === 0) return null;
-    const sRules = ((pricingRules ?? []) as PricingRule[]).filter(r => r.direction === 'surcharge');
-    if (sRules.length === 0) return null;
+    const rules = (pricingRules ?? []) as PricingRule[];
+    if (rules.length === 0) return null;
     const ctx = {
       carId: car.id, carCategory: car.category,
       startDate: new Date(form.startDate), endDate: new Date(form.endDate),
-      days, bookingDate: new Date(),
+      days, bookingDate: new Date(), promoCode: form.discountCode || undefined,
     };
-    const res = applyPricingRules(sRules, flatBasePrice, ctx);
+    const res = applyPricingRules(rules, flatBasePrice, ctx);
     return res.appliedDiscounts.length > 0 ? res : null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingRules, car, form.startDate, form.endDate, days, flatBasePrice]);
+  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, flatBasePrice]);
 
-  // When a surcharge rule is active, bypass seasonal pricing entirely.
-  // basePrice = flat + surcharge (e.g. €180 + €30 = €210 → €70/day)
-  const basePrice = activeSurcharge
-    ? Math.round((flatBasePrice - activeSurcharge.totalDiscount) * 100) / 100
-    : (seasonalData ? seasonalData.total : flatBasePrice);
+  // A surcharge is active if any rule produced a NEGATIVE discountAmount
+  const hasSurcharge = (flatRulesResult?.appliedDiscounts ?? []).some(d => d.discountAmount < 0);
+
+  // When surcharge active: use flatRulesResult.finalPrice (bypasses seasonal)
+  // When no surcharge: use seasonal base (normal behavior), then apply discounts
+  const pricingRuleResult = React.useMemo(() => {
+    if (!car || !form.startDate || !form.endDate || days === 0) return null;
+    if (hasSurcharge) return flatRulesResult; // surcharge already computed on flat base
+    // No surcharge — apply rules on seasonal base
+    const seasonalBase = seasonalData?.total ?? flatBasePrice;
+    if (seasonalBase === 0) return null;
+    const rules = (pricingRules ?? []) as PricingRule[];
+    if (rules.length === 0) return null;
+    const ctx = {
+      carId: car.id, carCategory: car.category,
+      startDate: new Date(form.startDate), endDate: new Date(form.endDate),
+      days, bookingDate: new Date(), promoCode: form.discountCode || undefined,
+    };
+    const res = applyPricingRules(rules, seasonalBase, ctx);
+    return res.appliedDiscounts.length > 0 ? res : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSurcharge, flatRulesResult, seasonalData, pricingRules, car, form.startDate, form.endDate, form.discountCode, days, flatBasePrice]);
+
   const insuranceTotal = insurancePrice * days;
 
-  // Apply discount rules only — surcharge is already folded into basePrice above
-  const pricingRuleResult = React.useMemo(() => {
-    if (!car || !form.startDate || !form.endDate || days === 0 || basePrice === 0) return null;
-    const activeRules = ((pricingRules ?? []) as PricingRule[]).filter(r => r.direction !== 'surcharge');
-    if (activeRules.length === 0) return null;
-    const ctx = {
-      carId: car.id,
-      carCategory: car.category,
-      startDate: new Date(form.startDate),
-      endDate: new Date(form.endDate),
-      days,
-      bookingDate: new Date(),
-      promoCode: form.discountCode || undefined,
-    };
-    const result = applyPricingRules(activeRules, basePrice, ctx);
-    return result.appliedDiscounts.length > 0 ? result : null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, basePrice]);
+  // basePrice: finalPrice from rules (surcharge+discounts already factored in)
+  // or seasonal (no rules) or flat (no dates)
+  const basePrice = pricingRuleResult
+    ? pricingRuleResult.finalPrice
+    : (seasonalData ? seasonalData.total : flatBasePrice);
 
-  // Rule-based discounts replace the old hardcoded TIRANA10 logic
-  const ruleDiscount = pricingRuleResult ? pricingRuleResult.totalDiscount : 0;
+  const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal;
+
+  // Effective per-day rate shown to customer
+  const effectiveDailyRate = days > 0
+    ? Math.round(basePrice / days * 100) / 100
+    : (car?.pricePerDay ?? 0);
+
+  // Legacy discount (old promo code fallback)
   const legacyDiscount =
     !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
       ? Math.round(basePrice * 0.1)
       : 0;
-  const discount = ruleDiscount + legacyDiscount;
-  const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - discount;
-
-  // Effective car subtotal (base ± rule adjustments, no extras/insurance/location).
-  // For surcharges ruleDiscount < 0, so carSubtotal > basePrice — shown as the daily rate.
-  const carSubtotal = Math.round((basePrice - ruleDiscount - legacyDiscount) * 100) / 100;
-  // Effective per-day rate shown to customer — includes surcharges folded in
-  const effectiveDailyRate = days > 0
-    ? Math.round(carSubtotal / days * 100) / 100
-    : (car?.pricePerDay ?? 0);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
@@ -1215,7 +1217,7 @@ export default function BookingPage() {
                           ? `${days} ${t("booking.days")} × €${effectiveDailyRate}`
                           : t("booking.discountCode")}
                       </span>
-                      <span>€{carSubtotal}</span>
+                      <span>€{basePrice}</span>
                     </div>
                   )}
                   {days > 0 && hours > 0 && (
