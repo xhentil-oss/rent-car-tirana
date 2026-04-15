@@ -105,10 +105,26 @@ router.post('/', async (req, res) => {
       await conn.beginTransaction();
 
       // Lock the car row to prevent concurrent bookings
-      const [carRows] = await conn.query('SELECT id, price_per_day, quantity FROM cars WHERE id = ? FOR UPDATE', [carId]);
+      const [carRows] = await conn.query('SELECT id, price_per_day, quantity, category FROM cars WHERE id = ? FOR UPDATE', [carId]);
       if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
-      const pricePerDay = Number(carRows[0].price_per_day);
+      const basePricePerDay = Number(carRows[0].price_per_day);
       const carQuantity = Number(carRows[0].quantity) || 1;
+      const carCategory = carRows[0].category;
+
+      // Check for monthly rate override (car-specific > category > all)
+      const startMonth = new Date(sd).getMonth() + 1;
+      const startYear = new Date(sd).getFullYear();
+      const [monthlyRates] = await conn.query(
+        'SELECT applies_to, applies_to_value, price_per_day FROM monthly_rates WHERE month = ? AND (year = ? OR year IS NULL)',
+        [startMonth, startYear]
+      );
+      let pricePerDay = basePricePerDay;
+      const mrCar = monthlyRates.find(r => r.applies_to === 'car' && r.applies_to_value === carId);
+      const mrCat = monthlyRates.find(r => r.applies_to === 'category' && r.applies_to_value === carCategory);
+      const mrAll = monthlyRates.find(r => r.applies_to === 'all');
+      if (mrCar) pricePerDay = Number(mrCar.price_per_day);
+      else if (mrCat) pricePerDay = Number(mrCat.price_per_day);
+      else if (mrAll) pricePerDay = Number(mrAll.price_per_day);
 
       const msPerDay = 86400000;
       const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
@@ -210,7 +226,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
 
       if (datesOrCarChanged) {
         // Lock car row and check overlap
-        const [carRows] = await conn.query('SELECT price_per_day, quantity FROM cars WHERE id = ? FOR UPDATE', [newCarId]);
+        const [carRows] = await conn.query('SELECT price_per_day, quantity, category FROM cars WHERE id = ? FOR UPDATE', [newCarId]);
         if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
         const carQuantity = Number(carRows[0].quantity) || 1;
 
@@ -222,10 +238,24 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
           await conn.rollback(); conn.release();
           return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
         }
-        // Recalculate price
+        // Check monthly rate override for new dates
+        const startMonth = new Date(newSd).getMonth() + 1;
+        const startYear = new Date(newSd).getFullYear();
+        const [monthlyRates] = await conn.query(
+          'SELECT applies_to, applies_to_value, price_per_day FROM monthly_rates WHERE month = ? AND (year = ? OR year IS NULL)',
+          [startMonth, startYear]
+        );
+        let effectivePrice = Number(carRows[0].price_per_day);
+        const mrCar = monthlyRates.find(r => r.applies_to === 'car' && r.applies_to_value === newCarId);
+        const mrCat = monthlyRates.find(r => r.applies_to === 'category' && r.applies_to_value === carRows[0].category);
+        const mrAll = monthlyRates.find(r => r.applies_to === 'all');
+        if (mrCar) effectivePrice = Number(mrCar.price_per_day);
+        else if (mrCat) effectivePrice = Number(mrCat.price_per_day);
+        else if (mrAll) effectivePrice = Number(mrAll.price_per_day);
+
         const msPerDay = 86400000;
         const days = Math.max(1, Math.ceil((new Date(newEd) - new Date(newSd)) / msPerDay));
-        fields.total_price = +(Number(carRows[0].price_per_day) * days).toFixed(2);
+        fields.total_price = +(effectivePrice * days).toFixed(2);
       }
 
       const entries = Object.entries(fields).filter(([, v]) => v !== undefined);

@@ -79,6 +79,7 @@ app.use('/api/reservations',  apiLimiter,  require('./routes/reservations'));
 app.use('/api/invoices',      apiLimiter,  require('./routes/invoices'));
 app.use('/api/reviews',       apiLimiter,  require('./routes/reviews'));
 app.use('/api/pricing-rules', apiLimiter,  require('./routes/pricingRules'));
+app.use('/api/monthly-rates', apiLimiter,  require('./routes/monthlyRates'));
 app.use('/api/fleet',         apiLimiter,  require('./routes/fleet'));
 app.use('/api/users',         apiLimiter,  require('./routes/users'));
 app.use('/api/activity-logs', apiLimiter,  require('./routes/activityLogs'));

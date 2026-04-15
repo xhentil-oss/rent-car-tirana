@@ -392,6 +392,22 @@ const TABLES = [
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
+  // MONTHLY RATES — per-month price overrides per category or car
+  `CREATE TABLE IF NOT EXISTS monthly_rates (
+    id                CHAR(36) NOT NULL,
+    year              SMALLINT DEFAULT NULL,
+    month             TINYINT NOT NULL,
+    applies_to        VARCHAR(30) NOT NULL DEFAULT 'all',
+    applies_to_value  VARCHAR(255) DEFAULT NULL,
+    price_per_day     DECIMAL(10,2) NOT NULL,
+    notes             TEXT DEFAULT NULL,
+    created_by        CHAR(36),
+    created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
   // SITE SETTINGS (key-value pairs, grouped by category)
   `CREATE TABLE IF NOT EXISTS settings (
     setting_key   VARCHAR(100) NOT NULL,

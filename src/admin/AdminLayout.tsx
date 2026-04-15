@@ -34,6 +34,7 @@ const navItems = [
   { label: "Raportet", href: "/admin/raporte", icon: ChartBar, group: "main" },
   { label: "Fleet Mgmt", href: "/admin/fleet", icon: Wrench, group: "main" },
   { label: "Ofertat & Çmimet", href: "/admin/ofertat", icon: Tag, group: "main" },
+  { label: "Çmimet Mujore", href: "/admin/cmime-mujore", icon: CalendarBlank, group: "main" },
   { label: "Media", href: "/admin/media", icon: Images, group: "main" },
   { label: "Vlerësimet", href: "/admin/vleresimet", icon: Star, group: "system" },
   { label: "Përdoruesit", href: "/admin/perdoruesit", icon: UserGear, group: "system" },
