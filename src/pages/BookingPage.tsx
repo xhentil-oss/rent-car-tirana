@@ -1166,7 +1166,7 @@ export default function BookingPage() {
                 <div className="space-y-2 mb-4">
                   {/* Active pricing rule discounts — surcharges hidden (folded into daily rate) */}
                   {pricingRuleResult && pricingRuleResult.appliedDiscounts
-                    .filter((disc) => disc.discountAmount > 0)
+                    .filter((disc) => disc.discountAmount > 0 && disc.rule.direction !== "surcharge")
                     .map((disc) => {
                     const meta = RULE_TYPE_LABELS[disc.rule.type] ?? { emoji: "🏷️", color: "bg-green-100 text-green-700 border-green-200" };
                     return (
@@ -1238,7 +1238,7 @@ export default function BookingPage() {
                     </div>
                   )}
                   {pricingRuleResult && pricingRuleResult.appliedDiscounts
-                    .filter((disc) => disc.discountAmount > 0) // surcharges are folded into the rate above
+                    .filter((disc) => disc.discountAmount > 0 && disc.rule.direction !== "surcharge") // surcharges are folded into the rate above
                     .map((disc) => (
                     <div key={disc.rule.id} className="flex justify-between text-sm text-success">
                       <span>{disc.label}</span>

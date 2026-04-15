@@ -100,8 +100,18 @@ app.all('/api/*', (req, res) => {
 
 // ─── SERVE FRONTEND (production) ─────────────────────────────
 const distPath = path.join(__dirname, 'public');
-app.use(express.static(distPath));
+// Cache hashed assets (JS/CSS) for 1 year; never cache index.html
+app.use(express.static(distPath, {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } else if (/\.(js|css)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  },
+}));
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
