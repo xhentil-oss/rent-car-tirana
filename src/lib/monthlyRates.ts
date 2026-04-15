@@ -29,8 +29,8 @@ export function resolveMonthlyRate(
 ): number | null {
   const matching = rates.filter(
     (r) =>
-      r.month === month &&
-      (r.year === null || r.year === year)
+      Number(r.month) === month &&
+      (r.year === null || Number(r.year) === year)
   );
 
   if (matching.length === 0) return null;

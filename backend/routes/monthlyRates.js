@@ -5,8 +5,8 @@ const { authenticate, requireRole, logActivity } = require('../middleware/auth')
 
 const fmt = (r) => ({
   id: r.id,
-  year: r.year,
-  month: r.month,
+  year: r.year !== null && r.year !== undefined ? parseInt(r.year) : null,
+  month: parseInt(r.month),
   appliesTo: r.applies_to,
   appliesToValue: r.applies_to_value,
   pricePerDay: parseFloat(r.price_per_day),
