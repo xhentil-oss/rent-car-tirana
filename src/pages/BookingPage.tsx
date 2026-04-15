@@ -251,14 +251,35 @@ export default function BookingPage() {
 
   const insurancePrice =
     insuranceOptions.find((i) => i.id === form.insurance)?.price || 0;
-  // Use seasonal base price if dates are selected, otherwise flat daily price
-  const basePrice = seasonalData ? seasonalData.total : days * (car?.pricePerDay ?? 0);
+  const flatBasePrice = days * (car?.pricePerDay ?? 0);
+
+  // Surcharge rules use the FLAT base price (car.pricePerDay × days), not the seasonal total.
+  // This ensures "+€10/day for May" means €60+€10=€70, not €72+€10=€82.
+  const activeSurcharge = React.useMemo(() => {
+    if (!car || !form.startDate || !form.endDate || days === 0 || flatBasePrice === 0) return null;
+    const sRules = ((pricingRules ?? []) as PricingRule[]).filter(r => r.direction === 'surcharge');
+    if (sRules.length === 0) return null;
+    const ctx = {
+      carId: car.id, carCategory: car.category,
+      startDate: new Date(form.startDate), endDate: new Date(form.endDate),
+      days, bookingDate: new Date(),
+    };
+    const res = applyPricingRules(sRules, flatBasePrice, ctx);
+    return res.appliedDiscounts.length > 0 ? res : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricingRules, car, form.startDate, form.endDate, days, flatBasePrice]);
+
+  // When a surcharge rule is active, bypass seasonal pricing entirely.
+  // basePrice = flat + surcharge (e.g. €180 + €30 = €210 → €70/day)
+  const basePrice = activeSurcharge
+    ? Math.round((flatBasePrice - activeSurcharge.totalDiscount) * 100) / 100
+    : (seasonalData ? seasonalData.total : flatBasePrice);
   const insuranceTotal = insurancePrice * days;
 
-  // Apply admin pricing rules on top of seasonal price — must be after basePrice declaration
+  // Apply discount rules only — surcharge is already folded into basePrice above
   const pricingRuleResult = React.useMemo(() => {
     if (!car || !form.startDate || !form.endDate || days === 0 || basePrice === 0) return null;
-    const activeRules = (pricingRules ?? []) as PricingRule[];
+    const activeRules = ((pricingRules ?? []) as PricingRule[]).filter(r => r.direction !== 'surcharge');
     if (activeRules.length === 0) return null;
     const ctx = {
       carId: car.id,
@@ -872,8 +893,8 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Seasonal Pricing Banner */}
-            {form.startDate && form.endDate && days > 0 && (
+            {/* Seasonal Pricing Banner — hidden when a surcharge rule is active for this period */}
+            {form.startDate && form.endDate && days > 0 && !activeSurcharge && (
               <div className={`rounded-lg border p-4 ${dominantSeason.badgeColor}`}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl leading-none mt-0.5">{dominantSeason.emoji}</span>
@@ -1176,26 +1197,19 @@ export default function BookingPage() {
                       </div>
                     );
                   })}
-                  {seasonalData && seasonalData.breakdown.length > 1 ? (
+                  {!activeSurcharge && seasonalData && seasonalData.breakdown.length > 1 ? (
                     <>
-                      {seasonalData.breakdown.map((b) => {
-                        // Scale each season's per-day price by the effective rate ratio
-                        // so multi-season breakdowns also reflect surcharges silently
-                        const ratio = basePrice > 0 ? carSubtotal / basePrice : 1;
-                        const effectivePPD = Math.round(b.pricePerDay * ratio * 100) / 100;
-                        const effectiveSubtotal = Math.round(b.subtotal * ratio * 100) / 100;
-                        return (
+                      {seasonalData.breakdown.map((b) => (
                         <div key={b.season.id} className="flex justify-between text-sm text-neutral-700">
-                          <span>{b.season.emoji} {b.days} ditë × €{effectivePPD}</span>
-                          <span>€{effectiveSubtotal}</span>
+                          <span>{b.season.emoji} {b.days} ditë × €{b.pricePerDay}</span>
+                          <span>€{b.subtotal}</span>
                         </div>
-                        );
-                      })}
+                      ))}
                     </>
                   ) : (
                     <div className="flex justify-between text-sm text-neutral-700">
                       <span>
-                        {days > 0 && seasonalData
+                        {days > 0 && seasonalData && !activeSurcharge
                           ? `${dominantSeason.emoji} ${days} ${t("booking.days")} × €${effectiveDailyRate}`
                           : days > 0
                           ? `${days} ${t("booking.days")} × €${effectiveDailyRate}`
@@ -1209,7 +1223,7 @@ export default function BookingPage() {
                       {hours} {t("booking.hours")}
                     </div>
                   )}
-                  {dominantSeason.multiplier !== 1 && days > 0 && (
+                  {!activeSurcharge && dominantSeason.multiplier !== 1 && days > 0 && (
                     <div className={`text-xs px-2 py-1 rounded-md border inline-flex items-center gap-1 ${dominantSeason.badgeColor}`}>
                       <Tag size={11} weight="bold" />
                       {dominantSeason.label}
