@@ -178,7 +178,7 @@ export function useMutation(entity: string) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `${res.status}`);
+        throw new Error(err.detail || err.error || `${res.status}`);
       }
       return res.json();
     } finally {
