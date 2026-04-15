@@ -65,8 +65,10 @@ export const RULE_TYPE_LABELS: Record<string, { label: string; emoji: string; co
 
 /** Check if a rule's date window covers the reservation period */
 function isDateWindowActive(rule: PricingRule, startDate: Date, endDate: Date): boolean {
-  const ruleStart = new Date(rule.startDate);
-  const ruleEnd = new Date(rule.endDate);
+  // If no date restriction, rule is always active
+  if (!rule.startDate && !rule.endDate) return true;
+  const ruleStart = rule.startDate ? new Date(rule.startDate) : new Date(0);
+  const ruleEnd = rule.endDate ? new Date(rule.endDate) : new Date("2099-12-31");
   // Rule must overlap with the booking window
   return startDate <= ruleEnd && endDate >= ruleStart;
 }
