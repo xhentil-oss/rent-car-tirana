@@ -6,10 +6,10 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
-import CarDetailPage from "./pages/CarDetailPage";
-import BookingPage from "./pages/BookingPage";
 
 // Lazy-loaded pages (admin + low-traffic)
+const CarDetailPage = React.lazy(() => import("./pages/CarDetailPage"));
+const BookingPage = React.lazy(() => import("./pages/BookingPage"));
 const MyAccountPage = React.lazy(() => import("./pages/MyAccountPage"));
 const AdminLayout = React.lazy(() => import("./admin/AdminLayout"));
 const AdminDashboard = React.lazy(() => import("./admin/pages/AdminDashboard"));
