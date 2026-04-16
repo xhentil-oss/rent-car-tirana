@@ -47,8 +47,28 @@ import StatusBadge from "../components/StatusBadge";
 import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
 import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
-import { resolveMonthlyRate, calcTotalWithMonthlyRates } from "../lib/monthlyRates";
-import type { MonthlyRate } from "../lib/monthlyRates";
+
+// Inline monthly rate resolution (avoids shared-module TDZ in Rollup bundle)
+interface MonthlyRate { id: string; year: number | null; month: number; appliesTo: string; appliesToValue: string | null; pricePerDay: number; }
+function resolveMonthlyRate(rates: MonthlyRate[], carId: string, carCategory: string, month: number, year: number): number | null {
+  const matching = rates.filter(r => Number(r.month) === month && (r.year === null || Number(r.year) === year));
+  if (matching.length === 0) return null;
+  return (matching.find(r => r.appliesTo === 'car' && r.appliesToValue === carId)
+    ?? matching.find(r => r.appliesTo === 'category' && r.appliesToValue === carCategory)
+    ?? matching.find(r => r.appliesTo === 'all')
+    ?? null)?.pricePerDay ?? null;
+}
+function calcMonthlyTotal(rates: MonthlyRate[], carId: string, carCategory: string, basePPD: number, startDate: Date, endDate: Date): number {
+  const cur = new Date(startDate); cur.setHours(0,0,0,0);
+  const end = new Date(endDate); end.setHours(0,0,0,0);
+  let total = 0;
+  while (cur < end) {
+    const r = resolveMonthlyRate(rates, carId, carCategory, cur.getMonth() + 1, cur.getFullYear());
+    total += r !== null ? r : basePPD;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return Math.round(total * 100) / 100;
+}
 
 // These constants use icon references; labels are resolved via t() at render time
 const EXTRAS_ICONS = [
@@ -295,7 +315,7 @@ export default function CarDetailPage() {
     const end = new Date(endDate);
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
     const priceBase = rates.length > 0
-      ? calcTotalWithMonthlyRates(rates, car.id, car.category, car.pricePerDay, start, end).total
+      ? calcMonthlyTotal(rates, car.id, car.category, car.pricePerDay, start, end)
       : calculateSeasonalTotal(car.pricePerDay, start, end).total;
     // Only discount rules (no surcharges) on top of base
     const rules = ((pricingRulesRaw ?? []) as PricingRule[])
