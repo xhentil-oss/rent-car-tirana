@@ -205,12 +205,28 @@ export default function CarDetailPage() {
     return () => { window.removeEventListener("keydown", handleKey); document.body.style.overflow = prevOverflow; };
   }, [galleryOpen, carImages.length]);
 
+  // Compute prices early so useSEO can use them
+  const seasonalPricePerDay = useMemo(
+    () => car ? getSeasonalPricePerDay(car.pricePerDay, startDate ? new Date(startDate) : undefined) : 0,
+    [car?.pricePerDay, startDate]
+  );
+  const effectivePricePerDay = useMemo(() => {
+    if (!car) return seasonalPricePerDay;
+    const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
+    if (rates.length > 0) {
+      const ref = startDate ? new Date(startDate) : new Date();
+      const monthly = resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear());
+      if (monthly !== null) return monthly;
+    }
+    return seasonalPricePerDay;
+  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay, startDate]);
+
   // Dynamic SEO per car — called unconditionally (hooks rule)
   useSEO(
     car
       ? {
-          title: t("carDetail.seo.title", { brand: car.brand, model: car.model, year: car.year, price: car.pricePerDay }),
-          description: t("carDetail.seo.description", { brand: car.brand, model: car.model, year: car.year, price: car.pricePerDay, category: car.category, transmission: car.transmission, fuel: car.fuel }),
+          title: t("carDetail.seo.title", { brand: car.brand, model: car.model, year: car.year, price: effectivePricePerDay }),
+          description: t("carDetail.seo.description", { brand: car.brand, model: car.model, year: car.year, price: effectivePricePerDay, category: car.category, transmission: car.transmission, fuel: car.fuel }),
           keywords: t("carDetail.seo.keywords", { brand: car.brand, model: car.model, category: car.category.toLowerCase() }),
           canonical: `/makina/${car.slug}`,
           ogImage: car.image,
@@ -281,32 +297,23 @@ export default function CarDetailPage() {
   // Current season for hero display
   const currentSeason = useMemo(() => getSeasonForDate(new Date()), []);
 
-  // Seasonal price per day — uses startDate month if selected, else today
-  const seasonalPricePerDay = useMemo(
-    () => car ? getSeasonalPricePerDay(car.pricePerDay, startDate ? new Date(startDate) : undefined) : 0,
-    [car?.pricePerDay, startDate]
-  );
-
-  // Effective price per day — monthly rate for selected/current month > seasonal
-  const effectivePricePerDay = useMemo(() => {
-    if (!car) return seasonalPricePerDay;
-    const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
-    if (rates.length > 0) {
-      const ref = startDate ? new Date(startDate) : new Date();
-      const month = ref.getMonth() + 1;
-      const year = ref.getFullYear();
-      const monthly = resolveMonthlyRate(rates, car.id, car.category, month, year);
-      if (monthly !== null) return monthly;
-    }
-    return seasonalPricePerDay;
-  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay, startDate]);
+  // (seasonalPricePerDay and effectivePricePerDay are computed above useSEO)
 
   // "List price" — always higher than actual to show discount visual
   const listPrice = useMemo(
-    () => car ? Math.round(car.pricePerDay * 1.2) : 0,
-    [car?.pricePerDay]
+    () => car ? Math.max(Math.round(car.pricePerDay * 1.2), Math.round(effectivePricePerDay * 1.01)) : 0,
+    [car?.pricePerDay, effectivePricePerDay]
   );
-  const discount = listPrice > 0 ? Math.round(((listPrice - effectivePricePerDay) / listPrice) * 100) : 0;
+  const discount = listPrice > effectivePricePerDay ? Math.round(((listPrice - effectivePricePerDay) / listPrice) * 100) : 0;
+
+  // Is a monthly rate active for the selected start month?
+  const monthlyRateActive = useMemo(() => {
+    if (!car || !startDate) return false;
+    const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
+    if (rates.length === 0) return false;
+    const ref = new Date(startDate);
+    return resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear()) !== null;
+  }, [car?.id, car?.category, monthlyRatesPublic, startDate]);
 
   // Smart pricing: monthly rates (priority) or seasonal + discount rules only
   const smartPricing = useMemo<PricingResult | null>(() => {
@@ -1162,8 +1169,8 @@ export default function CarDetailPage() {
                   >
                     <div className="bg-secondary/40 rounded-xl p-4 mb-4 border border-secondary">
                       <div className="space-y-2 text-sm">
-                        {/* Seasonal breakdown */}
-                        {seasonalBreakdown && seasonalBreakdown.breakdown.length > 1 ? (
+                        {/* Price breakdown: monthly rate or seasonal */}
+                        {!monthlyRateActive && seasonalBreakdown && seasonalBreakdown.breakdown.length > 1 ? (
                           seasonalBreakdown.breakdown.map((seg, i) => (
                             <div key={i} className="flex justify-between text-neutral-600">
                               <span className="flex items-center gap-1">
@@ -1175,7 +1182,7 @@ export default function CarDetailPage() {
                           ))
                         ) : (
                           <div className="flex justify-between text-neutral-600">
-                            <span>{t("carDetail.booking.basePrice", { price: seasonalPricePerDay, days })}</span>
+                            <span>{t("carDetail.booking.basePrice", { price: effectivePricePerDay, days })}</span>
                             <span className="font-medium">€{baseTotal}</span>
                           </div>
                         )}
