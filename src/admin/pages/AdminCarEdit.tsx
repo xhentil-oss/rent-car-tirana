@@ -235,22 +235,50 @@ export default function AdminCarEdit() {
           <div className="bg-white rounded-xl border border-border p-5">
             <p className="text-sm font-semibold text-neutral-700 mb-4 pb-3 border-b border-border">Identiteti i makinës</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: "Marka", key: "brand" as const },
-                { label: "Modeli", key: "model" as const },
-                { label: "Viti", key: "year" as const, type: "number" },
-                { label: "Çmimi / ditë (€)", key: "pricePerDay" as const, type: "number" },
-              ].map(({ label, key, type }) => (
-                <div key={key}>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1.5">{label}</label>
-                  <input
-                    type={type || "text"}
-                    value={form[key] as string}
-                    onChange={(e) => setField(key, e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-              ))}
+              {/* Brand — dropdown */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Marka</label>
+                <select
+                  value={form.brand}
+                  onChange={(e) => setField("brand", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                >
+                  <option value="">— Zgjidh markën —</option>
+                  {["Volkswagen", "Skoda", "Fiat", "Audi", "Mercedes-Benz", "BMW", "Opel", "Toyota", "Hyundai", "Kia", "Renault", "Peugeot", "Citroën", "Ford", "Seat", "Dacia"].map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Model — text */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Modeli</label>
+                <input
+                  type="text"
+                  value={form.model}
+                  onChange={(e) => setField("model", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </div>
+              {/* Year */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Viti</label>
+                <input
+                  type="number"
+                  value={form.year}
+                  onChange={(e) => setField("year", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </div>
+              {/* Price */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">Çmimi / ditë (€)</label>
+                <input
+                  type="number"
+                  value={form.pricePerDay}
+                  onChange={(e) => setField("pricePerDay", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">

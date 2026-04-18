@@ -492,8 +492,31 @@ export default function AdminCars() {
               <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-md text-neutral-500 hover:bg-secondary transition-colors duration-200 cursor-pointer"><X size={20} /></button>
             </div>
             <div className="space-y-4">
+              {/* Brand — dropdown */}
+              <div>
+                <label htmlFor="drawer-brand" className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Marka <span className="text-error">*</span>
+                </label>
+                <select
+                  id="drawer-brand"
+                  value={form.brand}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, brand: e.target.value }));
+                    if (formErrors.brand) setFormErrors(prev => ({ ...prev, brand: undefined }));
+                  }}
+                  className={`w-full px-3 py-2.5 rounded-md border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 transition-colors ${
+                    formErrors.brand ? "border-error focus:ring-error/30 focus:border-error" : "border-border focus:ring-primary/40 focus:border-primary"
+                  }`}
+                >
+                  <option value="">— Zgjidh markën —</option>
+                  {["Volkswagen", "Skoda", "Fiat", "Audi", "Mercedes-Benz", "BMW", "Opel", "Toyota", "Hyundai", "Kia", "Renault", "Peugeot", "Citroën", "Ford", "Seat", "Dacia"].map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+                {formErrors.brand && <p className="mt-1 text-xs text-error font-medium">{formErrors.brand}</p>}
+              </div>
+              {/* Model, Year, Price — text inputs */}
               {[
-                { id: "brand", label: "Marka", key: "brand" as keyof CarDraftForm },
                 { id: "model", label: "Modeli", key: "model" as keyof CarDraftForm },
                 { id: "year", label: "Viti", key: "year" as keyof CarDraftForm },
                 { id: "price", label: "Çmimi/ditë (€)", key: "pricePerDay" as keyof CarDraftForm },
