@@ -46,6 +46,7 @@ router.post(
       if (existingCust.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar si klient.' });
 
       const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      const userId = uuidv4();
       const customerId = uuidv4();
 
       const nameParts = name.trim().split(/\s+/);

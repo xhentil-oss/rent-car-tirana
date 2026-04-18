@@ -255,7 +255,11 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
 
         const msPerDay = 86400000;
         const days = Math.max(1, Math.ceil((new Date(newEd) - new Date(newSd)) / msPerDay));
-        fields.total_price = +(effectivePrice * days).toFixed(2);
+        const newPickup = fields.pickup_location || current.pickup_location;
+        const newDropoff = fields.dropoff_location || current.dropoff_location;
+        const newLocationFee = getLocationFee(newPickup, newDropoff);
+        fields.location_fee = newLocationFee;
+        fields.total_price = +(effectivePrice * days + newLocationFee).toFixed(2);
       }
 
       const entries = Object.entries(fields).filter(([, v]) => v !== undefined);

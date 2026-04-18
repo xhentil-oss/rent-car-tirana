@@ -347,7 +347,7 @@ export default function CarDetailPage() {
   const handleShare = useCallback(async () => {
     if (!car) return;
     const url = window.location.href;
-    const text = t("carDetail.share.text", { brand: car.brand, model: car.model, price: seasonalPricePerDay });
+    const text = t("carDetail.share.text", { brand: car.brand, model: car.model, price: effectivePricePerDay });
     if (navigator.share) {
       try {
         await navigator.share({ title: `${car.brand} ${car.model}`, text, url });

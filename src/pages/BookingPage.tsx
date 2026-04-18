@@ -296,6 +296,12 @@ export default function BookingPage() {
     ? pricingRuleResult.finalPrice
     : preDiscountBase;
 
+  // Legacy discount (old promo code fallback) — must be declared BEFORE total
+  const legacyDiscount =
+    !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
+      ? Math.round(basePrice * 0.1)
+      : 0;
+
   const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - legacyDiscount;
 
   // Effective per-day rate shown to customer
@@ -303,22 +309,17 @@ export default function BookingPage() {
     ? Math.round(basePrice / days * 100) / 100
     : (car?.pricePerDay ?? 0);
 
-  // Legacy discount (old promo code fallback)
-  const legacyDiscount =
-    !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
-      ? Math.round(basePrice * 0.1)
-      : 0;
-
-  // Price per day shown as car info label (uses monthly rate for current month if available)
+  // Price per day shown as car info label (uses monthly rate for start month if available)
   const displayPricePerDay = React.useMemo(() => {
     if (!car) return 0;
     const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
     if (rates.length > 0) {
-      const monthly = resolveMonthlyRate(rates, car.id, car.category, new Date().getMonth() + 1, new Date().getFullYear());
+      const ref = form.startDate ? new Date(form.startDate) : new Date();
+      const monthly = resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear());
       if (monthly !== null) return monthly;
     }
     return car.pricePerDay;
-  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay]);
+  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay, form.startDate]);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
