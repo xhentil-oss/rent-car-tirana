@@ -28,8 +28,8 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.emailjs.com", "https://unpkg.com", "https://images.unsplash.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:", "https://lh3.googleusercontent.com"],
+      connectSrc: ["'self'", "https://api.emailjs.com", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com"],
     },
   },
 }));
@@ -89,6 +89,7 @@ app.use('/api/blog',          apiLimiter,  require('./routes/blog'));
 app.use('/api/deposits',      apiLimiter,  require('./routes/deposits'));
 app.use('/api/customer-documents', apiLimiter, require('./routes/customerDocuments'));
 app.use('/api/communication-logs', apiLimiter, require('./routes/communicationLogs'));
+app.use('/api/google-reviews',     apiLimiter,  require('./routes/googleReviews'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));

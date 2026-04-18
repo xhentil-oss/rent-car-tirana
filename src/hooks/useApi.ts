@@ -33,6 +33,7 @@ const ENTITY_MAP: Record<string, string> = {
   CustomerDocument: "/customer-documents",
   CommunicationLog: "/communication-logs",
   Deposit: "/deposits",
+  GoogleReview: "/google-reviews",
 };
 
 function getToken(): string | null {

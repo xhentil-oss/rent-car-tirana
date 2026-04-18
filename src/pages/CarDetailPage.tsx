@@ -120,6 +120,7 @@ export default function CarDetailPage() {
   const { data: allCars, isPending } = useQuery("Car");
   const { data: allReservations } = useQuery("ReservationAvailability");
   const { data: dbReviews } = useQuery("Review", { where: { approved: true }, orderBy: { createdAt: "desc" }, limit: 6 });
+  const { data: googleData } = useQuery("GoogleReview");
   const { data: pricingRulesRaw } = useQuery("PricingRule");
   const { data: monthlyRatesPublic } = useQuery("MonthlyRatePublic", { where: { year: new Date().getFullYear() } });
 
@@ -272,8 +273,29 @@ export default function CarDetailPage() {
     });
   }, [startDate, endDate, allReservations, car?.id]);
 
-  // Reviews — prefer DB, fallback to i18n static
+  // Reviews — Google Places API (priority) → DB approved → i18n static fallback
+  const googleReviewsList = useMemo(() => {
+    const gd = googleData as { rating?: number; totalRatings?: number; reviews?: any[] } | null;
+    return gd?.reviews ?? [];
+  }, [googleData]);
+  const googleMeta = useMemo(() => {
+    const gd = googleData as { rating?: number; totalRatings?: number } | null;
+    return { rating: gd?.rating ?? null, totalRatings: gd?.totalRatings ?? 0 };
+  }, [googleData]);
+
   const reviews = useMemo(() => {
+    if (googleReviewsList.length > 0) {
+      return googleReviewsList.map((r: any, i: number) => ({
+        id: `g${i}`,
+        authorName: r.authorName,
+        rating: r.rating,
+        text: r.text,
+        avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+        photoUrl: r.profilePhotoUrl ?? null,
+        date: r.relativeTime ?? "",
+        fromGoogle: true as const,
+      }));
+    }
     if (dbReviews && dbReviews.length > 0) {
       return dbReviews.map((r) => ({
         id: r.id,
@@ -281,7 +303,9 @@ export default function CarDetailPage() {
         rating: r.rating,
         text: r.text,
         avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+        photoUrl: null as null,
         date: new Date(r.createdAt).toLocaleDateString("sq-AL", { month: "long", year: "numeric" }),
+        fromGoogle: false as const,
       }));
     }
     return (t("carDetail.staticReviews", { returnObjects: true }) as { authorName: string; rating: number; text: string; date: string }[]).map((r, i) => ({
@@ -290,9 +314,16 @@ export default function CarDetailPage() {
       rating: r.rating,
       text: r.text,
       avatar: r.authorName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+      photoUrl: null as null,
       date: r.date,
+      fromGoogle: false as const,
     }));
-  }, [dbReviews, t]);
+  }, [googleReviewsList, dbReviews, t]);
+
+  // Aggregate rating: Google business rating if available, else average of shown reviews
+  const displayRating = googleMeta.rating ?? (reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 4.9);
+  const displayTotalRatings = googleMeta.totalRatings > 0 ? googleMeta.totalRatings : reviews.length;
+  const isFromGoogle = googleReviewsList.length > 0;
 
   // Current season for hero display
   const currentSeason = useMemo(() => getSeasonForDate(new Date()), []);
@@ -939,69 +970,106 @@ export default function CarDetailPage() {
             </div>
 
             {/* ── GOOGLE REVIEWS ─────────────────────────────────── */}
-            <div ref={reviewsRef}>
-              {/* Header */}
+            <div ref={reviewsRef} className="bg-white rounded-2xl border border-border/80 overflow-hidden">
+
+              {/* Widget header — mimics Google reviews embed */}
               <div
-                className="flex items-center justify-between mb-5"
+                className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border/60"
                 style={{
                   opacity: reviewsInView ? 1 : 0,
-                  transform: reviewsInView ? "translateY(0)" : "translateY(16px)",
+                  transform: reviewsInView ? "translateY(0)" : "translateY(12px)",
                   transition: "opacity 0.5s ease, transform 0.5s ease",
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center shadow-sm">
-                    <GoogleLogo size={18} weight="bold" className="text-blue-500" />
+                  <div className="w-10 h-10 rounded-full bg-white border border-border shadow-sm flex items-center justify-center shrink-0">
+                    <GoogleLogo size={22} weight="bold" className="text-[#4285F4]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-neutral-900">{t("carDetail.reviews.title")}</h3>
-                    <div className="flex items-center gap-1.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={12} weight={s <= Math.round(avgRating) ? "fill" : "regular"} className="text-amber-400" />
-                      ))}
-                      <span className="text-xs text-neutral-500 ml-1">{avgRating.toFixed(1)} · {t("carDetail.reviews.count", { count: reviews.length })}</span>
+                    <p className="text-sm font-bold text-neutral-900 leading-tight">Rent Car Tirana</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-sm font-bold text-neutral-800">{displayRating.toFixed(1)}</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} size={12} weight={s <= Math.round(displayRating) ? "fill" : "regular"} className="text-amber-400" />
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-neutral-400">
+                        {displayTotalRatings > 0 ? `(${displayTotalRatings}+)` : ""}
+                        {isFromGoogle && <span className="ml-1 text-[#4285F4]">Google</span>}
+                      </span>
                     </div>
                   </div>
                 </div>
+                <a
+                  href="https://www.google.com/maps/search/Rent+Car+Tirana"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#4285F4]/30 text-[#4285F4] text-xs font-medium hover:bg-[#4285F4]/5 transition-colors no-underline"
+                >
+                  <Star size={11} weight="fill" />
+                  Lër vlerësim
+                </a>
               </div>
 
               {/* Review cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {reviews.slice(0, 3).map((review, i) => (
+              <div className="divide-y divide-border/50">
+                {reviews.slice(0, 5).map((review, i) => (
                   <div
                     key={review.id}
-                    className="bg-white rounded-xl border border-border/80 p-4 hover:shadow-md transition-all duration-300"
+                    className="flex gap-3 px-5 py-4 hover:bg-neutral-50/80 transition-colors duration-200"
                     style={{
                       opacity: reviewsInView ? 1 : 0,
-                      transform: reviewsInView ? "translateY(0)" : "translateY(20px)",
-                      transition: `opacity 0.5s ease ${i * 100 + 100}ms, transform 0.5s ease ${i * 100 + 100}ms, box-shadow 0.2s`,
+                      transform: reviewsInView ? "translateY(0)" : "translateY(14px)",
+                      transition: `opacity 0.45s ease ${i * 80 + 80}ms, transform 0.45s ease ${i * 80 + 80}ms`,
                     }}
                   >
-                    {/* Google icon top-right */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                          {review.avatar}
-                        </div>
+                    {review.photoUrl ? (
+                      <img
+                        src={review.photoUrl}
+                        alt={review.authorName}
+                        className="w-9 h-9 rounded-full object-cover shrink-0 border border-border/60"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0 border border-primary/10">
+                        {review.avatar}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
                         <div>
                           <p className="text-xs font-semibold text-neutral-800 leading-tight">{review.authorName}</p>
                           <p className="text-[10px] text-neutral-400">{review.date}</p>
                         </div>
+                        <GoogleLogo size={13} weight="bold" className="text-[#4285F4]/50 shrink-0 mt-0.5" />
                       </div>
-                      <GoogleLogo size={14} weight="bold" className="text-blue-400/60 shrink-0" />
+                      <div className="flex gap-0.5 mb-1.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} size={10} weight={s <= review.rating ? "fill" : "regular"} className="text-amber-400" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">{review.text}</p>
                     </div>
-
-                    {/* Stars */}
-                    <div className="flex gap-0.5 mb-2">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={11} weight={s <= review.rating ? "fill" : "regular"} className="text-amber-400" />
-                      ))}
-                    </div>
-
-                    {/* Text */}
-                    <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">{review.text}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Footer */}
+              <div
+                className="px-5 py-3 border-t border-border/60 bg-neutral-50/60"
+                style={{ opacity: reviewsInView ? 1 : 0, transition: "opacity 0.5s ease 0.5s" }}
+              >
+                <a
+                  href="https://www.google.com/maps/search/Rent+Car+Tirana"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4285F4] hover:underline no-underline"
+                >
+                  <GoogleLogo size={12} weight="bold" />
+                  Shiko të gjitha vlerësimet në Google Maps
+                  <CaretRight size={10} weight="bold" />
+                </a>
               </div>
             </div>
 
