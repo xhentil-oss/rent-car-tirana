@@ -28,6 +28,7 @@ type CarDraftForm = {
   slug: string;
   featured: boolean;
   quantity: string;
+  description: string;
 };
 
 type FormErrors = {
@@ -40,7 +41,7 @@ type FormErrors = {
 const emptyForm: CarDraftForm = {
   brand: "", model: "", year: "", pricePerDay: "", category: "Ekonomike",
   status: "Në dispozicion", transmission: "Automatike", fuel: "Benzinë",
-  seats: "5", luggage: "2", image: "", slug: "", featured: false, quantity: "1",
+  seats: "5", luggage: "2", image: "", slug: "", featured: false, quantity: "1", description: "",
 };
 
 // ─── Image Picker Modal ────────────────────────────────────────────────────
@@ -327,6 +328,7 @@ export default function AdminCars() {
       status: car.status, transmission: car.transmission, fuel: car.fuel,
       seats: String(car.seats), luggage: String(car.luggage),
       image: car.image, slug: car.slug, featured: car.featured, quantity: String(car.quantity ?? 1),
+      description: car.description ?? '',
     });
     setFormErrors({});
     setDrawerOpen(true);
@@ -360,6 +362,7 @@ export default function AdminCars() {
       slug: form.slug || `${form.brand}-${form.model}`.toLowerCase().replace(/\s+/g, "-"),
       featured: form.featured,
       quantity: Number(form.quantity) || 1,
+      description: form.description || null,
     };
     try {
       if (editingCarId) {
@@ -591,6 +594,10 @@ export default function AdminCars() {
                   <option value="I rezervuar">I rezervuar</option>
                   <option value="Në mirëmbajtje">Në mirëmbajtje</option>
                 </select>
+              </div>
+              <div>
+                <label htmlFor="drawer-description" className="block text-sm font-medium text-neutral-700 mb-1.5">Përshkrimi</label>
+                <textarea id="drawer-description" rows={3} value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} className="w-full px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none" placeholder="Përshkrim i shkurtër i makinës..." />
               </div>
               <ImagePickerField
                 value={form.image}
