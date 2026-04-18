@@ -121,7 +121,10 @@ export function useQuery(entity: string, filtersOrId?: Record<string, unknown> |
     const url = entityId
       ? `${API_BASE}${endpoint}/${entityId}`
       : `${API_BASE}${endpoint}${buildQuery(filters)}`;
-    fetchWithRefresh(url, { headers: getHeaders() })
+    // Bypass browser cache for authenticated users so admin refetch always gets fresh data
+    const fetchOpts: RequestInit = { headers: getHeaders() };
+    if (getToken()) fetchOpts.cache = 'no-store';
+    fetchWithRefresh(url, fetchOpts)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();

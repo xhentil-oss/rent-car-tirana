@@ -30,7 +30,12 @@ router.get('/', async (req, res) => {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(...safePagination(limit, offset, 100));
     const [rows] = await pool.query(sql, params);
-    res.set('Cache-Control', 'public, max-age=30');
+    // Only cache for unauthenticated (public) requests — admin refetch must get fresh data
+    if (!req.headers.authorization) {
+      res.set('Cache-Control', 'public, max-age=30');
+    } else {
+      res.set('Cache-Control', 'no-cache, no-store');
+    }
     res.json(rows.map(toCamel));
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
