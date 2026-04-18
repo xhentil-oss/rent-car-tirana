@@ -24,12 +24,15 @@ const STATIC_PAGES = [
   { path: "/vleresime", label: "Vlerësimet", priority: "0.7", changefreq: "weekly", section: "Kryesore" },
   { path: "/llogaria", label: "Llogaria ime", priority: "0.4", changefreq: "monthly", section: "Kryesore" },
   { path: "/blog", label: "Blog", priority: "0.8", changefreq: "weekly", section: "Kryesore" },
+  { path: "/kontakt", label: "Kontakt", priority: "0.6", changefreq: "monthly", section: "Kryesore" },
   { path: "/makina-me-qira-tirane", label: "Makina me qira Tiranë", priority: "0.95", changefreq: "weekly", section: "SEO" },
   { path: "/makine-me-qira-aeroport", label: "Makinë me qira Aeroport", priority: "0.9", changefreq: "monthly", section: "SEO" },
   { path: "/makina-suv-me-qira", label: "Makina SUV me qira", priority: "0.85", changefreq: "monthly", section: "SEO" },
   { path: "/makina-automatike-me-qira", label: "Makina Automatike me qira", priority: "0.85", changefreq: "monthly", section: "SEO" },
   { path: "/makina-luksoze-me-qira", label: "Makina Luksoze me qira", priority: "0.85", changefreq: "monthly", section: "SEO" },
   { path: "/sitemap", label: "Harta e faqes", priority: "0.3", changefreq: "monthly", section: "Kryesore" },
+  { path: "/termat-e-sherbimit", label: "Termat e Shërbimit", priority: "0.3", changefreq: "yearly", section: "Legal" },
+  { path: "/privatesie", label: "Politika e Privatësisë", priority: "0.3", changefreq: "yearly", section: "Legal" },
 ];
 
 function priorityColor(p: string) {
@@ -102,7 +105,7 @@ export default function SitemapPage() {
     URL.revokeObjectURL(url);
   };
 
-  const sections = ["Kryesore", "SEO", "Makinat"];
+  const sections = ["Kryesore", "SEO", "Legal", "Makinat"];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
