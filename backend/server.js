@@ -47,11 +47,18 @@ app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('combined'));
 
-// Rate limit — login endpoint
+// Rate limit — strict for login/register/reset (brute-force sensitive)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuta
   max: 20,
   message: { error: 'Shumë kërkesa. Provoni pas 15 minutash.' },
+});
+
+// Lenient limiter for session endpoints used during normal navigation (/me, /refresh, /logout)
+const sessionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { error: 'Shumë kërkesa. Provoni më vonë.' },
 });
 
 // General API rate limiter
@@ -74,7 +81,13 @@ app.post('/api/customers', publicPostLimiter);
 app.post('/api/reservations', publicPostLimiter);
 app.post('/api/reviews', publicPostLimiter);
 
-app.use('/api/auth',          authLimiter, require('./routes/auth'));
+// Apply strict auth limiter only to login/register/forgot; lenient to /me, /refresh, /logout
+const strictAuthPaths = ['/login', '/register', '/forgot-password', '/login-2fa', '/reset-password', '/resend-verification'];
+app.use('/api/auth', (req, res, next) => {
+  const p = req.path;
+  if (strictAuthPaths.some(s => p === s || p.startsWith(s))) return authLimiter(req, res, next);
+  return sessionLimiter(req, res, next);
+}, require('./routes/auth'));
 app.use('/api/cars',          apiLimiter,  require('./routes/cars'));
 app.use('/api/customers',     apiLimiter,  require('./routes/customers'));
 app.use('/api/reservations',  apiLimiter,  require('./routes/reservations'));

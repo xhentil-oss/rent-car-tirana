@@ -8,6 +8,15 @@ const otplib = require('otplib');
 const authenticator = otplib.authenticator || (otplib.default && otplib.default.authenticator);
 const QRCode = require('qrcode');
 if (authenticator) authenticator.options = { window: 1 }; // Allow ±30s clock drift
+
+// Simple HTML escape for email templates (prevent XSS via user-supplied name)
+const escapeHtml = (s) => String(s || '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+// In-memory OTP attempt tracker (tempToken -> count). Cleared every 10 min.
+const otpAttempts = new Map();
+setInterval(() => otpAttempts.clear(), 10 * 60 * 1000).unref?.();
 const pool = require('../database/db');
 const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { sendMail } = require('../lib/mailer');
@@ -68,6 +77,8 @@ router.post(
       const userId = uuidv4();
       const customerId = uuidv4();
       const verifyToken = crypto.randomBytes(32).toString('hex');
+      const verifyTokenHash = hashToken(verifyToken);
+      const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
       const nameParts = name.trim().split(/\s+/);
       const firstName = nameParts[0] || '';
@@ -78,8 +89,8 @@ router.post(
         await conn.beginTransaction();
 
         await conn.query(
-          'INSERT INTO users (id, email, name, password, role, email_verification_token) VALUES (?, ?, ?, ?, ?, ?)',
-          [userId, email, name, hash, role, verifyToken]
+          'INSERT INTO users (id, email, name, password, role, email_verification_token, email_verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [userId, email, name, hash, role, verifyTokenHash, verifyExpires]
         );
 
         await conn.query(
@@ -101,7 +112,7 @@ router.post(
         const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
         const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}`;
         sendMail(email, 'Verifiko emailin tënd — RentCar Tirana', `
-          <p>Mirë se vini, <strong>${name}</strong>!</p>
+          <p>Mirë se vini, <strong>${escapeHtml(name)}</strong>!</p>
           <p>Klikoni linkun më poshtë për të verifikuar emailin tuaj:</p>
           <p><a href="${verifyLink}" style="color:#2563eb">Verifiko emailin</a></p>
           <p>Linku skudon pas 24 orësh.</p>
@@ -221,6 +232,13 @@ router.post('/login-2fa', async (req, res) => {
 
     if (decoded.type !== '2fa_pending') return res.status(401).json({ error: 'Token i pavlefshëm.' });
 
+    // OTP brute-force protection — max 5 attempts per tempToken
+    const attempts = otpAttempts.get(tempToken) || 0;
+    if (attempts >= 5) {
+      otpAttempts.delete(tempToken);
+      return res.status(429).json({ error: 'Shumë përpjekje të gabuara. Hyni sërisht.' });
+    }
+
     const [rows] = await pool.query(
       'SELECT id, email, name, role, permissions, two_factor_secret, email_verified FROM users WHERE id = ? AND is_active = 1',
       [decoded.userId]
@@ -231,7 +249,11 @@ router.post('/login-2fa', async (req, res) => {
     if (!user.two_factor_secret) return res.status(400).json({ error: '2FA nuk është konfiguruar.' });
 
     const valid = authenticator.check(otp, user.two_factor_secret);
-    if (!valid) return res.status(401).json({ error: 'Kodi OTP është i gabuar.' });
+    if (!valid) {
+      otpAttempts.set(tempToken, attempts + 1);
+      return res.status(401).json({ error: `Kodi OTP është i gabuar. (${5 - attempts - 1} përpjekje të mbetura)` });
+    }
+    otpAttempts.delete(tempToken);
 
     const { access, refresh } = makeTokens(user.id);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
@@ -363,7 +385,7 @@ router.post('/forgot-password',
         const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
         const resetLink = `${frontendUrl}/reset-password?token=${token}`; // Send plaintext in email
         sendMail(email, 'Rivendosni fjalëkalimin — RentCar Tirana', `
-          <p>Përshëndetje, <strong>${user.name}</strong>!</p>
+          <p>Përshëndetje, <strong>${escapeHtml(user.name)}</strong>!</p>
           <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni linkun më poshtë:</p>
           <p><a href="${resetLink}" style="color:#2563eb">Rivendos fjalëkalimin</a></p>
           <p>Linku skudon pas 1 ore. Nëse nuk e keni kërkuar ju, injoroni këtë email.</p>
@@ -398,7 +420,8 @@ router.post('/reset-password',
       const { id: tokenId, user_id: userId } = rows[0];
       const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
-      await pool.query('UPDATE users SET password = ? WHERE id = ?', [hash, userId]);
+      // Also clear any existing lockout so user can log in immediately
+      await pool.query('UPDATE users SET password = ?, failed_attempts = 0, locked_until = NULL WHERE id = ?', [hash, userId]);
       await pool.query('UPDATE password_reset_tokens SET used = 1 WHERE id = ?', [tokenId]);
       await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
       clearAuthCookies(res);
@@ -418,13 +441,13 @@ router.get('/verify-email', async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      'SELECT id FROM users WHERE email_verification_token = ?',
-      [token]
+      'SELECT id FROM users WHERE email_verification_token = ? AND (email_verification_expires IS NULL OR email_verification_expires > NOW())',
+      [hashToken(String(token))]
     );
-    if (!rows.length) return res.status(400).json({ error: 'Token i pavlefshëm.' });
+    if (!rows.length) return res.status(400).json({ error: 'Token i pavlefshëm ose ka skaduar.' });
 
     await pool.query(
-      'UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?',
+      'UPDATE users SET email_verified = 1, email_verification_token = NULL, email_verification_expires = NULL WHERE id = ?',
       [rows[0].id]
     );
 
@@ -444,7 +467,11 @@ router.post('/resend-verification', authenticate, async (req, res) => {
     if (rows[0].email_verified) return res.status(400).json({ error: 'Emaili është tashmë i verifikuar.' });
 
     const verifyToken = crypto.randomBytes(32).toString('hex');
-    await pool.query('UPDATE users SET email_verification_token = ? WHERE id = ?', [verifyToken, req.user.id]);
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.query(
+      'UPDATE users SET email_verification_token = ?, email_verification_expires = ? WHERE id = ?',
+      [hashToken(verifyToken), verifyExpires, req.user.id]
+    );
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
     const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}`;

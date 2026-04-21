@@ -465,6 +465,7 @@ const ALTERS = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(255) NULL`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255) NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires DATETIME NULL`,
 ];
 
 async function migrate() {
@@ -502,8 +503,8 @@ async function migrate() {
       await connection.query(sql);
       console.log(`  ✅ ${sql.slice(0, 60)}...`);
     } catch (err) {
-      // Ignore "Duplicate column" or "already exists" errors
-      if (err.code === 'ER_DUP_FIELDNAME' || err.message.includes('Duplicate column')) {
+      // Ignore "Duplicate column" / "Duplicate key name" — idempotent re-runs
+      if (err.code === 'ER_DUP_FIELDNAME' || err.code === 'ER_DUP_KEYNAME' || err.message.includes('Duplicate column') || err.message.includes('Duplicate key name')) {
         console.log(`  ⏭️  Already applied: ${sql.slice(0, 60)}...`);
       } else {
         console.log(`  ⚠️  ${err.message.slice(0, 80)}`);

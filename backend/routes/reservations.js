@@ -83,12 +83,33 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website } = req.body;
+    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail } = req.body;
     // Honeypot bot protection — real users never fill hidden 'website' field
     if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate) {
       return res.status(400).json({ error: 'Fusha të detyrueshme mungojnë.' });
     }
+
+    // Verify customerId matches a real customer, and if customerEmail provided, that they match
+    const [custCheck] = await pool.query('SELECT id, email FROM customers WHERE id = ?', [customerId]);
+    if (!custCheck.length) return res.status(400).json({ error: 'Klient i pavlefshëm.' });
+    if (customerEmail && custCheck[0].email.toLowerCase() !== String(customerEmail).toLowerCase()) {
+      return res.status(403).json({ error: 'Klient i pavlefshëm.' });
+    }
+
+    // Validate locations against known list (prevent arbitrary values)
+    const ALLOWED_LOCATIONS = Object.keys(LOCATION_FEES).concat(['Tiranë', 'Tirana', 'Tirane']);
+    if (!ALLOWED_LOCATIONS.includes(pickupLocation) || !ALLOWED_LOCATIONS.includes(dropoffLocation)) {
+      return res.status(400).json({ error: 'Lokacion i pavlefshëm.' });
+    }
+
+    // Validate free-text lengths
+    if (notes && String(notes).length > 1000) return res.status(400).json({ error: 'Shënime shumë të gjata.' });
+    if (discountCode && String(discountCode).length > 50) return res.status(400).json({ error: 'Kodi i zbritjes i pavlefshëm.' });
+    const ALLOWED_INSURANCE = [null, '', 'Basic', 'Standard', 'Premium', 'Full'];
+    if (insurance && !ALLOWED_INSURANCE.includes(insurance)) return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
+    if (extras && String(extras).length > 500) return res.status(400).json({ error: 'Ekstra shumë të gjata.' });
+
     // Convert ISO datetime strings to YYYY-MM-DD for MySQL DATE columns
     const fmtDate = (d) => {
       const dt = new Date(d);

@@ -99,15 +99,17 @@ export function useQuery(entity: string, filtersOrId?: Record<string, unknown> |
   const refetch = useCallback(() => {
     if (skip) { setData(isIdFetch ? null : []); setIsPending(false); return; }
     setIsPending(true);
+    const controller = new AbortController();
     const url = entityId
       ? `${API_BASE}${endpoint}/${entityId}`
       : `${API_BASE}${endpoint}${buildQuery(filters)}`;
-    fetchWithRefresh(url, { headers: getHeaders(), cache: 'no-store' })
+    fetchWithRefresh(url, { headers: getHeaders(), cache: 'no-store', signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
       .then((json) => {
+        if (controller.signal.aborted) return;
         if (isIdFetch) {
           setData(Array.isArray(json) ? json[0] ?? null : json);
         } else {
@@ -116,15 +118,20 @@ export function useQuery(entity: string, filtersOrId?: Record<string, unknown> |
         setError(null);
       })
       .catch((err) => {
+        if (err?.name === 'AbortError' || controller.signal.aborted) return;
         console.warn(`useQuery(${entity}):`, err.message);
         setData(isIdFetch ? null : []);
         setError(err.message);
       })
-      .finally(() => setIsPending(false));
-  }, [entity, isIdFetch ? entityId : JSON.stringify(filters)]);
+      .finally(() => { if (!controller.signal.aborted) setIsPending(false); });
+
+    // Return cleanup so useEffect can abort on unmount/refetch
+    (refetch as any)._cleanup = () => controller.abort();
+  }, [entity, isIdFetch, isIdFetch ? entityId : JSON.stringify(filters)]);
 
   useEffect(() => {
     refetch();
+    return () => { (refetch as any)._cleanup?.(); };
   }, [refetch]);
 
   return { data, isPending, error, refetch };
@@ -226,7 +233,7 @@ export function useAuth() {
     setIsPending(false);
 
     // Background session verify — syncs with server cookie state
-    fetch(`${API_BASE}/auth/me`, { credentials: "include" })
+    fetchWithRefresh(`${API_BASE}/auth/me`, {})
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.user) {

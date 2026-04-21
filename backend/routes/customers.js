@@ -42,38 +42,54 @@ router.post('/', async (req, res) => {
     // Basic email format check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ error: 'Email format i pavlefshëm.' });
     if (name && name.length > 255) return res.status(400).json({ error: 'Emri shumë i gjatë.' });
-    // Check if customer with this email already exists (match by email only, not OR phone)
+
+    // phone is NOT NULL in DB — coerce to empty string if missing
+    const safePhone = (phone || '').toString().trim().slice(0, 30);
+
+    // Check if customer with this email already exists
     const [existing] = await pool.query(
       'SELECT id FROM customers WHERE email = ?', [email]
     );
     if (existing.length) {
-      // Return only id — do not leak PII to unauthenticated callers
-      return res.json({ id: existing[0].id });
+      // Identical shape/status to prevent email enumeration
+      return res.status(201).json({ id: existing[0].id });
     }
     const id = uuidv4();
     const createdBy = req.user ? req.user.id : null;
+    const safeName = name || `${firstName || ''} ${lastName || ''}`.trim() || email;
     await pool.query(
       'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, created_by) VALUES (?,?,?,?,?,?,?,?)',
-      [id, name || `${firstName} ${lastName}`, firstName, lastName, email, phone, type, createdBy]
+      [id, safeName, firstName || '', lastName || '', email, safePhone, type, createdBy]
     );
-    const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [id]);
-    res.status(201).json(fmt(rows[0]));
+    return res.status(201).json({ id });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type } = req.body;
-    // Check duplicate email/phone on another customer
-    const [dup] = await pool.query(
-      'SELECT id FROM customers WHERE (email = ? OR phone = ?) AND id != ?', [email, phone, req.params.id]
-    );
-    if (dup.length) {
-      return res.status(409).json({ error: 'Një klient me këtë email ose numër telefoni ekziston tashmë.' });
+
+    // Check duplicate email (always)
+    if (email) {
+      const [dupEmail] = await pool.query(
+        'SELECT id FROM customers WHERE email = ? AND id != ?', [email, req.params.id]
+      );
+      if (dupEmail.length) {
+        return res.status(409).json({ error: 'Një klient me këtë email ekziston tashmë.' });
+      }
+    }
+    // Check duplicate phone only when non-empty (avoid collisions on blank phones)
+    if (phone && phone.trim()) {
+      const [dupPhone] = await pool.query(
+        "SELECT id FROM customers WHERE phone = ? AND phone != '' AND id != ?", [phone, req.params.id]
+      );
+      if (dupPhone.length) {
+        return res.status(409).json({ error: 'Një klient me këtë numër telefoni ekziston tashmë.' });
+      }
     }
     await pool.query(
       'UPDATE customers SET name=?, first_name=?, last_name=?, email=?, phone=?, type=? WHERE id=?',
-      [name, firstName, lastName, email, phone, type, req.params.id]
+      [name, firstName, lastName, email, phone || '', type, req.params.id]
     );
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Customer', entityId: req.params.id, description: `Klient u ndryshua: ${email}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [req.params.id]);

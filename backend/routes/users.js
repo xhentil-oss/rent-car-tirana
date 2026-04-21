@@ -2,9 +2,8 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
-const { authenticate, requireRole, logActivity } = require('../middleware/auth');
-const { BCRYPT_ROUNDS, ADMIN_ROLES } = require('../lib/helpers');
-const { safePagination } = require('../lib/helpers');
+const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
+const { BCRYPT_ROUNDS, safePagination } = require('../lib/helpers');
 
 const fmt = (r) => ({ id: r.id, email: r.email, name: r.name, role: r.role, isActive: !!r.is_active, twoFactorEnabled: !!r.two_factor_enabled, permissions: r.permissions, lastLogin: r.last_login, createdAt: r.created_at });
 
@@ -37,6 +36,16 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
 router.put('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const { name, role, isActive, permissions, twoFactorEnabled } = req.body;
+
+    // Prevent locking users out by enabling 2FA without a configured secret
+    if (twoFactorEnabled === true) {
+      const [check] = await pool.query('SELECT two_factor_secret FROM users WHERE id = ?', [req.params.id]);
+      if (!check.length) return res.status(404).json({ error: 'Përdoruesi nuk u gjet.' });
+      if (!check[0].two_factor_secret) {
+        return res.status(400).json({ error: '2FA nuk mund të aktivizohet pa konfigurim. Përdoruesi duhet ta aktivizojë vetë nga llogaria.' });
+      }
+    }
+
     // Use COALESCE to preserve existing values when fields are not sent
     await pool.query(
       'UPDATE users SET name=COALESCE(?,name), role=COALESCE(?,role), is_active=COALESCE(?,is_active), permissions=COALESCE(?,permissions), two_factor_enabled=COALESCE(?,two_factor_enabled) WHERE id=?',
