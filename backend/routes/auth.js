@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
+authenticator.options = { window: 1 }; // Allow ±30s clock drift
 const pool = require('../database/db');
 const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { sendMail } = require('../lib/mailer');
@@ -348,17 +349,18 @@ router.post('/forgot-password',
       if (rows.length) {
         const user = rows[0];
         const token = crypto.randomBytes(32).toString('hex');
+        const hashedResetToken = hashToken(token); // Hash before DB storage
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 orë
 
         // Invalidate existing unused tokens for this user
         await pool.query('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0', [user.id]);
         await pool.query(
           'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-          [uuidv4(), user.id, token, expiresAt]
+          [uuidv4(), user.id, hashedResetToken, expiresAt] // Store hash
         );
 
         const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
-        const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+        const resetLink = `${frontendUrl}/reset-password?token=${token}`; // Send plaintext in email
         sendMail(email, 'Rivendosni fjalëkalimin — RentCar Tirana', `
           <p>Përshëndetje, <strong>${user.name}</strong>!</p>
           <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni linkun më poshtë:</p>
@@ -388,7 +390,7 @@ router.post('/reset-password',
     try {
       const [rows] = await pool.query(
         'SELECT id, user_id FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > NOW()',
-        [token]
+        [hashToken(token)] // Hash before lookup
       );
       if (!rows.length) return res.status(400).json({ error: 'Linku është i pavlefshëm ose ka skaduar.' });
 

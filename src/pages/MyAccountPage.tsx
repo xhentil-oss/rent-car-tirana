@@ -17,6 +17,7 @@ import {
 import { useAuth, useQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 function fmt(d: Date | string) {
   return new Date(d).toLocaleDateString("sq-AL", { day: "2-digit", month: "short", year: "numeric" });
@@ -34,14 +35,25 @@ export default function MyAccountPage() {
   };
 
   const { user, isAnonymous, isPending: authPending, logout } = useAuth();
+  const [searchParams] = useSearchParams();
+  const emailJustVerified = searchParams.get("verified") === "1";
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSent, setResendSent] = useState(false);
+  const [resendError, setResendError] = useState("");
 
   const handleResendVerification = async () => {
     setResendLoading(true);
+    setResendError("");
     try {
-      await fetch("/api/auth/resend-verification", { method: "POST", credentials: "include" });
-      setResendSent(true);
+      const res = await fetch("/api/auth/resend-verification", { method: "POST", credentials: "include" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setResendError(data.error || "Dërgimi dështoi. Provoni sërisht.");
+      } else {
+        setResendSent(true);
+      }
+    } catch {
+      setResendError("Problem me lidhjen. Provoni sërisht.");
     } finally {
       setResendLoading(false);
     }
@@ -144,8 +156,16 @@ export default function MyAccountPage() {
         </div>
       </div>
 
+      {/* Email just verified — success banner */}
+      {emailJustVerified && (
+        <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <CheckCircle size={18} weight="fill" className="text-green-500 shrink-0" />
+          <p className="text-sm text-green-700 font-medium">Emaili u verifikua me sukses! Llogaria juaj është plotësisht aktive.</p>
+        </div>
+      )}
+
       {/* Email verification banner */}
-      {user?.email_verified === 0 && !resendSent && (
+      {user?.email_verified === 0 && !resendSent && !emailJustVerified && (
         <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           <Warning size={18} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
@@ -160,6 +180,12 @@ export default function MyAccountPage() {
             <EnvelopeSimple size={13} />
             {resendLoading ? "Duke dërguar..." : "Ridërgo"}
           </button>
+        </div>
+      )}
+      {resendError && (
+        <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+          <Warning size={16} weight="fill" className="text-red-500 shrink-0" />
+          <p className="text-xs text-red-700">{resendError}</p>
         </div>
       )}
       {resendSent && (

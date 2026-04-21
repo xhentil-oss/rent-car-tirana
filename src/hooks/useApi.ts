@@ -212,7 +212,7 @@ export function useAuth() {
   const [isPending, setIsPending] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(true);
 
-  // Restore user from localStorage on mount (profile data only, not token)
+  // Restore user from localStorage immediately (fast), then verify with server in background
   useEffect(() => {
     const stored = localStorage.getItem("rct_user");
     if (stored) {
@@ -224,6 +224,23 @@ export function useAuth() {
       }
     }
     setIsPending(false);
+
+    // Background session verify — syncs with server cookie state
+    fetch(`${API_BASE}/auth/me`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.user) {
+          localStorage.setItem("rct_user", JSON.stringify(data.user));
+          setUser(data.user);
+          setIsAnonymous(false);
+        } else {
+          // Cookie expired or revoked — clear stale local state
+          localStorage.removeItem("rct_user");
+          setUser(null);
+          setIsAnonymous(true);
+        }
+      })
+      .catch(() => { /* network error — keep current local state */ });
   }, []);
 
   const login = useCallback(async (email?: string, password?: string) => {

@@ -8,33 +8,24 @@ set -e
 MSG="${1:-chore: deploy update}"
 
 echo ""
-echo "🔨 [1/4] Building frontend..."
+echo "🔨 [1/3] Building frontend..."
 npm run build
 
 echo ""
-echo "📦 [2/4] Copying dist → backend/public..."
-rm -rf backend/public
-cp -r dist backend/public
-
-echo ""
-echo "📝 [3/4] Committing..."
+echo "📝 [2/3] Committing (dist + src)..."
 git add -A
 git commit -m "$MSG" || echo "  ℹ️  Nothing new to commit"
 
 echo ""
-echo "🚀 [4/4] Pushing to GitHub..."
+echo "🚀 [3/3] Pushing to GitHub..."
 git push origin main
 
 echo ""
-echo "✅ Push u bë me sukses!"
+echo "✅ Push u bë! Tani ekzekuto në SERVER:"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Hapat në SERVER (cPanel SSH):"
-echo ""
-echo "  cd ~/public_html          # ose folder-i i projektit"
+echo "  cd ~/rent-car-tirana"
 echo "  git pull origin main"
-echo "  cd backend"
-echo "  npm install --production"
-echo "  npm run migrate"
-echo "  pm2 restart rental-backend   # ose emri i procesit tuaj"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  rm -rf backend/public/*"
+echo "  cp -r dist/* backend/public/"
+echo "  cd backend && npm install --production && npm run migrate"
+echo "  pm2 restart all"
