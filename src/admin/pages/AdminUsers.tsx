@@ -130,26 +130,57 @@ const defaultForm = (): UserForm => ({
 
 // ─── 2FA Setup Modal ──────────────────────────────────────────────────────────
 function TwoFAModal({
-  userName,
   onClose,
   onConfirm,
 }: {
-  userName: string;
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  const [step, setStep] = useState<"qr" | "verify">("qr");
-  const [code, setCode] = useState("");
+  const [step, setStep] = useState<"loading" | "qr" | "verify">("loading");
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [tempSecret, setTempSecret] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fakeSecret = "JBSWY3DPEHPK3PXP";
-  const fakeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=otpauth://totp/RentCar:${encodeURIComponent(userName)}?secret=${fakeSecret}%26issuer=RentCar`;
+  // Load QR code on mount
+  React.useEffect(() => {
+    fetch("/api/auth/2fa/setup", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.qrDataUrl) {
+          setQrDataUrl(data.qrDataUrl);
+          setTempSecret(data.tempSecret);
+          setStep("qr");
+        } else {
+          setError("Gabim gjatë konfigurimit të 2FA.");
+          setStep("qr");
+        }
+      })
+      .catch(() => { setError("Gabim gjatë lidhjes me serverin."); setStep("qr"); });
+  }, []);
 
-  const handleVerify = () => {
-    if (code.length === 6 && /^\d+$/.test(code)) {
+  const handleVerify = async () => {
+    if (otp.length !== 6) { setError("Kodi duhet të jetë 6 shifra."); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/2fa/verify-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tempSecret, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Kodi OTP është i gabuar."); return; }
       onConfirm();
-    } else {
-      setError("Kodi duhet të jetë 6 shifra. Provo përsëri.");
+    } catch {
+      setError("Gabim gjatë verifikimit.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,21 +198,31 @@ function TwoFAModal({
         </div>
 
         <div className="p-5">
-          {step === "qr" ? (
+          {step === "loading" ? (
+            <div className="flex justify-center py-8">
+              <ArrowClockwise size={28} className="animate-spin text-primary" />
+            </div>
+          ) : step === "qr" ? (
             <div className="space-y-4">
               <p className="text-sm text-neutral-600">
                 Skano kodin QR me aplikacionin tuaj <strong>Google Authenticator</strong> ose <strong>Authy</strong>.
               </p>
-              <div className="flex justify-center">
-                <img src={fakeQrUrl} alt="QR Code 2FA" className="w-44 h-44 rounded-lg border border-border" />
-              </div>
-              <div className="bg-neutral-50 rounded-lg p-3 border border-border">
-                <p className="text-xs text-neutral-500 mb-1">Ose fut manualisht:</p>
-                <code className="text-xs font-mono text-primary font-bold tracking-wider">{fakeSecret}</code>
-              </div>
+              {error && <p className="text-xs text-error text-center">{error}</p>}
+              {qrDataUrl && (
+                <div className="flex justify-center">
+                  <img src={qrDataUrl} alt="QR Code 2FA" className="w-44 h-44 rounded-lg border border-border" />
+                </div>
+              )}
+              {tempSecret && (
+                <div className="bg-neutral-50 rounded-lg p-3 border border-border">
+                  <p className="text-xs text-neutral-500 mb-1">Ose fut manualisht:</p>
+                  <code className="text-xs font-mono text-primary font-bold tracking-wider break-all">{tempSecret}</code>
+                </div>
+              )}
               <button
                 onClick={() => setStep("verify")}
-                className="w-full py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
+                disabled={!qrDataUrl}
+                className="w-full py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Vazhdo
               </button>
@@ -189,43 +230,33 @@ function TwoFAModal({
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-neutral-600">
-                Fut kodin 6-shifror nga aplikacioni juaj autentifikues.
+                Fut kodin 6-shifror nga aplikacioni juaj autentifikues për të konfirmuar.
               </p>
-              <div className="flex gap-2 justify-center">
-                {[0,1,2,3,4,5].map((i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength={1}
-                    value={code[i] || ""}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      const arr = code.split("");
-                      arr[i] = val;
-                      setCode(arr.join("").slice(0, 6));
-                      if (val && i < 5) {
-                        const next = document.getElementById(`otp-${i + 1}`);
-                        next?.focus();
-                      }
-                    }}
-                    id={`otp-${i}`}
-                    className="w-10 h-12 text-center text-lg font-mono border-2 border-border rounded-md focus:border-primary focus:outline-none"
-                  />
-                ))}
-              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => { if (e.key === "Enter") handleVerify(); }}
+                autoFocus
+                className="w-full px-4 py-3 text-center text-lg font-mono border-2 border-border rounded-md focus:border-primary focus:outline-none tracking-widest"
+              />
               {error && <p className="text-xs text-error text-center">{error}</p>}
               <div className="flex gap-2">
                 <button
-                  onClick={() => setStep("qr")}
+                  onClick={() => { setStep("qr"); setOtp(""); setError(""); }}
                   className="flex-1 py-2 border border-border text-neutral-600 rounded-md text-sm hover:bg-neutral-50 transition-colors cursor-pointer"
                 >
                   Mbrapa
                 </button>
                 <button
                   onClick={handleVerify}
-                  className="flex-1 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer"
+                  disabled={loading || otp.length !== 6}
+                  className="flex-1 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  Verifiko
+                  {loading ? "Duke verifikuar..." : "Aktivizo 2FA"}
                 </button>
               </div>
             </div>
@@ -453,9 +484,6 @@ export default function AdminUsers() {
   };
 
   const handle2FAConfirm = async () => {
-    if (!showTwoFA) return;
-    await update(showTwoFA, { twoFactorEnabled: true });
-    await createLog({ action: "UPDATE", entity: "UserAdminProfile", entityId: showTwoFA, description: "Aktivizuar 2FA për llogarinë", timestamp: new Date() });
     await refetch();
     setShowTwoFA(null);
   };
@@ -838,7 +866,6 @@ export default function AdminUsers() {
       {/* ── 2FA Setup Modal ──────────────────────────────────────────────── */}
       {showTwoFA && (
         <TwoFAModal
-          userName={getDisplayName((users ?? []).find((u) => u.id === showTwoFA) ?? {})}
           onClose={() => setShowTwoFA(null)}
           onConfirm={handle2FAConfirm}
         />

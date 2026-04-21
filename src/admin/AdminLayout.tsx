@@ -40,21 +40,48 @@ const navItems = [
   { label: "Përdoruesit", href: "/admin/perdoruesit", icon: UserGear, group: "system" },
   { label: "Cilësimet", href: "/admin/cilesimet", icon: Gear, group: "system" },  { label: "Blog", href: "/admin/blog", icon: Article, group: "system" },];
 
-function AdminLoginForm({ login }: { login: (email: string, password: string) => Promise<any> }) {
+function AdminLoginForm({
+  login,
+  loginWith2FA,
+}: {
+  login: (email: string, password: string) => Promise<any>;
+  loginWith2FA: (tempToken: string, otp: string) => Promise<any>;
+}) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // 2FA step
+  const [twoFAStep, setTwoFAStep] = useState(false);
+  const [tempToken, setTempToken] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      if (result?.requires2fa) {
+        setTempToken(result.tempToken);
+        setTwoFAStep(true);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errors.loginFailed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTwoFA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await loginWith2FA(tempToken, otpCode);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Kodi OTP është i gabuar");
     } finally {
       setLoading(false);
     }
@@ -67,33 +94,70 @@ function AdminLoginForm({ login }: { login: (email: string, password: string) =>
           <ShieldCheck size={28} weight="duotone" className="text-primary" />
         </div>
         <h1 className="text-xl font-semibold text-neutral-900 mb-2 text-center">Paneli Admin</h1>
-        <p className="text-sm text-neutral-500 mb-6 text-center">Kyçuni për të aksesuar panelin e administrimit.</p>
-        {error && <p className="text-sm text-error bg-red-50 rounded-md px-3 py-2 mb-4 text-center">{error}</p>}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
-          />
-          <input
-            type="password"
-            placeholder="Fjalëkalimi"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0 mt-1"
-          >
-            {loading ? "Duke u kyçur..." : "Kyçu"}
-          </button>
-        </form>
+
+        {twoFAStep ? (
+          <>
+            <p className="text-sm text-neutral-500 mb-6 text-center">Shkruani kodin 6-shifror nga aplikacioni juaj autentifikues.</p>
+            {error && <p className="text-sm text-error bg-red-50 rounded-md px-3 py-2 mb-4 text-center">{error}</p>}
+            <form onSubmit={handleTwoFA} className="flex flex-col gap-3">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                required
+                autoFocus
+                className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors tracking-widest text-center font-mono"
+              />
+              <button
+                type="submit"
+                disabled={loading || otpCode.length !== 6}
+                className="w-full py-3 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0 mt-1"
+              >
+                {loading ? "Duke verifikuar..." : "Konfirmo"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setTwoFAStep(false); setOtpCode(""); setError(""); }}
+                className="text-xs text-neutral-400 underline cursor-pointer bg-transparent border-0 text-center"
+              >
+                Kthehu te kyçja
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-neutral-500 mb-6 text-center">Kyçuni për të aksesuar panelin e administrimit.</p>
+            {error && <p className="text-sm text-error bg-red-50 rounded-md px-3 py-2 mb-4 text-center">{error}</p>}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+              />
+              <input
+                type="password"
+                placeholder="Fjalëkalimi"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0 mt-1"
+              >
+                {loading ? "Duke u kyçur..." : "Kyçu"}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
@@ -103,7 +167,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { user, isPending, isAnonymous, login, logout } = useAuth();
+  const { user, isPending, isAnonymous, login, loginWith2FA, logout } = useAuth();
 
   // Still loading auth state
   if (isPending) {
@@ -119,7 +183,7 @@ export default function AdminLayout() {
 
   // Not logged in → show login form
   if (isAnonymous) {
-    return <AdminLoginForm login={login} />;
+    return <AdminLoginForm login={login} loginWith2FA={loginWith2FA} />;
   }
 
   // Role-based access control — only admin, manager, staff can access admin panel
@@ -131,7 +195,7 @@ export default function AdminLayout() {
           <ShieldCheck size={40} weight="duotone" className="text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-semibold text-neutral-900 mb-2">Akses i Refuzuar</h1>
           <p className="text-sm text-neutral-500 mb-6">Nuk keni leje të aksesoni panelin e administrimit.</p>
-          <button onClick={logout} className="px-5 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 cursor-pointer border-0">
+          <button onClick={() => logout()} className="px-5 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 cursor-pointer border-0">
             Shkyçu
           </button>
         </div>

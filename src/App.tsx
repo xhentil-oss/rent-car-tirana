@@ -40,6 +40,7 @@ const TermsPage = React.lazy(() => import("./pages/TermsPage"));
 const PrivacyPage = React.lazy(() => import("./pages/PrivacyPage"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 const ThankYouPage = React.lazy(() => import("./pages/ThankYouPage"));
+const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 const BlogPage = React.lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = React.lazy(() => import("./pages/BlogPostPage"));
 
@@ -63,6 +64,7 @@ const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
   ["/privatesie",                "/en/privacy",               PrivacyPage],
   ["/blog",                      "/en/blog",                  BlogPage],
   ["/blog/:slug",                "/en/blog/:slug",            BlogPostPage],
+  ["/reset-password",            "/en/reset-password",        ResetPasswordPage],
 ];
 
 function LazyFallback() {

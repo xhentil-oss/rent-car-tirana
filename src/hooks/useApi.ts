@@ -36,55 +36,36 @@ const ENTITY_MAP: Record<string, string> = {
   GoogleReview: "/google-reviews",
 };
 
-function getToken(): string | null {
-  return localStorage.getItem("rct_token");
-}
-
+// Cookies are sent automatically — only Content-Type needed
 function getHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  return headers;
+  return { "Content-Type": "application/json" };
 }
 
 // Token refresh mutex — prevents concurrent refresh requests
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
-async function doRefresh(): Promise<string | null> {
-  const refreshToken = localStorage.getItem("rct_refresh_token");
-  if (!refreshToken) return null;
+async function doRefresh(): Promise<boolean> {
   try {
-    const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      credentials: "include",
     });
-    if (refreshRes.ok) {
-      const data = await refreshRes.json();
-      localStorage.setItem("rct_token", data.accessToken);
-      localStorage.setItem("rct_refresh_token", data.refreshToken);
-      return data.accessToken;
-    }
-  } catch { /* refresh failed */ }
-  // Refresh failed — clear session
-  localStorage.removeItem("rct_token");
-  localStorage.removeItem("rct_refresh_token");
-  localStorage.removeItem("rct_user");
-  return null;
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
-  let res = await fetch(url, options);
+  const opts = { ...options, credentials: "include" as RequestCredentials };
+  let res = await fetch(url, opts);
   if (res.status === 401) {
-    // Use mutex to prevent concurrent refresh attempts
     if (!refreshPromise) {
       refreshPromise = doRefresh().finally(() => { refreshPromise = null; });
     }
-    const newToken = await refreshPromise;
-    if (newToken) {
-      const newHeaders = { ...options.headers } as Record<string, string>;
-      newHeaders["Authorization"] = `Bearer ${newToken}`;
-      res = await fetch(url, { ...options, headers: newHeaders });
+    const refreshed = await refreshPromise;
+    if (refreshed) {
+      res = await fetch(url, opts);
     }
   }
   return res;
@@ -105,7 +86,6 @@ function buildQuery(filters?: Record<string, unknown>): string {
 
 // ─── useQuery ──────────────────────────────────────────────────
 export function useQuery(entity: string, filtersOrId?: Record<string, unknown> | string) {
-  // Support single-entity fetch: useQuery("Car", "uuid") → GET /api/cars/uuid
   const isIdFetch = typeof filtersOrId === "string";
   const filters = isIdFetch ? undefined : filtersOrId;
   const entityId = isIdFetch ? filtersOrId : undefined;
@@ -122,17 +102,13 @@ export function useQuery(entity: string, filtersOrId?: Record<string, unknown> |
     const url = entityId
       ? `${API_BASE}${endpoint}/${entityId}`
       : `${API_BASE}${endpoint}${buildQuery(filters)}`;
-    // Bypass browser cache for authenticated users so admin refetch always gets fresh data
-    const fetchOpts: RequestInit = { headers: getHeaders() };
-    if (getToken()) fetchOpts.cache = 'no-store';
-    fetchWithRefresh(url, fetchOpts)
+    fetchWithRefresh(url, { headers: getHeaders(), cache: 'no-store' })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
       })
       .then((json) => {
         if (isIdFetch) {
-          // Single entity: return the object directly
           setData(Array.isArray(json) ? json[0] ?? null : json);
         } else {
           setData(Array.isArray(json) ? json : json.data ?? json.items ?? [json]);
@@ -236,17 +212,14 @@ export function useAuth() {
   const [isPending, setIsPending] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(true);
 
-  // Check for existing session on mount
+  // Restore user from localStorage on mount (profile data only, not token)
   useEffect(() => {
-    const token = getToken();
     const stored = localStorage.getItem("rct_user");
-    if (token && stored) {
+    if (stored) {
       try {
-        const u = JSON.parse(stored);
-        setUser(u);
+        setUser(JSON.parse(stored));
         setIsAnonymous(false);
       } catch {
-        localStorage.removeItem("rct_token");
         localStorage.removeItem("rct_user");
       }
     }
@@ -261,15 +234,35 @@ export function useAuth() {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Login failed");
+      throw new Error(err.error || "Login dështoi");
     }
     const data = await res.json();
-    localStorage.setItem("rct_token", data.accessToken);
-    localStorage.setItem("rct_refresh_token", data.refreshToken);
+    // 2FA required — return as-is so the caller can show OTP input
+    if (data.requires2fa) return data;
+
+    localStorage.setItem("rct_user", JSON.stringify(data.user));
+    setUser(data.user);
+    setIsAnonymous(false);
+    return data.user;
+  }, []);
+
+  const loginWith2FA = useCallback(async (tempToken: string, otp: string) => {
+    const res = await fetch(`${API_BASE}/auth/login-2fa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ tempToken, otp }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "2FA dështoi");
+    }
+    const data = await res.json();
     localStorage.setItem("rct_user", JSON.stringify(data.user));
     setUser(data.user);
     setIsAnonymous(false);
@@ -280,30 +273,46 @@ export function useAuth() {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ name, email, password, phone }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (err.errors) throw new Error(err.errors.map((e: any) => e.msg).join(", "));
-      throw new Error(err.error || "Registration failed");
+      throw new Error(err.error || "Regjistrimi dështoi");
     }
     const data = await res.json();
-    localStorage.setItem("rct_token", data.accessToken);
-    localStorage.setItem("rct_refresh_token", data.refreshToken);
     localStorage.setItem("rct_user", JSON.stringify(data.user));
     setUser(data.user);
     setIsAnonymous(false);
     return data.user;
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("rct_token");
-    localStorage.removeItem("rct_refresh_token");
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch { /* ignore network errors during logout */ }
     localStorage.removeItem("rct_user");
     setUser(null);
     setIsAnonymous(true);
     window.location.href = "/";
   }, []);
 
-  return { user, isPending, isAnonymous, login, register, logout };
+  const forgotPassword = useCallback(async (email: string) => {
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Kërkesa dështoi");
+    }
+    return res.json();
+  }, []);
+
+  return { user, isPending, isAnonymous, login, loginWith2FA, register, logout, forgotPassword };
 }

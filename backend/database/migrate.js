@@ -5,18 +5,23 @@ const mysql = require('mysql2/promise');
 const TABLES = [
   // USERS
   `CREATE TABLE IF NOT EXISTS users (
-    id          CHAR(36) NOT NULL,
-    email       VARCHAR(255) UNIQUE NOT NULL,
-    password    VARCHAR(255) NOT NULL,
-    name        VARCHAR(255) NOT NULL,
-    role        ENUM('admin','manager','staff','accountant','customer') DEFAULT 'staff',
-    is_active   TINYINT(1) DEFAULT 1,
-    two_factor_enabled TINYINT(1) DEFAULT 0,
-    permissions TEXT DEFAULT '',
-    profile_picture_url VARCHAR(512),
-    last_login  DATETIME,
-    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id                       CHAR(36) NOT NULL,
+    email                    VARCHAR(255) UNIQUE NOT NULL,
+    password                 VARCHAR(255) NOT NULL,
+    name                     VARCHAR(255) NOT NULL,
+    role                     ENUM('admin','manager','staff','accountant','customer') DEFAULT 'staff',
+    is_active                TINYINT(1) DEFAULT 1,
+    two_factor_enabled       TINYINT(1) DEFAULT 0,
+    two_factor_secret        VARCHAR(255) NULL,
+    permissions              TEXT DEFAULT '',
+    profile_picture_url      VARCHAR(512),
+    last_login               DATETIME,
+    failed_attempts          TINYINT DEFAULT 0,
+    locked_until             DATETIME NULL,
+    email_verified           TINYINT(1) DEFAULT 0,
+    email_verification_token VARCHAR(255) NULL,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at               DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
@@ -454,6 +459,12 @@ const ALTERS = [
   'CREATE INDEX idx_car_status ON cars (status)',
   'CREATE INDEX idx_rt_token ON refresh_tokens (token)',
   'CREATE INDEX idx_rt_user ON refresh_tokens (user_id, expires_at)',
+  // ── Security columns added for lockout, 2FA, email verification ──
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts TINYINT DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until DATETIME NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(255) NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255) NULL`,
 ];
 
 async function migrate() {

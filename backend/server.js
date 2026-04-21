@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use(cors({
   origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('combined'));
 

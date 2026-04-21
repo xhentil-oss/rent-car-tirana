@@ -11,6 +11,8 @@ import {
   User,
   SignOut,
   ShieldCheck,
+  EnvelopeSimple,
+  Warning,
 } from "@phosphor-icons/react";
 import { useAuth, useQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
@@ -32,6 +34,18 @@ export default function MyAccountPage() {
   };
 
   const { user, isAnonymous, isPending: authPending, logout } = useAuth();
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    try {
+      await fetch("/api/auth/resend-verification", { method: "POST", credentials: "include" });
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  };
   const isAdmin = !isAnonymous && user?.role && ['admin', 'manager', 'staff'].includes(user.role);
 
   const { data: reservations, isPending: resLoading } = useQuery("Reservation", {
@@ -129,6 +143,31 @@ export default function MyAccountPage() {
           </button>
         </div>
       </div>
+
+      {/* Email verification banner */}
+      {user?.email_verified === 0 && !resendSent && (
+        <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <Warning size={18} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-800">Emaili juaj nuk është verifikuar</p>
+            <p className="text-xs text-amber-600 mt-0.5">Kemi dërguar një link verifikimi tek <strong>{user?.email}</strong>.</p>
+          </div>
+          <button
+            onClick={handleResendVerification}
+            disabled={resendLoading}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-amber-700 border border-amber-300 rounded-md px-2.5 py-1.5 hover:bg-amber-100 transition-colors cursor-pointer bg-transparent disabled:opacity-50"
+          >
+            <EnvelopeSimple size={13} />
+            {resendLoading ? "Duke dërguar..." : "Ridërgo"}
+          </button>
+        </div>
+      )}
+      {resendSent && (
+        <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <CheckCircle size={18} weight="fill" className="text-green-500 shrink-0" />
+          <p className="text-sm text-green-700">Emaili i verifikimit u ridërgua. Kontrolloni kutinë tuaj.</p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">

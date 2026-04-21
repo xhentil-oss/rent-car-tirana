@@ -7,12 +7,11 @@ const pool = require('../database/db');
  */
 const authenticate = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Accept token from httpOnly cookie (preferred) or Authorization header (fallback)
+    const token = req.cookies?.rct_token || req.headers.authorization?.replace(/^Bearer /, '');
+    if (!token) {
       return res.status(401).json({ error: 'Token mungon. Ju luteni kyçuni.' });
     }
-
-    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const [rows] = await pool.query(

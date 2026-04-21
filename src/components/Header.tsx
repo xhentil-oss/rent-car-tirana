@@ -51,15 +51,27 @@ function LanguageSwitcher() {
 }
 
 function UserMenu() {
-  const { user, isPending, isAnonymous, login, register, logout } = useAuth();
+  const { user, isPending, isAnonymous, login, loginWith2FA, register, logout, forgotPassword } = useAuth();
   const { localePath } = useLocale();
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [authTab, setAuthTab] = useState<"login" | "register">("login");
+  const [authTab, setAuthTab] = useState<"login" | "register" | "forgot">("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  // 2FA step
+  const [twoFAStep, setTwoFAStep] = useState(false);
+  const [tempToken, setTempToken] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [twoFAError, setTwoFAError] = useState("");
+  const [twoFALoading, setTwoFALoading] = useState(false);
+  // Forgot password
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  // Register
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPhone, setRegPhone] = useState("");
@@ -98,9 +110,34 @@ function UserMenu() {
       setLoginLoading(true);
       setLoginError("");
       login(loginEmail, loginPass)
-        .then(() => setShowAuth(false))
+        .then((result: any) => {
+          if (result?.requires2fa) {
+            setTempToken(result.tempToken);
+            setTwoFAStep(true);
+          } else {
+            setShowAuth(false);
+          }
+        })
         .catch((err: Error) => setLoginError(err.message || "Login dështoi"))
         .finally(() => setLoginLoading(false));
+    };
+
+    const handleTwoFA = () => {
+      setTwoFALoading(true);
+      setTwoFAError("");
+      loginWith2FA(tempToken, otpCode)
+        .then(() => { setShowAuth(false); setTwoFAStep(false); })
+        .catch((err: Error) => setTwoFAError(err.message || "Kodi OTP është i gabuar"))
+        .finally(() => setTwoFALoading(false));
+    };
+
+    const handleForgot = () => {
+      setForgotLoading(true);
+      setForgotError("");
+      forgotPassword(forgotEmail)
+        .then(() => setForgotSent(true))
+        .catch((err: Error) => setForgotError(err.message || "Kërkesa dështoi"))
+        .finally(() => setForgotLoading(false));
     };
 
     const handleRegister = () => {
@@ -126,26 +163,95 @@ function UserMenu() {
 
         {showAuth && (
           <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-border shadow-lg z-50 overflow-hidden">
-            {/* Tabs */}
-            <div className="flex border-b border-border">
-              <button
-                onClick={() => setAuthTab("login")}
-                className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "login" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
-              >
-                <SignIn size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
-                Hyr
-              </button>
-              <button
-                onClick={() => setAuthTab("register")}
-                className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "register" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
-              >
-                <UserPlus size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
-                Regjistrohu
-              </button>
-            </div>
+            {/* Tabs — hidden in 2FA step */}
+            {!twoFAStep && authTab !== "forgot" && (
+              <div className="flex border-b border-border">
+                <button
+                  onClick={() => setAuthTab("login")}
+                  className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "login" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
+                >
+                  <SignIn size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
+                  Hyr
+                </button>
+                <button
+                  onClick={() => setAuthTab("register")}
+                  className={`flex-1 py-2.5 text-sm font-medium cursor-pointer border-0 transition-colors ${authTab === "register" ? "bg-white text-primary border-b-2 border-primary" : "bg-neutral-50 text-neutral-500 hover:text-neutral-700"}`}
+                >
+                  <UserPlus size={14} weight="bold" className="inline mr-1.5 -mt-0.5" />
+                  Regjistrohu
+                </button>
+              </div>
+            )}
 
             <div className="p-4">
-              {authTab === "login" ? (
+              {/* ── 2FA Step ── */}
+              {twoFAStep ? (
+                <>
+                  <p className="text-xs font-medium text-neutral-700 mb-1">Autentifikim me dy faktorë</p>
+                  <p className="text-xs text-neutral-500 mb-3">Shkruani kodin 6-shifror nga aplikacioni tuaj autentifikues.</p>
+                  {twoFAError && <p className="text-xs text-error mb-2">{twoFAError}</p>}
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleTwoFA(); }}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary tracking-widest text-center font-mono"
+                    autoFocus
+                  />
+                  <button
+                    disabled={twoFALoading || otpCode.length !== 6}
+                    onClick={handleTwoFA}
+                    className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
+                  >
+                    {twoFALoading ? "Duke verifikuar..." : "Konfirmo"}
+                  </button>
+                  <button
+                    onClick={() => { setTwoFAStep(false); setOtpCode(""); setTwoFAError(""); }}
+                    className="mt-2 w-full text-xs text-neutral-400 underline cursor-pointer bg-transparent border-0"
+                  >
+                    Kthehu te kyçja
+                  </button>
+                </>
+              ) : authTab === "forgot" ? (
+                /* ── Forgot Password ── */
+                <>
+                  <p className="text-xs font-medium text-neutral-700 mb-1">Rivendos fjalëkalimin</p>
+                  {forgotSent ? (
+                    <p className="text-xs text-green-600 mb-3">Nëse emaili ekziston, keni marrë udhëzime për rivendosjen.</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-neutral-500 mb-3">Shkruani emailin tuaj dhe do t'ju dërgojmë udhëzime.</p>
+                      {forgotError && <p className="text-xs text-error mb-2">{forgotError}</p>}
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleForgot(); }}
+                        className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary"
+                        autoFocus
+                      />
+                      <button
+                        disabled={forgotLoading || !forgotEmail}
+                        onClick={handleForgot}
+                        className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
+                      >
+                        {forgotLoading ? "Duke dërguar..." : "Dërgo linkun"}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => { setAuthTab("login"); setForgotSent(false); setForgotEmail(""); setForgotError(""); }}
+                    className="mt-2 w-full text-xs text-neutral-400 underline cursor-pointer bg-transparent border-0"
+                  >
+                    Kthehu te kyçja
+                  </button>
+                </>
+              ) : authTab === "login" ? (
+                /* ── Login ── */
                 <>
                   {loginError && <p className="text-xs text-error mb-2">{loginError}</p>}
                   <input
@@ -161,8 +267,16 @@ function UserMenu() {
                     value={loginPass}
                     onChange={(e) => setLoginPass(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
-                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-3 outline-none focus:border-primary"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-1 outline-none focus:border-primary"
                   />
+                  <div className="text-right mb-3">
+                    <button
+                      onClick={() => { setAuthTab("forgot"); setForgotEmail(loginEmail); }}
+                      className="text-xs text-neutral-400 hover:text-primary underline cursor-pointer bg-transparent border-0"
+                    >
+                      Harrova fjalëkalimin
+                    </button>
+                  </div>
                   <button
                     disabled={loginLoading || !loginEmail || !loginPass}
                     onClick={handleLogin}
@@ -178,6 +292,7 @@ function UserMenu() {
                   </p>
                 </>
               ) : (
+                /* ── Register ── */
                 <>
                   {regError && <p className="text-xs text-error mb-2">{regError}</p>}
                   <input
@@ -308,7 +423,7 @@ function UserMenu() {
 }
 
 function MobileUserMenu({ onClose }: { onClose: () => void }) {
-  const { user, isAnonymous, login, logout } = useAuth();
+  const { user, isAnonymous, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { localePath } = useLocale();
