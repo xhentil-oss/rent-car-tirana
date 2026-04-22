@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSEO } from "../hooks/useSEO";
-import { X, FunnelSimple, SortAscending } from "@phosphor-icons/react";
+import { X, FunnelSimple, SortAscending, CaretDown } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import CarCard from "../components/CarCard";
@@ -19,6 +19,20 @@ export default function FleetPage() {
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>("default");
   const [page, setPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close mobile filter panel
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+        setMobileFiltersOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileFiltersOpen]);
 
   useEffect(() => {
     const cat = searchParams.get("kategoria") ?? "";
@@ -92,6 +106,13 @@ export default function FleetPage() {
   const hasFilters =
     activeCategory || activeTransmission || activeFuel || effectiveMaxPrice < priceMax || sortBy !== "default";
 
+  const activeFilterCount =
+    (activeCategory ? 1 : 0) +
+    (activeTransmission ? 1 : 0) +
+    (activeFuel ? 1 : 0) +
+    (effectiveMaxPrice < priceMax ? 1 : 0) +
+    (sortBy !== "default" ? 1 : 0);
+
   const FilterChip = ({
     label,
     onRemove,
@@ -124,7 +145,174 @@ export default function FleetPage() {
         </div>
       </div>
 
-      <div className="bg-white border-b border-border sticky top-[72px] z-30">
+      <div ref={filterBarRef} className="bg-white border-b border-border sticky top-[60px] md:top-[72px] z-30 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+        {/* ── MOBILE: compact sticky trigger ── */}
+        <div className="md:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen((v) => !v)}
+            className="w-full flex items-center gap-2 px-4 py-3 text-left"
+            aria-expanded={mobileFiltersOpen}
+            aria-controls="mobile-filter-panel"
+          >
+            <FunnelSimple size={18} weight="regular" className="text-neutral-700 shrink-0" />
+            <span className="text-sm font-medium text-neutral-800">{t("fleet.filterLabel")}</span>
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
+            <CaretDown
+              size={14}
+              weight="bold"
+              className={`ml-auto text-neutral-500 transition-transform duration-300 ${mobileFiltersOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {/* Active chips row — visible only when panel is closed and filters exist */}
+          {!mobileFiltersOpen && activeFilterCount > 0 && (
+            <div className="flex gap-2 overflow-x-auto px-4 pb-2 -mt-1 scrollbar-thin">
+              {activeCategory && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
+                  {activeCategory}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveCategory(""); }} aria-label={t("fleet.removeFilter", { label: activeCategory })}>
+                    <X size={11} weight="bold" />
+                  </button>
+                </span>
+              )}
+              {activeTransmission && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
+                  {activeTransmission}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveTransmission(""); }} aria-label={t("fleet.removeFilter", { label: activeTransmission })}>
+                    <X size={11} weight="bold" />
+                  </button>
+                </span>
+              )}
+              {activeFuel && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
+                  {activeFuel}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveFuel(""); }} aria-label={t("fleet.removeFilter", { label: activeFuel })}>
+                    <X size={11} weight="bold" />
+                  </button>
+                </span>
+              )}
+              {effectiveMaxPrice < priceMax && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
+                  {`≤ €${effectiveMaxPrice}`}
+                  <button onClick={(e) => { e.stopPropagation(); setMaxPrice(priceMax); }} aria-label={t("fleet.removeFilter", { label: String(effectiveMaxPrice) })}>
+                    <X size={11} weight="bold" />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Collapsible panel */}
+          <div
+            id="mobile-filter-panel"
+            className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${mobileFiltersOpen ? "max-h-[800px]" : "max-h-0"}`}
+          >
+            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border bg-white">
+              <div>
+                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">{t("fleet.filterLabel")}</div>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => { setActiveCategory(activeCategory === cat ? "" : cat); setPage(1); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeCategory === cat ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Transmision</div>
+                <div className="flex flex-wrap gap-2">
+                  {transmissions.map((tr) => (
+                    <button
+                      key={tr}
+                      onClick={() => { setActiveTransmission(activeTransmission === tr ? "" : tr); setPage(1); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeTransmission === tr ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
+                    >
+                      {tr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Karburanti</div>
+                <div className="flex flex-wrap gap-2">
+                  {fuels.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => { setActiveFuel(activeFuel === f ? "" : f); setPage(1); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeFuel === f ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="maxPriceMobile" className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">
+                  {t("fleet.maxPrice", { price: effectiveMaxPrice })}
+                </label>
+                <input
+                  id="maxPriceMobile"
+                  type="range"
+                  min={priceMin}
+                  max={priceMax}
+                  value={effectiveMaxPrice}
+                  onChange={(e) => { setMaxPrice(Number(e.target.value)); setPage(1); }}
+                  className="w-full accent-primary"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="sortMobile" className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">
+                  <SortAscending size={12} weight="regular" className="inline mr-1" />
+                  Renditja
+                </label>
+                <select
+                  id="sortMobile"
+                  value={sortBy}
+                  onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                  className="w-full text-sm border border-border rounded-md px-3 py-2 bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="default">{t("fleet.sort.default")}</option>
+                  <option value="price_asc">{t("fleet.sort.price_asc")}</option>
+                  <option value="price_desc">{t("fleet.sort.price_desc")}</option>
+                  <option value="name_asc">{t("fleet.sort.name_asc")}</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                {hasFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex-1 px-4 py-2.5 rounded-md text-sm font-medium text-error border border-error bg-white"
+                  >
+                    {t("fleet.clearFilters")}
+                  </button>
+                )}
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
+                >
+                  Apliko
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── DESKTOP: original always-visible layout ── */}
+        <div className="hidden md:block">
         <div className="max-w-[1440px] mx-auto px-6 py-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
@@ -254,6 +442,7 @@ export default function FleetPage() {
               )}
             </div>
           )}
+        </div>
         </div>
       </div>
 
