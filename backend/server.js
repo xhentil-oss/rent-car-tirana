@@ -109,6 +109,83 @@ app.use('/api/google-reviews',     apiLimiter,  require('./routes/googleReviews'
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
+// ─── DYNAMIC SITEMAP ──────────────────────────────────────────
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const pool = require('./database/db');
+    const BASE = 'https://rentcartiranaairport.com';
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [cars]  = await pool.query("SELECT slug, updated_at FROM cars WHERE status != 'Deleted' ORDER BY created_at");
+    const [posts] = await pool.query("SELECT slug, updated_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC").catch(() => [[]]);
+
+    const escXml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : today;
+
+    const staticUrls = [
+      { sq: '/',                          en: '/en',                       pri: '1.0',  freq: 'weekly' },
+      { sq: '/makina-me-qira-tirane',     en: '/en/car-rental-tirana',     pri: '0.95', freq: 'weekly' },
+      { sq: '/flota',                     en: '/en/fleet',                 pri: '0.9',  freq: 'weekly' },
+      { sq: '/makine-me-qira-aeroport',   en: '/en/airport-car-rental',    pri: '0.9',  freq: 'monthly' },
+      { sq: '/makina-suv-me-qira',        en: '/en/suv-car-rental',        pri: '0.85', freq: 'monthly' },
+      { sq: '/makina-automatike-me-qira', en: '/en/automatic-car-rental',  pri: '0.85', freq: 'monthly' },
+      { sq: '/makina-luksoze-me-qira',    en: '/en/luxury-car-rental',     pri: '0.85', freq: 'monthly' },
+      { sq: '/rezervo',                   en: '/en/book',                  pri: '0.8',  freq: 'monthly' },
+      { sq: '/blog',                      en: '/en/blog',                  pri: '0.8',  freq: 'weekly' },
+      { sq: '/vleresime',                 en: '/en/reviews',               pri: '0.7',  freq: 'weekly' },
+      { sq: '/kontakt',                   en: '/en/contact',               pri: '0.6',  freq: 'monthly' },
+      { sq: '/termat-e-sherbimit',        en: '/en/terms',                 pri: '0.3',  freq: 'yearly' },
+      { sq: '/privatesie',                en: '/en/privacy',               pri: '0.3',  freq: 'yearly' },
+    ];
+
+    const urlEntry = ({ loc, alt_sq, alt_en, lastmod, freq, pri }) => `
+  <url>
+    <loc>${escXml(BASE + loc)}</loc>
+    <xhtml:link rel="alternate" hreflang="sq" href="${escXml(BASE + alt_sq)}" />
+    <xhtml:link rel="alternate" hreflang="en" href="${escXml(BASE + alt_en)}" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(BASE + alt_sq)}" />
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${freq}</changefreq>
+    <priority>${pri}</priority>
+  </url>`;
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
+
+    // Static pages
+    for (const { sq, en, pri, freq } of staticUrls) {
+      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod: today, freq, pri });
+      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod: today, freq, pri });
+    }
+
+    // Car detail pages
+    for (const car of cars) {
+      const sq = `/makina/${escXml(car.slug)}`;
+      const en = `/en/car/${escXml(car.slug)}`;
+      const lastmod = fmtDate(car.updated_at);
+      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod, freq: 'weekly', pri: '0.8' });
+      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod, freq: 'weekly', pri: '0.8' });
+    }
+
+    // Blog posts
+    for (const post of posts) {
+      const sq = `/blog/${escXml(post.slug)}`;
+      const en = `/en/blog/${escXml(post.slug)}`;
+      const lastmod = fmtDate(post.updated_at);
+      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod, freq: 'monthly', pri: '0.7' });
+      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod, freq: 'monthly', pri: '0.7' });
+    }
+
+    xml += `\n</urlset>`;
+
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600'); // cache 1h
+    return res.send(xml);
+  } catch (err) {
+    console.error('Sitemap generation error:', err);
+    res.status(500).send('Sitemap temporarily unavailable.');
+  }
+});
+
 // ─── API 404 for unknown endpoints ────────────────────────────
 app.all('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint nuk ekziston.' });

@@ -2,5 +2,10 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /llogaria
+Disallow: /en/my-account
+Disallow: /faleminderit
+Disallow: /en/thank-you
+Disallow: /reset-password
+Disallow: /en/reset-password
 
 Sitemap: https://rentcartiranaairport.com/sitemap.xml
