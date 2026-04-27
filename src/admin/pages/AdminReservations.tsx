@@ -5,7 +5,7 @@ import { calculateSeasonalTotal, getDominantSeason } from "../../lib/seasonalPri
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import StatusBadge from "../../components/StatusBadge";
-import { sendPickupReminder, sendInvoiceEmail, sendReservationConfirmed, sendReservationCancelled, getTomorrowReservations } from "../../lib/emailService";
+import { sendPickupReminder, getTomorrowReservations } from "../../lib/emailService";
 import { Bell, EnvelopeSimple } from "@phosphor-icons/react";
 
 function useActivityLog() {
@@ -210,46 +210,9 @@ export default function AdminReservations() {
       await log("UPDATE", "Reservation", id, `Statusi ndryshoi → ${status}: ${customerName}`);
       await refetchReservations();
 
-      if (res) {
-        const customer = (customers ?? []).find(c => c.id === res.customerId);
-        const car = (cars ?? []).find(c => c.id === res.carId);
-
-        if (customer && car) {
-          const emailData = {
-            customerName: customer.name || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim(),
-            customerEmail: customer.email,
-            carName: `${car.brand} ${car.model}`,
-            startDate: new Date(res.startDate).toLocaleDateString("sq-AL"),
-            endDate: new Date(res.endDate).toLocaleDateString("sq-AL"),
-            pickupLocation: res.pickupLocation,
-            totalPrice: res.totalPrice,
-            reservationId: res.id,
-          };
-
-          setEmailSending(prev => ({ ...prev, [id]: true }));
-
-          if (status === "Confirmed") {
-            await sendReservationConfirmed(emailData);
-            setEmailFeedback(prev => ({ ...prev, [id]: "confirmed" }));
-          } else if (status === "Cancelled") {
-            await sendReservationCancelled(emailData);
-            setEmailFeedback(prev => ({ ...prev, [id]: "cancelled" }));
-          } else if (status === "Completed") {
-            await sendInvoiceEmail({
-              customerName: emailData.customerName,
-              customerEmail: emailData.customerEmail,
-              carName: emailData.carName,
-              startDate: emailData.startDate,
-              endDate: emailData.endDate,
-              totalPrice: emailData.totalPrice,
-              reservationId: emailData.reservationId,
-              invoiceNo: `INV-${res.id.slice(0, 8).toUpperCase()}`,
-            });
-          }
-
-          setEmailSending(prev => ({ ...prev, [id]: false }));
-          setTimeout(() => setEmailFeedback(prev => ({ ...prev, [id]: null })), 4000);
-        }
+      if (res && ["Confirmed", "Cancelled", "Completed"].includes(status)) {
+        setEmailFeedback(prev => ({ ...prev, [id]: status === "Confirmed" ? "confirmed" : status === "Cancelled" ? "cancelled" : "completed" }));
+        setTimeout(() => setEmailFeedback(prev => ({ ...prev, [id]: null })), 4000);
       }
     } catch (e) { console.error(e); }
   };
@@ -261,20 +224,8 @@ export default function AdminReservations() {
     const newSent: Record<string, boolean> = { ...reminderSent };
     for (const res of tomorrowReservations) {
       if (newSent[res.id]) continue;
-      const customer = (customers ?? []).find(c => c.id === res.customerId);
-      const car = (cars ?? []).find(c => c.id === res.carId);
-      if (customer && car) {
-        await sendPickupReminder({
-          customerName: customer.name,
-          customerEmail: customer.email,
-          carName: `${car.brand} ${car.model}`,
-          pickupLocation: res.pickupLocation,
-          startDate: new Date(res.startDate).toLocaleDateString("sq-AL"),
-          startTime: res.startTime,
-          reservationId: res.id,
-        });
-        newSent[res.id] = true;
-      }
+      const ok = await sendPickupReminder(res.id);
+      if (ok) newSent[res.id] = true;
     }
     setReminderSent(newSent);
     setSendingReminder(false);

@@ -3,6 +3,8 @@ const { v4: uuidv4 } = require('uuid');
 const pool = require('../database/db');
 const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
+const { sendMail } = require('../lib/mailer');
+const tpl = require('../lib/emailTemplates');
 
 // Location fees (pickup or dropoff at these locations incur a surcharge)
 const LOCATION_FEES = {
@@ -98,7 +100,7 @@ router.post('/', async (req, res) => {
     }
 
     // Validate locations against known list (prevent arbitrary values)
-    const ALLOWED_LOCATIONS = Object.keys(LOCATION_FEES).concat(['Tiranë', 'Tirana', 'Tirane']);
+    const ALLOWED_LOCATIONS = Object.keys(LOCATION_FEES).concat(['Tiranë', 'Tirana', 'Tirane', 'Tiranë Qendër']);
     if (!ALLOWED_LOCATIONS.includes(pickupLocation) || !ALLOWED_LOCATIONS.includes(dropoffLocation)) {
       return res.status(400).json({ error: 'Lokacion i pavlefshëm.' });
     }
@@ -126,7 +128,7 @@ router.post('/', async (req, res) => {
       await conn.beginTransaction();
 
       // Lock the car row to prevent concurrent bookings
-      const [carRows] = await conn.query('SELECT id, price_per_day, quantity, category FROM cars WHERE id = ? FOR UPDATE', [carId]);
+      const [carRows] = await conn.query('SELECT id, brand, model, price_per_day, quantity, category FROM cars WHERE id = ? FOR UPDATE', [carId]);
       if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
       const basePricePerDay = Number(carRows[0].price_per_day);
       const carQuantity = Number(carRows[0].quantity) || 1;
@@ -172,6 +174,27 @@ router.post('/', async (req, res) => {
       conn.release();
 
       const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
+      const [custRows] = await pool.query('SELECT name, email FROM customers WHERE id = ?', [customerId]);
+      if (custRows.length && custRows[0].email) {
+        const fmtLocale = (d) => new Date(d).toLocaleDateString('sq-AL');
+        sendMail(
+          custRows[0].email,
+          'Konfirmim Rezervimi — Rent Car Tirana',
+          tpl.bookingConfirmation({
+            customerName: custRows[0].name,
+            carName: `${carRows[0].brand || ''} ${carRows[0].model || ''}`.trim(),
+            pickupLocation,
+            dropoffLocation,
+            startDate: fmtLocale(sd),
+            endDate: fmtLocale(ed),
+            startTime: startTime || '10:00',
+            endTime: endTime || '10:00',
+            totalPrice,
+            insurance: insurance || null,
+            reservationId: id,
+          })
+        ).catch((e) => console.error('[Email] booking confirmation failed:', e));
+      }
       res.status(201).json(fmt(rows[0]));
     } catch (txErr) {
       await conn.rollback();
@@ -193,6 +216,43 @@ router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Reservation', entityId: req.params.id, description: `Status ndryshoi në: ${status}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
+
+    // Send status email non-blocking — after response is sent
+    if (['Confirmed', 'Cancelled', 'Completed'].includes(status)) {
+      pool.query(
+        `SELECT r.total_price, r.pickup_location, r.start_date, r.end_date,
+                cu.name AS customer_name, cu.email AS customer_email,
+                ca.brand, ca.model
+         FROM reservations r
+         JOIN customers cu ON cu.id = r.customer_id
+         JOIN cars ca ON ca.id = r.car_id
+         WHERE r.id = ?`,
+        [req.params.id]
+      ).then(([eRows]) => {
+        if (!eRows.length || !eRows[0].customer_email) return;
+        const r = eRows[0];
+        const fmtLocale = (d) => new Date(d).toLocaleDateString('sq-AL');
+        const emailData = {
+          customerName: r.customer_name,
+          carName: `${r.brand} ${r.model}`,
+          startDate: fmtLocale(r.start_date),
+          endDate: fmtLocale(r.end_date),
+          pickupLocation: r.pickup_location,
+          totalPrice: r.total_price,
+          reservationId: req.params.id,
+        };
+        if (status === 'Confirmed') {
+          sendMail(r.customer_email, 'Rezervimi u konfirmua — Rent Car Tirana', tpl.reservationConfirmed(emailData)).catch(() => {});
+        } else if (status === 'Cancelled') {
+          sendMail(r.customer_email, 'Rezervimi u anulua — Rent Car Tirana', tpl.reservationCancelled(emailData)).catch(() => {});
+        } else if (status === 'Completed') {
+          sendMail(r.customer_email, 'Fatura juaj — Rent Car Tirana', tpl.invoiceEmail({
+            ...emailData,
+            invoiceNo: `INV-${String(req.params.id).slice(0, 8).toUpperCase()}`,
+          })).catch(() => {});
+        }
+      }).catch(() => {});
+    }
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 

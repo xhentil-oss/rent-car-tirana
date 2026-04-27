@@ -33,7 +33,6 @@ import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
-import { sendBookingConfirmation } from "../lib/emailService";
 
 interface BookingForm {
   pickup: string;
@@ -59,9 +58,9 @@ const extraOptions = [
 ];
 
 const insuranceOptions = [
-  { id: "basic", label: "Sigurim bazë (përfshirë)", price: 0 },
-  { id: "full", label: "Sigurim i plotë", price: 15 },
-  { id: "premium", label: "Sigurim premium", price: 25 },
+  { id: "Basic", label: "Sigurim bazë (përfshirë)", price: 0 },
+  { id: "Full", label: "Sigurim i plotë", price: 15 },
+  { id: "Premium", label: "Sigurim premium", price: 25 },
 ];
 
 // ── Seasonal Price Table Component ──────────────────────────────────────────
@@ -162,7 +161,7 @@ export default function BookingPage() {
     phone: "",
     email: "",
     extras: [],
-    insurance: "basic",
+    insurance: "Basic",
     discountCode: "",
   });
 
@@ -387,21 +386,6 @@ export default function BookingPage() {
         insurance: form.insurance,
         extras: form.extras.join(","),
         discountCode: form.discountCode || undefined,
-      });
-      // 3. Dërgo email konfirmimi (non-blocking)
-      sendBookingConfirmation({
-        customerName: `${form.firstName.trim()} ${form.lastName.trim()}`,
-        customerEmail: form.email.trim(),
-        carName: `${car.brand} ${car.model}`,
-        pickupLocation: form.pickup,
-        dropoffLocation: form.dropoff,
-        startDate: new Date(`${form.startDate}T${form.startTime}`).toLocaleDateString("sq-AL"),
-        endDate: new Date(`${form.endDate}T${form.endTime}`).toLocaleDateString("sq-AL"),
-        startTime: form.startTime,
-        endTime: form.endTime,
-        totalPrice: total,
-        insurance: form.insurance,
-        reservationId: reservation.id,
       });
       setSubmitted(true);
       // Redirect to thank-you page with booking summary via state (no PII in URL)

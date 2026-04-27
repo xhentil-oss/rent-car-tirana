@@ -13,8 +13,6 @@ import {
   FacebookLogo,
   InstagramLogo,
 } from "@phosphor-icons/react";
-import emailjs from "@emailjs/browser";
-import { EMAIL_CONFIG } from "../lib/emailConfig";
 import { useSEO, buildLocalBusinessSchema, buildBreadcrumbSchema } from "../hooks/useSEO";
 
 type FormState = {
@@ -93,33 +91,25 @@ export default function ContactPage() {
     setSending(true);
     setError(null);
 
-    const isConfigured =
-      EMAIL_CONFIG.PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY" &&
-      EMAIL_CONFIG.SERVICE_ID !== "YOUR_SERVICE_ID";
-
-    if (!isConfigured) {
-      // Simulate success in dev mode
-      await new Promise((r) => setTimeout(r, 1200));
-      setSent(true);
-      setSending(false);
-      return;
-    }
-
     try {
-      emailjs.init(EMAIL_CONFIG.PUBLIC_KEY);
-      await emailjs.send(EMAIL_CONFIG.SERVICE_ID, "template_contact_form", {
-        from_name: form.name,
-        from_email: form.email,
-        from_phone: form.phone || "N/A",
-        subject: form.subject,
-        message: form.message,
-        company_name: EMAIL_CONFIG.COMPANY_NAME,
-        company_email: EMAIL_CONFIG.COMPANY_EMAIL,
-        to_email: EMAIL_CONFIG.COMPANY_EMAIL,
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone || undefined,
+          subject: form.subject,
+          message: form.message,
+        }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Dërgimi dështoi.");
+      }
       setSent(true);
-    } catch {
-      setError("Dërgimi dështoi. Ju lutem provoni sërish ose na kontaktoni direkt.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Dërgimi dështoi. Ju lutem provoni sërish ose na kontaktoni direkt.");
     } finally {
       setSending(false);
     }

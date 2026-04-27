@@ -30,7 +30,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "https://lh3.googleusercontent.com"],
-      connectSrc: ["'self'", "https://api.emailjs.com", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com"],
+      connectSrc: ["'self'", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com"],
     },
   },
 }));
@@ -105,6 +105,8 @@ app.use('/api/deposits',      apiLimiter,  require('./routes/deposits'));
 app.use('/api/customer-documents', apiLimiter, require('./routes/customerDocuments'));
 app.use('/api/communication-logs', apiLimiter, require('./routes/communicationLogs'));
 app.use('/api/google-reviews',     apiLimiter,  require('./routes/googleReviews'));
+app.post('/api/contact', require('./routes/contact'));
+app.use('/api/email',    apiLimiter,  require('./routes/email'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));

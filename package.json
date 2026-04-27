@@ -9,8 +9,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@emailjs/browser": "latest",
-    "@phosphor-icons/react": "^2.1.10",
+"@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-accordion": "1.2.1",
     "@radix-ui/react-alert-dialog": "1.1.2",
     "@radix-ui/react-aspect-ratio": "1.1.0",

@@ -56,7 +56,7 @@ async function doRefresh(): Promise<boolean> {
   }
 }
 
-async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
+export async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
   const opts = { ...options, credentials: "include" as RequestCredentials };
   let res = await fetch(url, opts);
   if (res.status === 401) {
