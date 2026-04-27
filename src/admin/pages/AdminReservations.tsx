@@ -178,7 +178,7 @@ export default function AdminReservations() {
         dropoffLocation: formData.dropoffLocation,
         status: "Confirmed",
         totalPrice: calculatedPrice.total,
-        insurance: "basic",
+        insurance: "Basic",
         extras: "",
         source: formData.source,
         notes: formData.notes,
