@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, Key, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
 
@@ -45,20 +45,6 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
       { key: "smtp_password", label: "Fjalëkalimi / App Password", type: "password", placeholder: "••••••••" },
       { key: "smtp_from_name", label: "Emri dërguesit", placeholder: "Rent Car Tirana" },
       { key: "smtp_from_email", label: "Email dërguesit", type: "email", placeholder: "noreply@rentcartiranaairport.com" },
-    ],
-  },
-  {
-    id: "emailjs",
-    title: "EmailJS (Frontend)",
-    icon: Key,
-    description: "Kredencialet e EmailJS për dërgimin e emaileve direkt nga browser-i.",
-    fields: [
-      { key: "emailjs_public_key", label: "Public Key", placeholder: "YOUR_EMAILJS_PUBLIC_KEY" },
-      { key: "emailjs_service_id", label: "Service ID", placeholder: "service_xxxxxx" },
-      { key: "emailjs_template_booking", label: "Template: Konfirmim Rezervimi", placeholder: "template_booking_confirm" },
-      { key: "emailjs_template_reminder", label: "Template: Kujtesë", placeholder: "template_pickup_reminder" },
-      { key: "emailjs_template_invoice", label: "Template: Faturë", placeholder: "template_invoice" },
-      { key: "emailjs_template_contact", label: "Template: Formë Kontakti", placeholder: "template_contact_form" },
     ],
   },
   {
