@@ -108,8 +108,9 @@ router.post('/', async (req, res) => {
     // Validate free-text lengths
     if (notes && String(notes).length > 1000) return res.status(400).json({ error: 'Shënime shumë të gjata.' });
     if (discountCode && String(discountCode).length > 50) return res.status(400).json({ error: 'Kodi i zbritjes i pavlefshëm.' });
-    const ALLOWED_INSURANCE = [null, '', 'Basic', 'Standard', 'Premium', 'Full'];
-    if (insurance && !ALLOWED_INSURANCE.includes(insurance)) return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
+    const ALLOWED_INSURANCE = ['basic', 'standard', 'premium', 'full'];
+    const insuranceNorm = insurance ? String(insurance).charAt(0).toUpperCase() + String(insurance).slice(1).toLowerCase() : null;
+    if (insuranceNorm && !ALLOWED_INSURANCE.includes(insuranceNorm.toLowerCase())) return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
     if (extras && String(extras).length > 500) return res.status(400).json({ error: 'Ekstra shumë të gjata.' });
 
     // Convert ISO datetime strings to YYYY-MM-DD for MySQL DATE columns
@@ -167,7 +168,7 @@ router.post('/', async (req, res) => {
       const id = uuidv4();
       await conn.query(
         'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, locationFee, insurance || null, extras || '', discountCode || null, null]
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extras || '', discountCode || null, null]
       );
 
       await conn.commit();
