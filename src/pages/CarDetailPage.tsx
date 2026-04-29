@@ -80,17 +80,17 @@ const EXTRAS_ICONS = [
 
 // Scroll-triggered animation hook
 function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
+  const obsRef = useRef<IntersectionObserver | null>(null);
+  // Callback ref fires whenever the element mounts/unmounts, even after async car data loads
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    if (obsRef.current) { obsRef.current.disconnect(); obsRef.current = null; }
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setInView(true); obs.disconnect(); } },
+    obsRef.current = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); obsRef.current?.disconnect(); } },
       { threshold }
     );
-    obs.observe(el);
-    return () => obs.disconnect();
+    obsRef.current.observe(el);
   }, [threshold]);
   return { ref, inView };
 }
