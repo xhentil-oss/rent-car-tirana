@@ -11,7 +11,10 @@
     "adminPanel": "Admin Panel",
     "logout": "Sign out",
     "login": "Sign in",
-    "user": "User"
+    "user": "User",
+    "trustClients": "500+ happy clients",
+    "trustNoFees": "No hidden fees",
+    "trustSupport": "24/7 support"
   },
   "footer": {
     "tagline": "Tirana's #1 car rental service. Modern fleet, transparent pricing, 24/7 service.",

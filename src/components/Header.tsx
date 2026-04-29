@@ -13,6 +13,9 @@ import {
   SpinnerGap,
   Globe,
   UserPlus,
+  Star,
+  SealCheck,
+  Headset,
 } from "@phosphor-icons/react";
 import { useAuth } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
@@ -481,7 +484,7 @@ export default function Header() {
   const navLinks = [
     { label: t("header.fleet"), href: "/flota" },
     { label: "Blog", href: "/blog" },
-    { label: t("header.reviews"), href: "/vleresime" },
+    { label: t("header.reviews"), href: "/vleresime", badge: "★ 4.9" },
     { label: t("header.about"), href: "/", anchor: "rreth-nesh" },
     { label: t("header.contact"), href: "/", anchor: "kontakti" },
   ];
@@ -512,11 +515,30 @@ export default function Header() {
   };
 
   return (
-    <header
-      className="sticky top-0 z-50 bg-white border-b border-border"
-      style={{ height: "72px" }}
-    >
-      <div className="max-w-[1440px] mx-auto px-6 h-full flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white border-b border-border">
+      {/* Trust bar — desktop only */}
+      <div className="hidden md:block bg-neutral-900 text-white text-xs">
+        <div className="max-w-[1440px] mx-auto px-6 py-1.5 flex items-center justify-center gap-6">
+          <span className="flex items-center gap-1.5">
+            <Star size={11} weight="fill" className="text-yellow-400" />
+            <span className="font-semibold">4.9/5</span>
+            <span className="text-neutral-400 mx-1">·</span>
+            <span className="text-neutral-300">{t("header.trustClients")}</span>
+          </span>
+          <span className="text-neutral-600">|</span>
+          <span className="flex items-center gap-1.5">
+            <SealCheck size={11} weight="fill" className="text-green-400" />
+            <span className="text-neutral-300">{t("header.trustNoFees")}</span>
+          </span>
+          <span className="text-neutral-600">|</span>
+          <span className="flex items-center gap-1.5">
+            <Headset size={11} weight="fill" className="text-blue-400" />
+            <span className="text-neutral-300">{t("header.trustSupport")}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-[1440px] mx-auto px-6 flex items-center justify-between" style={{ height: "72px" }}>
         {/* Logo */}
         <LLink
           to="/"
@@ -551,13 +573,18 @@ export default function Header() {
               <LLink
                 key={link.href}
                 to={link.href}
-                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer ${
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline cursor-pointer inline-flex items-center gap-1.5 ${
                   isActive(link.href)
                     ? "text-primary bg-secondary"
                     : "text-neutral-700 hover:text-primary hover:bg-secondary"
                 }`}
               >
                 {link.label}
+                {link.badge && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-100 text-yellow-700 leading-none">
+                    {link.badge}
+                  </span>
+                )}
               </LLink>
             )
           )}
@@ -601,7 +628,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden absolute top-[72px] left-0 right-0 bg-white border-b border-border z-50 shadow-lg">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-border z-50 shadow-lg">
           <nav className="flex flex-col p-4 gap-1" aria-label="Navigimi mobil">
             {navLinks.map((link) =>
               link.anchor ? (
@@ -619,13 +646,18 @@ export default function Header() {
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline ${
+                  className={`px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 no-underline inline-flex items-center gap-2 ${
                     isActive(link.href)
                       ? "text-primary bg-secondary"
                       : "text-neutral-700 hover:text-primary hover:bg-secondary"
                   }`}
                 >
                   {link.label}
+                  {link.badge && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-100 text-yellow-700 leading-none">
+                      {link.badge}
+                    </span>
+                  )}
                 </LLink>
               )
             )}

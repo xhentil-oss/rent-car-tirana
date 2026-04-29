@@ -11,7 +11,10 @@
     "adminPanel": "Panel Admin",
     "logout": "Dil nga llogaria",
     "login": "Hyr",
-    "user": "Përdoruesi"
+    "user": "Përdoruesi",
+    "trustClients": "Mbi 500 klientë të kënaqur",
+    "trustNoFees": "Pa kosto të fshehura",
+    "trustSupport": "Mbështetje 24/7"
   },
   "footer": {
     "tagline": "Shërbimi nr.1 i makinave me qira në Tiranë. Flota moderne, çmime transparente, shërbim 24/7.",
