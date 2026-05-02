@@ -30,7 +30,7 @@ export default function RichEditor({
 }: Props) {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
+      StarterKit.configure({ heading: { levels: [2, 3] }, link: false }),
       TiptapLink.configure({
         openOnClick: false,
         HTMLAttributes: { class: "text-primary underline cursor-pointer" },

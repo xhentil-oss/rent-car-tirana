@@ -137,6 +137,10 @@ export default function AdminBlog() {
                   <textarea value={form.excerptSq} onChange={e => set("excerptSq", e.target.value)} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="1-2 fjali përshkruese..." />
                 </div>
                 <div>
+                  <label className="text-xs font-medium text-neutral-600 mb-1.5 block">Imazhi i kopertinës</label>
+                  <ImagePicker value={form.coverImage} onChange={url => set("coverImage", url)} />
+                </div>
+                <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">Përmbajtja (SQ) *</label>
                   <RichEditor
                     value={form.contentSq}
@@ -154,6 +158,10 @@ export default function AdminBlog() {
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">Excerpt (EN)</label>
                   <textarea value={form.excerptEn} onChange={e => set("excerptEn", e.target.value)} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="1-2 sentences..." />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-neutral-600 mb-1.5 block">Cover image</label>
+                  <ImagePicker value={form.coverImage} onChange={url => set("coverImage", url)} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">Content (EN)</label>
@@ -174,10 +182,6 @@ export default function AdminBlog() {
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">Slug (URL)</label>
                 <input value={form.slug} onChange={e => set("slug", e.target.value)} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="titulli-postimit" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1.5 block">Imazhi i kopertinës</label>
-                <ImagePicker value={form.coverImage} onChange={url => set("coverImage", url)} />
               </div>
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">Tags (me presje)</label>
