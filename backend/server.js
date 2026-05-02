@@ -107,7 +107,12 @@ app.use('/api/communication-logs', apiLimiter, require('./routes/communicationLo
 app.use('/api/google-reviews',     apiLimiter,  require('./routes/googleReviews'));
 app.post('/api/contact', require('./routes/contact'));
 app.use('/api/email',    apiLimiter,  require('./routes/email'));
-app.use('/api/upload',  apiLimiter,  require('./routes/upload'));
+try {
+  app.use('/api/upload', apiLimiter, require('./routes/upload'));
+} catch (e) {
+  console.warn('⚠️  Upload route unavailable (multer missing?):', e.message);
+  app.use('/api/upload', (req, res) => res.status(503).json({ error: 'Upload jo i disponueshëm. Kontakto adminstratorin.' }));
+}
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
