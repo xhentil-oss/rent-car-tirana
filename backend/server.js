@@ -44,7 +44,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(cookieParser());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
 
 // Rate limit — strict for login/register/reset (brute-force sensitive)
