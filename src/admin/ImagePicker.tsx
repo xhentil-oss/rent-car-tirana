@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Image, UploadSimple, Link, X, SpinnerGap } from "@phosphor-icons/react";
-import { fetchWithRefresh } from "../hooks/useApi";
 
 interface Props {
   value: string;
@@ -15,39 +14,33 @@ export default function ImagePicker({ value, onChange }: Props) {
   const [urlMode, setUrlMode] = useState(false);
   const [urlInput, setUrlInput] = useState(value);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = (file: File) => {
     setError("");
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetchWithRefresh("/api/upload/blog", {
-        method: "POST",
-        body: formData,
-        // No Content-Type — browser sets multipart boundary automatically
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Ngarkimi dështoi.");
-      }
-      const data = await res.json();
-      onChange(data.url);
-      setUrlMode(false);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleFiles = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
     if (!file.type.startsWith("image/")) {
       setError("Vetëm imazhe lejohen (JPG, PNG, WEBP, GIF).");
       return;
     }
-    uploadFile(file);
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Imazhi shumë i madh. Max 4MB.");
+      return;
+    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      onChange(e.target?.result as string);
+      setUrlMode(false);
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setError("Leximi i skedarit dështoi.");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    uploadFile(files[0]);
   };
 
   const handleDrop = (e: React.DragEvent) => {
