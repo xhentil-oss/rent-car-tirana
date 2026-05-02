@@ -82,20 +82,20 @@
       "title": "Si funksionon?",
       "subtitle": "Rezervo makinën tënde në 3 hapa të thjeshtë",
       "steps": [
-        { "title": "Zgjidh makinën", "desc": "Filtro sipas kategorisë, çmimit dhe disponueshmërisë. Krahasoni specifikat." },
-        { "title": "Konfirmo rezervimin", "desc": "Plotëso formularin, zgjidh sigurimin dhe nënshkruaj kontratën dixhitale." },
-        { "title": "Merr çelësat", "desc": "Tërhiqe makinën nga aeroporti ose qendra e Tiranës. Pa pritje." }
+        { "title": "Zgjidh makinën", "desc": "Shfleto flotën tonë të plotë dhe filtro sipas kategorisë (ekonomike, SUV, luksoze, automatike), çmimit ditor dhe disponueshmërisë në datat tuaja. Çdo faqe makine tregon specifikat e plota, pajisjet e përfshira, opsionet e sigurimit dhe çmimin transparent gjithëpërfshirës — pa surpriza." },
+        { "title": "Konfirmo rezervimin", "desc": "Plotëso formularin e rezervimit online me detajet tuaja personale, vendpikën (Aeroport Tirana ose qendër), datat dhe nivelin e sigurimit. Kontrolloni çmimin total, aplikoni kodin e zbritjes dhe nënshkruani kontratën dixhitale — të gjitha në më pak se 2 minuta, nga çdo pajisje." },
+        { "title": "Merr çelësat", "desc": "Pas mbërritjes në Aeroportin e Tiranës, përfaqësuesi ynë do t'ju presë në holin e arritjeve me tabelë me emrin tuaj. Dorëzimi i makinës është i shpejtë dhe transparent — kontrolloni makinën bashkë, merrni çelësat dhe jeni gati të eksploroni Shqipërinë." }
       ],
       "cta": "Rezervo tani — është e shpejtë"
     },
     "whyUs": {
       "title": "Pse të zgjidhni Rent Car Tirana?",
-      "subtitle": "Ofrojmë shërbimin më të mirë të makinave me qira në Tiranë. Me flotën tonë moderne dhe shërbimin 24/7, udhëtimi juaj fillon me besim.",
+      "subtitle": "Jemi shërbimi më i besuar i makinave me qira në Shqipëri, me operim direkt në Aeroportin Ndërkombëtar të Tiranës (TIA) dhe qendrën e Tiranës. Flota jonë moderne, çmimet transparente dhe ekipi 24/7 na kanë bërë zgjedhjen e parë të mijëra udhëtarëve që mbërrijnë në Shqipëri çdo vit.",
       "items": [
-        { "title": "Çmime të qarta", "desc": "Pa kosto të fshehura. Çmimi që shihni është çmimi final." },
-        { "title": "Mbështetje 24/7", "desc": "Jemi gjithmonë në dispozicion për çdo nevojë tuajën." },
-        { "title": "Sigurim përfshirë", "desc": "Të gjitha makinat vijnë me sigurim të plotë të përfshirë." },
-        { "title": "Fleksibilitet", "desc": "Tërhiqni dhe ktheni makinën ku ju nevojitet." }
+        { "title": "Çmime të qarta", "desc": "Pa kosto të fshehura — asnjëherë. Çdo ofertë përfshin TVSH-në, sigurimin bazë dhe të gjitha taksat rrugore. Çmimi që shihni online është saktësisht çmimi që paguani gjatë marrjes. Pa shtesë aeroporti, pa grackë parapagimi karburanti, pa tarifa surprizë në kartën tuaj." },
+        { "title": "Mbështetje 24/7", "desc": "Jemi gjithmonë në dispozicion për çdo nevojë tuajën. Nëse keni nevojë për ndihmë gjatë mbërritjes me avion natën vonë në Aeroportin e Tiranës, keni pyetje rreth rezervimit, ose nevojitet asistencë urgjente rrugore kudo në Shqipëri — ekipi ynë është një telefonatë larg, çdo orë të ditës e natës." },
+        { "title": "Sigurim përfshirë", "desc": "Të gjitha makinat vijnë me sigurim bazë CDW (Collision Damage Waiver) pa kosto shtesë. Ky sigurim mbulon dëmet e mjetit mbi shumën standarde. Gjatë rezervimit mund të zgjidhni Super CDW me mbulim të plotë dhe zero kaparcë — rekomandohet shumë për rrugët malore dhe bregdetare." },
+        { "title": "Fleksibilitet", "desc": "Tërhiqni makinën në Aeroportin e Tiranës dhe kthejeni në qendër, ose anasjelltas — pa kosto shtesë. Operojmë 7 ditë në javë, 24 orë në ditë. Qiratë njëkahëshe, tarifat mujore afatgjata dhe rezervimet e minutës së fundit janë të gjitha të disponueshme." }
       ]
     },
     "guarantees": [
