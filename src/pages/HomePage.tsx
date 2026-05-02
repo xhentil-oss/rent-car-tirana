@@ -55,6 +55,8 @@ export default function HomePage() {
   const howItWorksSteps = (t("home.howItWorks.steps", { returnObjects: true }) as { title: string; desc: string }[]);
   const guarantees = (t("home.guarantees", { returnObjects: true }) as { title: string; desc: string }[]);
   const airportFeatures = t("home.airportSection.features", { returnObjects: true }) as string[];
+  const destinations = t("home.destinations.places", { returnObjects: true }) as { name: string; desc: string }[];
+  const rentalGuideItems = t("home.rentalGuide.items", { returnObjects: true }) as { title: string; desc: string }[];
   const guaranteeIcons = [SealCheck, CreditCard, ShieldCheck];
   const guaranteeColors = [
     { color: "text-primary", bg: "bg-primary/10" },
@@ -618,6 +620,15 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── SEO Text ─────────────────────────────────────────── */}
+      <section className="py-8 px-6 bg-secondary border-b border-border">
+        <div className="max-w-[1440px] mx-auto">
+          <p className="text-sm text-neutral-500 leading-relaxed text-center max-w-4xl mx-auto">
+            {t("home.seoText")}
+          </p>
+        </div>
+      </section>
+
       {/* ── Register CTA for Customers ──────────────────────── */}
       <section className="py-14 px-6 bg-white border-b border-border">
         <div className="max-w-3xl mx-auto text-center">
@@ -650,6 +661,57 @@ export default function HomePage() {
             <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f1", "Pa pagesë")}</span>
             <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f2", "Menaxho rezervimet")}</span>
             <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-success" /> {t("home.registerCta.f3", "Histori e plotë")}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Explore Albania Destinations ──────────────────────── */}
+      <section className="py-16 px-6 bg-white border-b border-border" aria-labelledby="destinations-heading">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="text-center mb-10">
+            <h2 id="destinations-heading" className="text-3xl font-medium text-neutral-900 mb-2">
+              {t("home.destinations.title")}
+            </h2>
+            <p className="text-neutral-500 max-w-2xl mx-auto">{t("home.destinations.subtitle")}</p>
+            <p className="text-sm text-neutral-600 mt-4 max-w-3xl mx-auto leading-relaxed">{t("home.destinations.intro")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {destinations.map((place, i) => (
+              <div key={i} className={`bg-secondary rounded-xl border border-border p-6 ${i === 4 ? "lg:col-span-1 md:col-span-2 lg:col-span-1" : ""}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin size={15} weight="fill" className="text-primary shrink-0" />
+                  <span className="text-sm font-semibold text-primary">{place.name}</span>
+                </div>
+                <p className="text-sm text-neutral-600 leading-relaxed">{place.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Rental Guide ──────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-background" aria-labelledby="guide-heading">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="text-center mb-10">
+            <h2 id="guide-heading" className="text-3xl font-medium text-neutral-900 mb-2">
+              {t("home.rentalGuide.title")}
+            </h2>
+            <p className="text-neutral-500">{t("home.rentalGuide.subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {rentalGuideItems.map((item, i) => (
+              <div key={i} className="bg-white rounded-xl border border-border p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">{i + 1}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-900 mb-2">{item.title}</h3>
+                    <p className="text-sm text-neutral-600 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

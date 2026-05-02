@@ -115,10 +115,33 @@
       ],
       "cta": "Rezervo Marrjen nga Aeroporti"
     },
+    "destinations": {
+      "title": "Eksploroni Shqipërinë me Makinën Tuaj me Qira",
+      "subtitle": "Nga Aeroporti Nënë Tereza (TIA), e gjithë Shqipëria është në dorë",
+      "intro": "Qiraja e makinës në aeroport Tirana hap dyert e njërit prej vendeve më të bukura dhe më pak të eksploruar të Evropës. Shqipëria ofron plazhe të pastërta Adriatike dhe Jonike, qytete trashëgimie UNESCO, rrënoja ilire antike dhe peizazhe malore dramatike — të gjitha brenda pak orëve me makinë nga Aeroporti Ndërkombëtar i Tiranës.",
+      "places": [
+        { "name": "Durrës — 35 km · 30 min", "desc": "Qyteti kryesor bregdetar i Shqipërisë dhe destinacioni më popullor i plazhit. Shëtitni përgjatë plazheve të gjera me rërë të Adriatikut, vizitoni një nga amfiteatrot romake më të mëdha të Ballkanit dhe shijoni bulevardët e gjallë bregdetarë. I përshtatshëm për një ekskursion ditor direkt nga Aeroporti i Tiranës." },
+        { "name": "Berat — 120 km · 1 orë 30 min", "desc": "Qytet i Trashëgimisë Botërore UNESCO dhe një nga qytetet më të fotografuara të Shqipërisë, i njohur si 'Qyteti i Njëmijë Dritareve.' Qendra historike e ruajtur mirë qëndron përgjatë lumit Osum, dominuar nga kala mesjetare me pamje panoramike mbi luginë." },
+        { "name": "Vlorë — 150 km · 2 orë", "desc": "Porta e Rivierës Shqiptare dhe qyteti ku u shpall pavarësia shqiptare në 1912. Rrethuar nga ujërat e kristalta të Adriatikut dhe Jonit, Vlora është baza ideale për të eksploruar Llogaranë, Gadishullin e Karaburunit dhe fshatrat bregdetare të jugut." },
+        { "name": "Shkodër — 110 km · 1 orë 20 min", "desc": "Kryeqyteti kulturor i Shqipërisë Veriore dhe porta drejt Alpeve Shqiptare. Vizitoni Kalanë e Rozafës me pamje mbi Liqenin e Shkodrës, eksploroni pazarin historik dhe përdorni Shkodrën si bazë për aventura në Bjeshkët e Namuna — të fundit nga natyra e virgjër e Evropës." },
+        { "name": "Sarandë — 280 km · 3 orë 30 min", "desc": "Perla e Rivierës Shqiptare dhe një nga sekretet më të mira të Mesdheut. Vizitoni rrënojat antike të Butrintit (UNESCO), notoni në ujërat e kaltër të Syrit të Kaltër dhe relaksohuni në plazhet me rërë të bardhë të Ksamilit. Ideal për një udhëtim rrugor 4-5 ditor nga Aeroporti i Tiranës." }
+      ]
+    },
+    "rentalGuide": {
+      "title": "Gjithçka Duhet të Dini Përpara se të Merrni Makinën në Aeroport",
+      "subtitle": "Udhëzues i plotë për marrjen e makinës në Aeroportin e Tiranës",
+      "items": [
+        { "title": "Dokumentet e nevojshme", "desc": "Për të marrë makinë me qira në Aeroportin e Tiranës nevojiten tre gjëra: patentë shoferi e vlefshme (e mbajtur të paktën 1 vit), kartë identiteti ose pasaportë e vlefshme, dhe kartë krediti ose debiti për depozitën e kthyeshme. Patentat ndërkombëtare dhe të BE-së nga të gjitha vendet pranohen pa dokumentacion shtesë." },
+        { "title": "Kufiri i moshës dhe politika për shoferë të rinj", "desc": "Mosha minimale për të marrë makinë me qira në Aeroportin e Tiranës është 21 vjeç. Shoferët e moshës 21–25 mund të kenë një shtesë sipas kategorisë së zgjedhur të mjetit. Nuk ka kufizim moshe maksimale. Të gjithë shoferët duhet të paraqesin patentë të vlefshme dhe të regjistrohen në kontratën e qirasë." },
+        { "title": "Sigurimi dhe mbulimet e disponueshme", "desc": "Çdo makinë në flotën tonë të aeroportit përfshin sigurim bazë CDW (Collision Damage Waiver) pa kosto shtesë. Gjatë rezervimit online mund të zgjidhni Super CDW me mbulim të plotë dhe zero kaparcë — rekomandohet shumë për rrugët malore dhe bregdetare të Shqipërisë." },
+        { "title": "Drejtimi në Shqipëri — çfarë të prisni", "desc": "Rrugët kryesore të Shqipërisë janë moderne dhe mirëmbajtura. Autostrada SH2 lidhë Aeroportin Ndërkombëtar të Tiranës me qendrën e qytetit në rreth 20 minuta. Rrugët bregdetare të Rivierës Shqiptare dhe kalimet malore mund të jenë më të ngushta — rekomandohet SUV për rrugë jashtë rrugëve kryesore. Tabelat rrugore ndjekin standardet evropiane." }
+      ]
+    },
     "reviews": {
       "title": "Çfarë thonë klientët tanë",
       "subtitle": "Mbi 500 klientë të kënaqur çdo vit"
     },
+    "seoText": "Rent Car Tirana është shërbimi më i besuar i makinave me qira në Shqipëri, me operim direkt në Aeroportin Ndërkombëtar të Tiranës (Aeroporti Nënë Tereza — TIA) dhe qendrën e Tiranës. Nëse kërkoni makina me qira aeroport Tirana për një udhëtim biznesi, pushime familjare përgjatë Rivierës Shqiptare, ose një udhëtim rrugor nëpër Ballkanin Perëndimor — flota jonë moderne, çmimet transparente gjithëpërfshirëse dhe shërbimi i dedikuar i pritjes në aeroport na kanë bërë zgjedhjen e preferuar të mijëra udhëtarëve ndërkombëtarë çdo vit. Rezervo online në më pak se 2 minuta — anulim falas, konfirmim i menjëhershëm, pa kosto të fshehura.",
     "faq": {
       "items": [
         { "question": "Si funksionon rezervimi?", "answer": "Zgjidhni makinën, plotësoni formularin e rezervimit me datat dhe informacionin tuaj, dhe konfirmoni. Do të merrni email konfirmimi menjëherë." },
@@ -126,6 +149,9 @@
         { "question": "A mund të marr makinën nga aeroporti?", "answer": "Po! Ofrojmë tërhieje dhe kthim falas direkt në Aeroportin Nënë Tereza (TIA). Ekipi ynë ju pret në dalje — pa kosto shtesë, pa pritje." },
         { "question": "A ka kosto shtesë për marrjen nga aeroporti?", "answer": "Jo. Makina me qira aeroport Tirana vjen me tërhieje dhe kthim falas — pa asnjë shtesë. Çmimi që shihni gjatë rezervimit është çmimi final." },
         { "question": "Si ju gjej në Aeroportin e Tiranës?", "answer": "Pas zbarkimit, drejtohuni kah halli i arritjeve. Përfaqësuesi ynë do t'ju presë me një tabelë me emrin tuaj. Mund të na kontaktoni edhe telefonikisht 24/7 në +355 69 756 2951." },
+        { "question": "Çfarë lloje makinash janë të disponueshme në Aeroport?", "answer": "Flota jonë e aeroportit përfshin makina ekonomike nga €25/ditë, SUV familjare, makina luksoze dhe automatike. Të gjitha mjetet janë të shërbyer rregullisht, të pastëruara para çdo qiraje dhe jo më të vjetra se 4 vjet. Mund të filtroni flotën sipas kategorisë, transmetimit dhe çmimit." },
+        { "question": "A mund ta kthej makinën në Aeroport në çdo orë?", "answer": "Po, pranojmë kthime në Aeroportin Ndërkombëtar të Tiranës 24 orë në ditë, 7 ditë në javë — përfshirë festat zyrtare. Na informoni rreth fluturimit tuaj të kthimit gjatë rezervimit dhe ne organizojmë gjithçka. Nuk ka kosto shtesë për kthime natën ose në mëngjes të hershëm." },
+        { "question": "Sa larg është Aeroporti i Tiranës nga qendra?", "answer": "Aeroporti Ndërkombëtar Nënë Tereza (TIA) ndodhet rreth 17 km nga qendra e Tiranës. Me makinë nëpër autostradën SH2 udhëtimi zgjat 20-25 minuta. Me shërbimin tonë të makinave me qira aeroport Tirana, shmangni taksitë dhe autobusët dhe drejtohuni direkt drejt destinacionit tuaj." },
         { "question": "Çfarë ndodh nëse makina prishet?", "answer": "Kemi shërbim asistence 24/7. Do t'ju dërgojmë menjëherë ndihmë ose makinë zëvendësuese pa kosto shtesë." },
         { "question": "A mund të anuloj rezervimin?", "answer": "Po, mund të anuloni falas deri 24 orë para datës së tërhieves. Pas kësaj, aplikohet tarifa e anulimit." }
       ]
