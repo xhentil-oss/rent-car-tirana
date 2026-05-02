@@ -44,7 +44,7 @@ export default function ImagePicker({ value, onChange }: Props) {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.type.startsWith("image/")) {
-      setError("Vetëm imazhe lejohen (JPG, PNG, WEBP).");
+      setError("Vetëm imazhe lejohen (JPG, PNG, WEBP, GIF).");
       return;
     }
     uploadFile(file);

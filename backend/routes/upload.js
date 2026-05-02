@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { authenticate, requireRole } = require('../middleware/auth');
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MIME_TO_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
 const MAX_SIZE_MB = 4;
 
 const storage = multer.diskStorage({
@@ -15,7 +16,8 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    // Use verified MIME type, not client-supplied filename extension
+    const ext = MIME_TO_EXT[file.mimetype] || '.jpg';
     cb(null, `blog-${Date.now()}-${uuidv4().slice(0, 8)}${ext}`);
   },
 });

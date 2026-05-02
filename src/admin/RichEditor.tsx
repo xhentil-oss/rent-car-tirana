@@ -64,10 +64,15 @@ export default function RichEditor({
     const prev = editor.getAttributes("link").href ?? "";
     const url = window.prompt("URL e linkut:", prev);
     if (url === null) return;
-    if (url.trim() === "") {
+    const trimmed = url.trim();
+    if (trimmed === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
     } else {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
+      // Block dangerous protocols
+      if (/^(javascript|data|vbscript):/i.test(trimmed)) return;
+      // Auto-prepend https:// if no protocol given
+      const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
     }
   }, [editor]);
 
