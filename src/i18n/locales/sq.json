@@ -46,9 +46,9 @@
   "home": {
     "promoBanner": "<strong>Last Minute:</strong> Rezervo brenda 24 orëve dhe merr <strong>-10% zbritje</strong> me kodin",
     "hero": {
-      "title": "Makina me qira në Tiranë.",
-      "titleHighlight": "Rezervo në pak hapa.",
-      "subtitle": "Merr makinën në aeroport ose në qendër të Tiranës. Çmime të qarta, rezervim i menjëhershëm.",
+      "title": "Makina me Qira Tirana Airport.",
+      "titleHighlight": "Marrje Falas. Konfirmim i Menjëhershëm.",
+      "subtitle": "Shërbimi nr.1 i makinave me qira Tirana Airport (TIA) & qendër. Çmime transparente nga €25/ditë — pa kosto të fshehura, konfirmim i çastit.",
       "pickupFrom": "Tërhiqni nga",
       "returnTo": "Ktheni në",
       "selectPlace": "Zgjidhni vendin",
@@ -103,6 +103,18 @@
       { "title": "Pa kosto të fshehura", "desc": "Çmimi final përfshin gjithçka: taksën, sigurimin bazë dhe deliveryn." },
       { "title": "Anulim falas", "desc": "Anulo falas deri 48 orë para marrjes. Pa rrezik, pa gjoba." }
     ],
+    "airportSection": {
+      "title": "Makina me Qira Aeroport Tirana — Marrje Falas",
+      "badge": "Aeroporti Ndërkombëtar Tiranë — TIA",
+      "body": "Kërkoni makina me qira aeroport Tirana? Ofrojmë tërhieje dhe kthim falas direkt në Aeroportin Ndërkombëtar Nënë Tereza (TIA) — i disponueshëm ditë e natë, 7 ditë në javë. Si shërbimi kryesor i makinave me qira Tirana Airport, garantojmë çmime të plota me gjithçka të përfshirë, flotë moderne dhe pritje personale kur zbrisni nga aeroplani. Rezervimi online zgjat vetëm 2 minuta.",
+      "features": [
+        "Tërhieje falas në Aeroport Tirana (TIA) — pritje personale në dalje",
+        "I disponueshëm 24/7 — fluturime ditore dhe natore",
+        "Çmim gjithëpërfshirës, pa kosto të fshehura",
+        "Konfirmim i menjëhershëm online brenda 2 minutave"
+      ],
+      "cta": "Rezervo Marrjen nga Aeroporti"
+    },
     "reviews": {
       "title": "Çfarë thonë klientët tanë",
       "subtitle": "Mbi 500 klientë të kënaqur çdo vit"
@@ -111,7 +123,9 @@
       "items": [
         { "question": "Si funksionon rezervimi?", "answer": "Zgjidhni makinën, plotësoni formularin e rezervimit me datat dhe informacionin tuaj, dhe konfirmoni. Do të merrni email konfirmimi menjëherë." },
         { "question": "Cilat dokumente duhen?", "answer": "Keni nevojë për patentë shoferi të vlefshme (minimum 1 vit), kartë identiteti ose pasaportë, dhe kartë krediti/debiti për depozitën." },
-        { "question": "A mund të marr makinën nga aeroporti?", "answer": "Po! Ofrojmë shërbim tërhieje dhe kthimi direkt në Aeroportin Ndërkombëtar Nënë Tereza pa kosto shtesë." },
+        { "question": "A mund të marr makinën nga aeroporti?", "answer": "Po! Ofrojmë tërhieje dhe kthim falas direkt në Aeroportin Nënë Tereza (TIA). Ekipi ynë ju pret në dalje — pa kosto shtesë, pa pritje." },
+        { "question": "A ka kosto shtesë për marrjen nga aeroporti?", "answer": "Jo. Makina me qira aeroport Tirana vjen me tërhieje dhe kthim falas — pa asnjë shtesë. Çmimi që shihni gjatë rezervimit është çmimi final." },
+        { "question": "Si ju gjej në Aeroportin e Tiranës?", "answer": "Pas zbarkimit, drejtohuni kah halli i arritjeve. Përfaqësuesi ynë do t'ju presë me një tabelë me emrin tuaj. Mund të na kontaktoni edhe telefonikisht 24/7 në +355 69 756 2951." },
         { "question": "Çfarë ndodh nëse makina prishet?", "answer": "Kemi shërbim asistence 24/7. Do t'ju dërgojmë menjëherë ndihmë ose makinë zëvendësuese pa kosto shtesë." },
         { "question": "A mund të anuloj rezervimin?", "answer": "Po, mund të anuloni falas deri 24 orë para datës së tërhieves. Pas kësaj, aplikohet tarifa e anulimit." }
       ]

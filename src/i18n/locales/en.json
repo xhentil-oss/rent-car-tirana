@@ -46,9 +46,9 @@
   "home": {
     "promoBanner": "<strong>Last Minute:</strong> Book within 24 hours and get <strong>-10% off</strong> with code",
     "hero": {
-      "title": "Car Rental in Tirana.",
-      "titleHighlight": "Book in just a few steps.",
-      "subtitle": "Pick up your car at the airport or city center. Clear prices, instant booking.",
+      "title": "Rent Car Tirana Airport.",
+      "titleHighlight": "Free Pickup. Instant Booking.",
+      "subtitle": "Albania's #1 car rental at Tirana Airport (TIA) & city center. Transparent prices from €25/day — no hidden fees, instant confirmation.",
       "pickupFrom": "Pick up from",
       "returnTo": "Return to",
       "selectPlace": "Select location",
@@ -103,6 +103,18 @@
       { "title": "No hidden fees", "desc": "The final price includes everything: tax, basic insurance and delivery." },
       { "title": "Free cancellation", "desc": "Cancel free up to 48 hours before pickup. No risk, no penalties." }
     ],
+    "airportSection": {
+      "title": "Car Rental at Tirana Airport — Free Pickup Included",
+      "badge": "Tirana International Airport — TIA",
+      "body": "Need to rent a car at Tirana Airport? We provide free pickup and drop-off directly at Mother Teresa International Airport (TIA) — available day and night, 7 days a week. As Albania's leading car rental tirana airport service, we guarantee transparent all-inclusive prices, a modern fleet, and a meet & greet so you never wait. Whether you're searching tirana airport rent a car for a day trip or an Albania road trip — booking takes under 2 minutes.",
+      "features": [
+        "Free pickup at Tirana Airport (TIA) — meet & greet included",
+        "Available 24/7 — day and night flights",
+        "All-inclusive price, no hidden fees",
+        "Instant online confirmation in under 2 minutes"
+      ],
+      "cta": "Book Airport Pickup"
+    },
     "reviews": {
       "title": "What our customers say",
       "subtitle": "Over 500 happy customers every year"
@@ -111,7 +123,9 @@
       "items": [
         { "question": "How does booking work?", "answer": "Choose your car, fill in the booking form with dates and your information, and confirm. You will receive a confirmation email immediately." },
         { "question": "What documents are required?", "answer": "You need a valid driver's license (minimum 1 year), identity card or passport, and a credit/debit card for the deposit." },
-        { "question": "Can I pick up the car from the airport?", "answer": "Yes! We offer pickup and return directly at Mother Teresa International Airport at no extra cost." },
+        { "question": "Can I pick up the car from the airport?", "answer": "Yes! We offer free pickup and return directly at Mother Teresa International Airport (TIA). Our team meets you at arrivals — no extra charge, no waiting." },
+        { "question": "Is there an extra fee for Tirana Airport pickup?", "answer": "No. Rent car tirana airport pickup and drop-off is completely free with no surcharges. The price you see when booking is the total price — nothing extra at the airport." },
+        { "question": "How do I find you at Tirana Airport?", "answer": "After landing, proceed to the arrivals hall. Our representative will be waiting with a sign bearing your name. You can also reach us by phone 24/7 at +355 69 756 2951." },
         { "question": "What happens if the car breaks down?", "answer": "We have 24/7 assistance service. We will immediately send you help or a replacement car at no extra cost." },
         { "question": "Can I cancel my booking?", "answer": "Yes, you can cancel free of charge up to 24 hours before the pickup date. After that, a cancellation fee applies." }
       ]

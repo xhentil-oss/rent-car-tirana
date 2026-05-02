@@ -54,6 +54,7 @@ export default function HomePage() {
   const whyUsItems = (t("home.whyUs.items", { returnObjects: true }) as { title: string; desc: string }[]);
   const howItWorksSteps = (t("home.howItWorks.steps", { returnObjects: true }) as { title: string; desc: string }[]);
   const guarantees = (t("home.guarantees", { returnObjects: true }) as { title: string; desc: string }[]);
+  const airportFeatures = t("home.airportSection.features", { returnObjects: true }) as string[];
   const guaranteeIcons = [SealCheck, CreditCard, ShieldCheck];
   const guaranteeColors = [
     { color: "text-primary", bg: "bg-primary/10" },
@@ -61,10 +62,17 @@ export default function HomePage() {
     { color: "text-accent", bg: "bg-accent/10" },
   ];
 
+  const isEN = i18n.language === 'en';
   useSEO({
-    title: "Makina me Qira Tiranë — Rezervo Online",
-    description: "Shërbimi nr.1 i makinave me qira në Tiranë. Rezervo online, merr makinën nga aeroporti ose qendra. Çmime transparente nga €25/ditë. Disponueshëm 24/7.",
-    keywords: "makina me qira tirane, rent a car tirana, makine me qira shqiperi, makinë me qira aeroport tirana",
+    title: isEN
+      ? "Rent Car Tirana Airport — Free Pickup, Book Online | Albania #1"
+      : "Makina me Qira Tirana Airport — Marrje Falas, Rezervo Online",
+    description: isEN
+      ? "Rent car Tirana Airport at the best price. Albania's #1 car rental — free pickup at Mother Teresa International Airport (TIA), no hidden fees, from €25/day. Book online in 2 minutes."
+      : "Makina me qira aeroport Tirana — shërbimi nr.1 në Shqipëri. Marrje falas nga aeroporti Nënë Tereza (TIA), pa kosto të fshehura, nga €25/ditë. Rezervo online.",
+    keywords: isEN
+      ? "rent car tirana airport, rent a car tirana airport, albania rent a car tirana airport, tirana airport rent a car, car rental albania tirana airport, car rental tirana"
+      : "makina me qira aeroport tirana, rent car tirana airport, makine me qira tirane, makinë me qira aeroport, rent a car tirana airport",
     canonical: "/",
     structuredData: [
       buildLocalBusinessSchema(),
@@ -84,9 +92,9 @@ export default function HomePage() {
   const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
   const [bannerAbout, setBannerAbout] = useState("https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80");
   const [heroSlides, setHeroSlides] = useState([
-    { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1400&q=80", alt: "Car rental by the sea Albania" },
-    { src: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1400&q=80", alt: "Rental car in Tirana city street" },
-    { src: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&q=80", alt: "Car rental road trip Albania" },
+    { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1400&q=80", alt: "Rent car tirana airport — Albania car rental coastal road" },
+    { src: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1400&q=80", alt: "Car rental Tirana Albania — rent a car tirana airport" },
+    { src: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&q=80", alt: "Albania rent a car tirana airport — road trip" },
   ]);
   const [heroSlide, setHeroSlide] = useState(0);
 
@@ -328,6 +336,59 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Airport Car Rental Section ───────────────────────────── */}
+      <section className="py-14 px-6 bg-white border-b border-border" aria-labelledby="airport-heading">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Airplane size={16} weight="fill" className="text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                  {t("home.airportSection.badge")}
+                </span>
+              </div>
+              <h2 id="airport-heading" className="text-2xl md:text-3xl font-medium text-neutral-900 mb-4">
+                {t("home.airportSection.title")}
+              </h2>
+              <p className="text-neutral-600 leading-relaxed mb-6 text-sm md:text-base">
+                {t("home.airportSection.body")}
+              </p>
+              <ul className="space-y-2.5 mb-7">
+                {airportFeatures.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                    <CheckCircle size={17} weight="fill" className="text-success shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <LLink
+                to={isEN ? "/en/airport-car-rental" : "/makine-me-qira-aeroport"}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity no-underline"
+              >
+                <Airplane size={16} weight="fill" />
+                {t("home.airportSection.cta")}
+              </LLink>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: Airplane, label: isEN ? "Free Airport Pickup" : "Marrje Falas Aeroport", sub: "Mother Teresa TIA" },
+                { icon: Clock, label: isEN ? "Available 24/7" : "24/7 i Disponueshëm", sub: isEN ? "Day & night flights" : "Fluturime ditore & natore" },
+                { icon: SealCheck, label: isEN ? "No Hidden Fees" : "Pa Kosto të Fshehura", sub: isEN ? "All-inclusive price" : "Çmim gjithëpërfshirës" },
+                { icon: ShieldCheck, label: isEN ? "Insurance Included" : "Sigurim i Përfshirë", sub: isEN ? "Basic coverage free" : "Mbulim bazë falas" },
+              ].map(({ icon: Icon, label, sub }, i) => (
+                <div key={i} className="bg-secondary rounded-xl border border-border p-5 flex flex-col gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-white border border-border flex items-center justify-center">
+                    <Icon size={18} weight="fill" className="text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-neutral-900 leading-tight">{label}</p>
+                  <p className="text-xs text-neutral-500">{sub}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
