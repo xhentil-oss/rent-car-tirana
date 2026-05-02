@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { PencilSimple, Trash, Plus, Eye, EyeSlash, MagnifyingGlass, Article } from "@phosphor-icons/react";
+import RichEditor from "../RichEditor";
 
 function slugify(text: string) {
   return text
@@ -135,8 +136,12 @@ export default function AdminBlog() {
                   <textarea value={form.excerptSq} onChange={e => set("excerptSq", e.target.value)} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="1-2 fjali përshkruese..." />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Përmbajtja (SQ) * — HTML</label>
-                  <textarea value={form.contentSq} onChange={e => set("contentSq", e.target.value)} rows={16} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y font-mono" placeholder="<h2>Titulli...</h2><p>Teksti...</p>" />
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Përmbajtja (SQ) *</label>
+                  <RichEditor
+                    value={form.contentSq}
+                    onChange={val => set("contentSq", val)}
+                    placeholder="Shkruaj përmbajtjen në shqip..."
+                  />
                 </div>
               </>
             ) : (
@@ -150,8 +155,12 @@ export default function AdminBlog() {
                   <textarea value={form.excerptEn} onChange={e => set("excerptEn", e.target.value)} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="1-2 sentences..." />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Content (EN) — HTML</label>
-                  <textarea value={form.contentEn} onChange={e => set("contentEn", e.target.value)} rows={16} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y font-mono" placeholder="<h2>Title...</h2><p>Text...</p>" />
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Content (EN)</label>
+                  <RichEditor
+                    value={form.contentEn}
+                    onChange={val => set("contentEn", val)}
+                    placeholder="Write content in English..."
+                  />
                 </div>
               </>
             )}
