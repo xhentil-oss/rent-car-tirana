@@ -82,8 +82,20 @@ export default function HomePage() {
 
   const { data: allCars } = useQuery("Car");
   const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
-  const [bannerHero, setBannerHero] = useState("https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1200&q=80");
   const [bannerAbout, setBannerAbout] = useState("https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80");
+  const [heroSlides, setHeroSlides] = useState([
+    { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1400&q=80", alt: "Car rental by the sea Albania" },
+    { src: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1400&q=80", alt: "Rental car in Tirana city street" },
+    { src: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&q=80", alt: "Car rental road trip Albania" },
+  ]);
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroSlide((s) => (s + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     fetch("/api/settings/public")
@@ -93,7 +105,13 @@ export default function HomePage() {
           .split(",")
           .filter(Boolean);
         setFeaturedCarIds(ids);
-        if (data.banner_hero) setBannerHero(data.banner_hero);
+        if (data.banner_hero) {
+          setHeroSlides((prev) => {
+            const updated = [...prev];
+            updated[1] = { ...updated[1], src: data.banner_hero };
+            return updated;
+          });
+        }
         if (data.banner_about) setBannerAbout(data.banner_about);
       })
       .catch(() => {});
@@ -168,13 +186,27 @@ export default function HomePage() {
         aria-labelledby="hero-heading"
       >
         <div className="absolute inset-0">
-          <img
-            src={bannerHero}
-            alt="Rental car in Tirana city street"
-            className="w-full h-full object-cover"
-            loading="eager"
-          />
+          {heroSlides.map((slide, i) => (
+            <img
+              key={slide.src}
+              src={slide.src}
+              alt={slide.alt}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === heroSlide ? "opacity-100" : "opacity-0"}`}
+              loading={i === 0 ? "eager" : "lazy"}
+            />
+          ))}
           <div className="absolute inset-0 bg-neutral-900/70" />
+          {/* Slide dots */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {heroSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroSlide(i)}
+                aria-label={`Slide ${i + 1}`}
+                className={`w-2 h-2 rounded-full transition-all cursor-pointer border-0 ${i === heroSlide ? "bg-white w-5" : "bg-white/40 hover:bg-white/70"}`}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="relative z-10 max-w-[1440px] mx-auto px-6 py-20 w-full">

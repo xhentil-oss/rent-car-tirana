@@ -125,7 +125,7 @@ app.get('/sitemap.xml', async (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
 
     const [cars]  = await pool.query("SELECT slug, updated_at FROM cars WHERE status != 'Deleted' ORDER BY created_at");
-    const [posts] = await pool.query("SELECT slug, updated_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC").catch(() => [[]]);
+    const [posts] = await pool.query("SELECT slug, updated_at FROM blog_posts WHERE status = 'published' ORDER BY created_at DESC").catch(() => [[]]);
 
     const escXml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : today;

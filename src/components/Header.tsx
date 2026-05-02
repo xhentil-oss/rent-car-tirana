@@ -661,6 +661,23 @@ export default function Header() {
                 </LLink>
               )
             )}
+            {/* Trust strip — mobile */}
+            <div className="mx-4 my-2 px-3 py-2.5 rounded-lg bg-neutral-50 border border-border grid grid-cols-3 gap-1 text-center">
+              <span className="flex flex-col items-center gap-0.5">
+                <Star size={12} weight="fill" className="text-yellow-400" />
+                <span className="text-[10px] font-semibold text-neutral-700">4.9/5</span>
+                <span className="text-[9px] text-neutral-400">{t("header.trustClients")}</span>
+              </span>
+              <span className="flex flex-col items-center gap-0.5 border-x border-border">
+                <SealCheck size={12} weight="fill" className="text-green-500" />
+                <span className="text-[10px] font-semibold text-neutral-700">{t("header.trustNoFees")}</span>
+              </span>
+              <span className="flex flex-col items-center gap-0.5">
+                <Headset size={12} weight="fill" className="text-blue-500" />
+                <span className="text-[10px] font-semibold text-neutral-700">{t("header.trustSupport")}</span>
+              </span>
+            </div>
+
             <div className="pt-3 border-t border-border mt-2 flex flex-col gap-2">
               <a
                 href="tel:+355697562951"
