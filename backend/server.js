@@ -107,6 +107,7 @@ app.use('/api/communication-logs', apiLimiter, require('./routes/communicationLo
 app.use('/api/google-reviews',     apiLimiter,  require('./routes/googleReviews'));
 app.post('/api/contact', require('./routes/contact'));
 app.use('/api/email',    apiLimiter,  require('./routes/email'));
+app.use('/api/upload',  apiLimiter,  require('./routes/upload'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
@@ -192,6 +193,12 @@ app.get('/sitemap.xml', async (req, res) => {
 app.all('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint nuk ekziston.' });
 });
+
+// ─── SERVE UPLOADED FILES ─────────────────────────────────────
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders(res) { res.setHeader('Cache-Control', 'public, max-age=604800'); },
+}));
 
 // ─── SERVE FRONTEND (production) ─────────────────────────────
 const distPath = path.join(__dirname, 'public');

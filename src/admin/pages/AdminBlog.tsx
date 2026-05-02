@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { PencilSimple, Trash, Plus, Eye, EyeSlash, MagnifyingGlass, Article } from "@phosphor-icons/react";
 import RichEditor from "../RichEditor";
+import ImagePicker from "../ImagePicker";
 
 function slugify(text: string) {
   return text
@@ -175,9 +176,8 @@ export default function AdminBlog() {
                 <input value={form.slug} onChange={e => set("slug", e.target.value)} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="titulli-postimit" />
               </div>
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Imazhi i kopertinës (URL)</label>
-                <input value={form.coverImage} onChange={e => set("coverImage", e.target.value)} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="https://..." />
-                {form.coverImage && <img src={form.coverImage} alt="" className="mt-2 rounded-lg h-24 w-full object-cover" />}
+                <label className="text-xs font-medium text-neutral-600 mb-1.5 block">Imazhi i kopertinës</label>
+                <ImagePicker value={form.coverImage} onChange={url => set("coverImage", url)} />
               </div>
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">Tags (me presje)</label>
