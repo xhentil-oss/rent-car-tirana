@@ -11,7 +11,7 @@ const ITEMS_PER_PAGE = 9;
 
 export default function BlogPage() {
   const { t } = useTranslation();
-  const { lang } = useLocale();
+  const { lang, localePath } = useLocale();
   const isEn = lang === "en";
   const [page, setPage] = useState(1);
 
@@ -84,7 +84,7 @@ export default function BlogPage() {
                 return (
                   <LLink
                     key={post.id}
-                    to={`/blog/${post.slug}`}
+                    to={localePath(`/blog/${post.slug}`)}
                     className="group bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300 no-underline"
                   >
                     {post.coverImage ? (

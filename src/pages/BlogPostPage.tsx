@@ -12,7 +12,7 @@ const API_BASE = "/api";
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { lang } = useLocale();
+  const { lang, localePath } = useLocale();
   const { t } = useTranslation();
   const isEn = lang === "en";
 
@@ -37,7 +37,7 @@ export default function BlogPostPage() {
   useSEO({
     title: metaTitle || "Blog",
     description: metaDesc,
-    canonical: `/blog/${slug}`,
+    canonical: localePath(`/blog/${slug}`),
     ogImage: post?.coverImage,
     ogType: "article",
     structuredData: post ? {
@@ -54,7 +54,7 @@ export default function BlogPostPage() {
         "name": "Rent Car Tirana",
         "url": "https://rentcartiranaairport.com"
       },
-      "mainEntityOfPage": `https://rentcartiranaairport.com/blog/${slug}`
+      "mainEntityOfPage": `https://rentcartiranaairport.com${localePath(`/blog/${slug}`)}`
     } : undefined,
   });
 
@@ -81,7 +81,7 @@ export default function BlogPostPage() {
           <h1 className="text-2xl font-bold text-neutral-800 mb-2">
             {isEn ? "Post not found" : "Postimi nuk u gjet"}
           </h1>
-          <LLink to="/blog" className="text-primary hover:underline no-underline">
+          <LLink to={localePath("/blog")} className="text-primary hover:underline no-underline">
             {isEn ? "Back to blog" : "Kthehu te blogu"}
           </LLink>
         </div>
@@ -100,7 +100,7 @@ export default function BlogPostPage() {
     <div className="min-h-screen bg-background text-foreground">
       <article className="max-w-3xl mx-auto px-6 py-10">
         {/* Breadcrumb */}
-        <LLink to="/blog" className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-primary transition-colors no-underline mb-6">
+        <LLink to={localePath("/blog")} className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-primary transition-colors no-underline mb-6">
           <ArrowLeft size={14} /> {isEn ? "All articles" : "Të gjithë artikujt"}
         </LLink>
 
