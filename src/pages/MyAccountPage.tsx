@@ -45,7 +45,13 @@ export default function MyAccountPage() {
     setResendLoading(true);
     setResendError("");
     try {
-      const res = await fetch("/api/auth/resend-verification", { method: "POST", credentials: "include" });
+      const locale = /^\/en(\/|$)/.test(window.location.pathname) ? 'en' : 'sq';
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setResendError(data.error || "Dërgimi dështoi. Provoni sërisht.");

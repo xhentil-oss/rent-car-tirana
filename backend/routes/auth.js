@@ -7,6 +7,11 @@ const { body, validationResult } = require('express-validator');
 const otplib = require('otplib');
 const authenticator = otplib.authenticator || (otplib.default && otplib.default.authenticator);
 const QRCode = require('qrcode');
+const { OAuth2Client } = require('google-auth-library');
+
+// Google OAuth client — lazy-init so the app boots even if env is missing.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 if (authenticator) authenticator.options = { window: 1 }; // Allow ±30s clock drift
 
 // Simple HTML escape for email templates (prevent XSS via user-supplied name)
@@ -14,9 +19,11 @@ const escapeHtml = (s) => String(s || '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-// In-memory OTP attempt tracker (tempToken -> count). Cleared every 10 min.
-const otpAttempts = new Map();
-setInterval(() => otpAttempts.clear(), 10 * 60 * 1000).unref?.();
+// OTP brute-force tracking is persisted in DB columns users.otp_failed_attempts /
+// users.otp_locked_until (see migrate.js) — survives server restarts and works
+// across multiple Node processes.
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_MINUTES = 15;
 const pool = require('../database/db');
 const { authenticate, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { sendMail } = require('../lib/mailer');
@@ -54,33 +61,56 @@ const makeTokens = (userId) => {
 router.post(
   '/register',
   [
-    body('email').isEmail().withMessage('Email i pavlefshëm'),
-    body('password').isLength({ min: 8 }).withMessage('Fjalëkalimi duhet të ketë min 8 karaktere'),
-    body('name').notEmpty().withMessage('Emri është i detyrueshëm'),
-    body('phone').optional().isMobilePhone('any').withMessage('Numri i telefonit nuk është i vlefshëm'),
+    body('email').isEmail().withMessage('Email i pavlefshëm').isLength({ max: 255 }).withMessage('Email tepër i gjatë'),
+    body('password').isLength({ min: 8, max: 128 }).withMessage('Fjalëkalimi duhet të ketë min 8 karaktere'),
+    body('name').trim().notEmpty().withMessage('Emri është i detyrueshëm').isLength({ max: 100 }).withMessage('Emri tepër i gjatë'),
+    // `checkFalsy: true` treats empty string / null / 0 as missing so the
+    // "(opsional)" phone field doesn't block registration when left blank.
+    body('phone').optional({ checkFalsy: true }).isLength({ max: 30 }).withMessage('Numri i telefonit tepër i gjatë'),
+    body('locale').optional().isIn(['sq', 'en']),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email, name, password, phone } = req.body;
+    // Normalize: trim + lowercase email so "User@X.com" and "user@x.com" don't
+    // create duplicate accounts and login always finds the user.
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const name = String(req.body.name || '').trim();
+    const password = req.body.password;
+    const phone = req.body.phone ? String(req.body.phone).trim() : '';
+    const locale = req.body.locale === 'en' ? 'en' : 'sq';
     const role = 'customer';
 
     try {
       const [existingUser] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
       if (existingUser.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
 
-      const [existingCust] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
-      if (existingCust.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar si klient.' });
+      // A `customers` row with this email is COMMON: it's created every time
+      // someone books as a guest. We don't refuse — we attach that existing
+      // customer record to the new user account so booking history is kept.
+      // If the customer is already linked to another user, then it's a genuine
+      // duplicate — refuse.
+      const [existingCust] = await pool.query('SELECT id, user_id FROM customers WHERE email = ?', [email]);
+      let customerId;
+      let reusedCustomer = false;
+      if (existingCust.length) {
+        if (existingCust[0].user_id) {
+          return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
+        }
+        customerId = existingCust[0].id;
+        reusedCustomer = true;
+      } else {
+        customerId = uuidv4();
+      }
 
       const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
       const userId = uuidv4();
-      const customerId = uuidv4();
       const verifyToken = crypto.randomBytes(32).toString('hex');
       const verifyTokenHash = hashToken(verifyToken);
       const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-      const nameParts = name.trim().split(/\s+/);
+      const nameParts = name.split(/\s+/);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -88,15 +118,34 @@ router.post(
       try {
         await conn.beginTransaction();
 
-        await conn.query(
-          'INSERT INTO users (id, email, name, password, role, email_verification_token, email_verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [userId, email, name, hash, role, verifyTokenHash, verifyExpires]
-        );
+        try {
+          await conn.query(
+            'INSERT INTO users (id, email, name, password, role, email_verification_token, email_verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [userId, email, name, hash, role, verifyTokenHash, verifyExpires]
+          );
+        } catch (insErr) {
+          // Race: two simultaneous registers passed the SELECT check.
+          // Return a friendly 409 instead of the generic 500.
+          if (insErr && insErr.code === 'ER_DUP_ENTRY') {
+            await conn.rollback(); conn.release();
+            return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
+          }
+          throw insErr;
+        }
 
-        await conn.query(
-          'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [customerId, name, firstName, lastName, email, phone || '', 'Standard', userId]
-        );
+        if (reusedCustomer) {
+          // Attach existing guest customer to the new user, filling in any
+          // missing name/phone fields without overwriting non-empty data.
+          await conn.query(
+            'UPDATE customers SET user_id = ?, name = COALESCE(NULLIF(name, ""), ?), first_name = COALESCE(NULLIF(first_name, ""), ?), last_name = COALESCE(NULLIF(last_name, ""), ?), phone = COALESCE(NULLIF(phone, ""), ?) WHERE id = ?',
+            [userId, name, firstName, lastName, phone, customerId]
+          );
+        } else {
+          await conn.query(
+            'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [customerId, name, firstName, lastName, email, phone, 'Standard', userId]
+          );
+        }
 
         const { access, refresh } = makeTokens(userId);
         const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
@@ -110,7 +159,7 @@ router.post(
 
         // Send verification email (non-blocking)
         const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
-        const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}`;
+        const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}&locale=${locale}`;
         sendMail(email, 'Verifiko emailin tënd — RentCar Tirana', `
           <p>Mirë se vini, <strong>${escapeHtml(name)}</strong>!</p>
           <p>Klikoni linkun më poshtë për të verifikuar emailin tuaj:</p>
@@ -147,7 +196,10 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email, password } = req.body;
+    const { password } = req.body;
+    // Normalize: same rules as /register so users still log in after the
+    // email-normalization rollout, regardless of how they typed the email.
+    const email = String(req.body.email || '').trim().toLowerCase();
 
     try {
       const [rows] = await pool.query(
@@ -232,15 +284,9 @@ router.post('/login-2fa', async (req, res) => {
 
     if (decoded.type !== '2fa_pending') return res.status(401).json({ error: 'Token i pavlefshëm.' });
 
-    // OTP brute-force protection — max 5 attempts per tempToken
-    const attempts = otpAttempts.get(tempToken) || 0;
-    if (attempts >= 5) {
-      otpAttempts.delete(tempToken);
-      return res.status(429).json({ error: 'Shumë përpjekje të gabuara. Hyni sërisht.' });
-    }
-
+    // OTP brute-force protection — persisted in DB (survives restarts / multi-process)
     const [rows] = await pool.query(
-      'SELECT id, email, name, role, permissions, two_factor_secret, email_verified FROM users WHERE id = ? AND is_active = 1',
+      'SELECT id, email, name, role, permissions, two_factor_secret, email_verified, otp_failed_attempts, otp_locked_until FROM users WHERE id = ? AND is_active = 1',
       [decoded.userId]
     );
     if (!rows.length) return res.status(401).json({ error: 'Llogaria nuk ekziston.' });
@@ -248,12 +294,28 @@ router.post('/login-2fa', async (req, res) => {
     const user = rows[0];
     if (!user.two_factor_secret) return res.status(400).json({ error: '2FA nuk është konfiguruar.' });
 
+    // Check existing OTP lockout
+    if (user.otp_locked_until && new Date(user.otp_locked_until) > new Date()) {
+      const remaining = Math.ceil((new Date(user.otp_locked_until) - Date.now()) / 60000);
+      return res.status(429).json({ error: `Shumë përpjekje të gabuara OTP. Provoni pas ${remaining} minutash.` });
+    }
+
     const valid = authenticator.check(otp, user.two_factor_secret);
     if (!valid) {
-      otpAttempts.set(tempToken, attempts + 1);
-      return res.status(401).json({ error: `Kodi OTP është i gabuar. (${5 - attempts - 1} përpjekje të mbetura)` });
+      const attempts = (user.otp_failed_attempts || 0) + 1;
+      if (attempts >= OTP_MAX_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + OTP_LOCK_MINUTES * 60 * 1000);
+        await pool.query(
+          'UPDATE users SET otp_failed_attempts = ?, otp_locked_until = ? WHERE id = ?',
+          [attempts, lockedUntil, user.id]
+        );
+        return res.status(429).json({ error: `Shumë përpjekje të gabuara OTP. Llogaria u bllokua për ${OTP_LOCK_MINUTES} minuta.` });
+      }
+      await pool.query('UPDATE users SET otp_failed_attempts = ? WHERE id = ?', [attempts, user.id]);
+      return res.status(401).json({ error: `Kodi OTP është i gabuar. (${OTP_MAX_ATTEMPTS - attempts} përpjekje të mbetura)` });
     }
-    otpAttempts.delete(tempToken);
+    // Reset OTP counters on success
+    await pool.query('UPDATE users SET otp_failed_attempts = 0, otp_locked_until = NULL WHERE id = ?', [user.id]);
 
     const { access, refresh } = makeTokens(user.id);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
@@ -291,7 +353,13 @@ router.post('/refresh', async (req, res) => {
       'SELECT * FROM refresh_tokens WHERE token = ? AND user_id = ? AND expires_at > NOW()',
       [hashedToken, decoded.userId]
     );
-    if (!rows.length) return res.status(401).json({ error: 'Refresh token i pavlefshëm ose ka skaduar.' });
+    if (!rows.length) {
+      // Reuse-detection: token is JWT-valid but not in DB → it was already rotated.
+      // Treat as theft attempt and invalidate the whole token family for this user.
+      await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [decoded.userId]).catch(() => {});
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'Refresh token i pavlefshëm ose ka skaduar.' });
+    }
 
     const { access, refresh: newRefresh } = makeTokens(decoded.userId);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
@@ -322,6 +390,163 @@ router.post('/logout', authenticate, async (req, res) => {
     return res.json({ message: 'U shkyçët me sukses.' });
   } catch (err) {
     return res.status(500).json({ error: 'Gabim gjatë shkyçjes.' });
+  }
+});
+
+// ─── POST /api/auth/google ────────────────────────────────────
+// Sign in / sign up with a Google ID token (credential from Google Identity Services).
+// The frontend obtains this token client-side via the GSI button or one-tap.
+// On success we issue our own access + refresh JWT cookies just like /login.
+router.post('/google', async (req, res) => {
+  if (!googleClient) {
+    return res.status(500).json({ error: 'Google Sign-In nuk është i konfiguruar.' });
+  }
+  const { credential } = req.body || {};
+  if (!credential || typeof credential !== 'string') {
+    return res.status(400).json({ error: 'Credential mungon.' });
+  }
+
+  try {
+    // Verify signature + audience. Throws if invalid/expired/wrong audience.
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.sub || !payload.email) {
+      return res.status(401).json({ error: 'Token Google i pavlefshëm.' });
+    }
+    if (!payload.email_verified) {
+      return res.status(401).json({ error: 'Emaili Google nuk është i verifikuar.' });
+    }
+
+    const googleId = payload.sub;
+    const email = String(payload.email).trim().toLowerCase();
+    const name = String(payload.name || payload.email.split('@')[0]).trim().slice(0, 100);
+    const picture = payload.picture || null;
+
+    // 1) User already linked via google_id → log them in.
+    let [rows] = await pool.query(
+      'SELECT id, email, name, role, permissions, is_active, email_verified FROM users WHERE google_id = ?',
+      [googleId]
+    );
+
+    let userId;
+    let user;
+
+    if (rows.length) {
+      if (!rows[0].is_active) return res.status(403).json({ error: 'Llogaria juaj është çaktivizuar.' });
+      user = rows[0];
+      userId = user.id;
+    } else {
+      // 2) Existing local account with same email → link it.
+      [rows] = await pool.query(
+        'SELECT id, email, name, role, permissions, is_active, email_verified FROM users WHERE email = ?',
+        [email]
+      );
+      if (rows.length) {
+        if (!rows[0].is_active) return res.status(403).json({ error: 'Llogaria juaj është çaktivizuar.' });
+        user = rows[0];
+        userId = user.id;
+        await pool.query(
+          'UPDATE users SET google_id = ?, email_verified = 1, profile_picture_url = COALESCE(profile_picture_url, ?) WHERE id = ?',
+          [googleId, picture, userId]
+        );
+      } else {
+        // 3) Brand-new user → create users + customers rows in a transaction.
+        userId = uuidv4();
+        const customerId = uuidv4();
+        const nameParts = name.split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Attach existing guest customer if any (same email, no user_id yet).
+        const [existingCust] = await pool.query('SELECT id, user_id FROM customers WHERE email = ?', [email]);
+        let finalCustomerId = customerId;
+        let reusedCustomer = false;
+        if (existingCust.length) {
+          if (existingCust[0].user_id) {
+            return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
+          }
+          finalCustomerId = existingCust[0].id;
+          reusedCustomer = true;
+        }
+
+        const conn = await pool.getConnection();
+        try {
+          await conn.beginTransaction();
+          try {
+            await conn.query(
+              'INSERT INTO users (id, email, name, role, email_verified, google_id, profile_picture_url) VALUES (?, ?, ?, ?, 1, ?, ?)',
+              [userId, email, name, 'customer', googleId, picture]
+            );
+          } catch (insErr) {
+            if (insErr && insErr.code === 'ER_DUP_ENTRY') {
+              await conn.rollback(); conn.release();
+              return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
+            }
+            throw insErr;
+          }
+
+          if (reusedCustomer) {
+            await conn.query(
+              'UPDATE customers SET user_id = ?, name = COALESCE(NULLIF(name, ""), ?), first_name = COALESCE(NULLIF(first_name, ""), ?), last_name = COALESCE(NULLIF(last_name, ""), ?) WHERE id = ?',
+              [userId, name, firstName, lastName, finalCustomerId]
+            );
+          } else {
+            await conn.query(
+              'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [finalCustomerId, name, firstName, lastName, email, '', 'Standard', userId]
+            );
+          }
+
+          await conn.commit();
+          conn.release();
+        } catch (txErr) {
+          try { await conn.rollback(); } catch {}
+          try { conn.release(); } catch {}
+          throw txErr;
+        }
+
+        user = { id: userId, email, name, role: 'customer', permissions: '', email_verified: 1 };
+        await logActivity({
+          userId, action: 'CREATE', entity: 'Customer', entityId: finalCustomerId,
+          description: `Regjistrim me Google: ${email}`, ipAddress: req.ip,
+        });
+      }
+    }
+
+    // Look up customerId for the response (matches /login behaviour).
+    const [custRows] = await pool.query(
+      'SELECT id FROM customers WHERE user_id = ? OR email = ? LIMIT 1',
+      [userId, email]
+    );
+    const customerId = custRows[0]?.id || null;
+
+    // Issue our own session tokens.
+    const { access, refresh } = makeTokens(userId);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
+    await pool.query(
+      'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
+      [uuidv4(), userId, hashToken(refresh), expiresAt]
+    );
+
+    setAuthCookies(res, access, refresh);
+    await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [userId]);
+    await logActivity({
+      userId, action: 'LOGIN', entity: 'User', entityId: userId,
+      description: 'Hyrje me Google', ipAddress: req.ip,
+    });
+
+    return res.json({
+      user: {
+        id: userId, email: user.email, name: user.name, role: user.role,
+        permissions: user.permissions, customerId, email_verified: 1,
+      },
+    });
+  } catch (err) {
+    console.error('Google sign-in error:', err.message);
+    return res.status(401).json({ error: 'Token Google i pavlefshëm ose ka skaduar.' });
   }
 });
 
@@ -362,11 +587,20 @@ router.post('/change-password', authenticate,
 router.post('/forgot-password',
   [body('email').isEmail()],
   async (req, res) => {
-    // Always return 200 to prevent email enumeration
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: 'Email i pavlefshëm.' });
+    // Always return 200 to prevent email enumeration.
+    // Also equalize response time so attackers cannot infer existence via timing.
+    const tStart = Date.now();
+    const MIN_RESPONSE_MS = 600;
+    const finish = (payload, status = 200) => {
+      const elapsed = Date.now() - tStart;
+      const delay = Math.max(0, MIN_RESPONSE_MS - elapsed);
+      setTimeout(() => res.status(status).json(payload), delay);
+    };
 
-    const { email } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return finish({ error: 'Email i pavlefshëm.' }, 400);
+
+    const email = String(req.body.email || '').trim().toLowerCase();
     try {
       const [rows] = await pool.query('SELECT id, name FROM users WHERE email = ?', [email]);
       if (rows.length) {
@@ -391,10 +625,10 @@ router.post('/forgot-password',
           <p>Linku skudon pas 1 ore. Nëse nuk e keni kërkuar ju, injoroni këtë email.</p>
         `).catch(() => {});
       }
-      return res.json({ message: 'Nëse emaili ekziston, do të merrni udhëzime për rivendosjen.' });
+      return finish({ message: 'Nëse emaili ekziston, do të merrni udhëzime për rivendosjen.' });
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });
+      return finish({ error: 'Gabim i brendshëm i serverit.' }, 500);
     }
   }
 );
@@ -452,7 +686,11 @@ router.get('/verify-email', async (req, res) => {
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
-    return res.redirect(`${frontendUrl}/llogaria?verified=1`);
+    // Redirect to the localized account page. `locale` is passed when the
+    // verification email is generated so users stay in their language.
+    const locale = req.query.locale === 'en' ? 'en' : 'sq';
+    const accountPath = locale === 'en' ? '/en/my-account' : '/llogaria';
+    return res.redirect(`${frontendUrl}${accountPath}?verified=1`);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });
@@ -474,7 +712,8 @@ router.post('/resend-verification', authenticate, async (req, res) => {
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
-    const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}`;
+    const locale = req.body?.locale === 'en' ? 'en' : 'sq';
+    const verifyLink = `${frontendUrl}/api/auth/verify-email?token=${verifyToken}&locale=${locale}`;
     sendMail(rows[0].email, 'Verifiko emailin tënd — RentCar Tirana', `
       <p>Klikoni linkun për të verifikuar emailin tuaj:</p>
       <p><a href="${verifyLink}" style="color:#2563eb">Verifiko emailin</a></p>

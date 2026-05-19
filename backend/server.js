@@ -75,6 +75,15 @@ const publicPostLimiter = rateLimit({
   message: { error: 'Shumë kërkesa. Provoni pas 15 minutash.' },
 });
 
+// Extra-strict per-IP limiter for /register specifically — prevents bots from
+// mass-creating customer accounts. 5 per hour per IP is generous for humans
+// (typo retries, multiple family members on same Wi-Fi) but blocks scripts.
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 orë
+  max: 5,
+  message: { error: 'Shumë regjistrime nga kjo IP. Provoni pas 1 ore.' },
+});
+
 // ─── ROUTES ───────────────────────────────────────────────────
 // Stricter rate limits on public POST endpoints (booking spam, review flood)
 app.post('/api/customers', publicPostLimiter);
@@ -82,9 +91,16 @@ app.post('/api/reservations', publicPostLimiter);
 app.post('/api/reviews', publicPostLimiter);
 
 // Apply strict auth limiter only to login/register/forgot; lenient to /me, /refresh, /logout
-const strictAuthPaths = ['/login', '/register', '/forgot-password', '/login-2fa', '/reset-password', '/resend-verification'];
+// /register additionally has a per-IP registerLimiter (hourly cap) on top of authLimiter.
+const strictAuthPaths = ['/login', '/register', '/forgot-password', '/login-2fa', '/reset-password', '/resend-verification', '/google'];
 app.use('/api/auth', (req, res, next) => {
   const p = req.path;
+  if (p === '/register' || p.startsWith('/register')) {
+    return registerLimiter(req, res, (err) => {
+      if (err) return next(err);
+      return authLimiter(req, res, next);
+    });
+  }
   if (strictAuthPaths.some(s => p === s || p.startsWith(s))) return authLimiter(req, res, next);
   return sessionLimiter(req, res, next);
 }, require('./routes/auth'));

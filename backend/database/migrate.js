@@ -466,6 +466,17 @@ const ALTERS = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255) NULL`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires DATETIME NULL`,
+  // ── OTP / 2FA brute-force tracking persisted to DB ──
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_failed_attempts TINYINT DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_locked_until DATETIME NULL`,
+  // ── Google OAuth (sign-in with Google) ──
+  // google_id is the 'sub' claim from Google's ID token — stable, unique per Google account.
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) NULL UNIQUE`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url VARCHAR(512) NULL`,
+  // Make password nullable so Google-only accounts don't need a local password.
+  `ALTER TABLE users MODIFY COLUMN password VARCHAR(255) NULL`,
+  // ── Index for slug lookups on cars (slug already UNIQUE → auto-indexed, but explicit) ──
+  'CREATE INDEX idx_car_slug ON cars (slug)',
 ];
 
 async function migrate() {

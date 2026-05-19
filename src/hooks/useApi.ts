@@ -74,12 +74,19 @@ export async function fetchWithRefresh(url: string, options: RequestInit): Promi
 function buildQuery(filters?: Record<string, unknown>): string {
   if (!filters) return "";
   const params = new URLSearchParams();
+  const serialize = (v: unknown): string => {
+    if (v === null || v === undefined) return "";
+    if (Array.isArray(v) || (typeof v === "object" && v !== null)) {
+      try { return JSON.stringify(v); } catch { return String(v); }
+    }
+    return String(v);
+  };
   if (filters.where && typeof filters.where === "object") {
     for (const [k, v] of Object.entries(filters.where as Record<string, unknown>)) {
-      if (v !== undefined && v !== null) params.set(k, String(v));
+      if (v !== undefined && v !== null) params.set(k, serialize(v));
     }
   }
-  if (filters.orderBy) params.set("orderBy", JSON.stringify(filters.orderBy));
+  if (filters.orderBy) params.set("orderBy", serialize(filters.orderBy));
   if (filters.limit) params.set("limit", String(filters.limit));
   return params.toString() ? `?${params.toString()}` : "";
 }
@@ -294,16 +301,41 @@ export function useAuth() {
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
+    // Detect locale from URL so the verification email link redirects back to
+    // the page in the user's language.
+    const locale = typeof window !== 'undefined' && /^\/en(\/|$)/.test(window.location.pathname) ? 'en' : 'sq';
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ name, email, password, phone }),
+      body: JSON.stringify({ name, email, password, phone, locale }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (err.errors) throw new Error(err.errors.map((e: any) => e.msg).join(", "));
       throw new Error(err.error || "Regjistrimi dështoi");
+    }
+    const data = await res.json();
+    localStorage.setItem("rct_user", JSON.stringify(data.user));
+    setUser(data.user);
+    setIsAnonymous(false);
+    return data.user;
+  }, []);
+
+  /**
+   * Sign in with a Google ID token (credential string from Google Identity Services).
+   * Backend verifies the token, creates/links the user, and sets auth cookies.
+   */
+  const googleLogin = useCallback(async (credential: string) => {
+    const res = await fetch(`${API_BASE}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ credential }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Hyrja me Google dështoi");
     }
     const data = await res.json();
     localStorage.setItem("rct_user", JSON.stringify(data.user));
@@ -338,5 +370,5 @@ export function useAuth() {
     return res.json();
   }, []);
 
-  return { user, isPending, isAnonymous, login, loginWith2FA, register, logout, forgotPassword };
+  return { user, isPending, isAnonymous, login, loginWith2FA, register, googleLogin, logout, forgotPassword };
 }

@@ -22,6 +22,63 @@ import { useTranslation } from "react-i18next";
 import { useLocale } from "../hooks/useLocale";
 import LLink from "./LLink";
 
+// Google Identity Services — loaded lazily when the auth dropdown opens.
+const GSI_SRC = "https://accounts.google.com/gsi/client";
+const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || "";
+
+function loadGsiScript(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if ((window as any).google?.accounts?.id) return Promise.resolve();
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${GSI_SRC}"]`);
+  if (existing) {
+    return new Promise((resolve) => existing.addEventListener("load", () => resolve(), { once: true }));
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = GSI_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Google script"));
+    document.head.appendChild(s);
+  });
+}
+
+function GoogleSignInButton({ onCredential, onError }: { onCredential: (c: string) => void; onError: (msg: string) => void }) {
+  const divRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !divRef.current) return;
+    let cancelled = false;
+    loadGsiScript()
+      .then(() => {
+        if (cancelled || !divRef.current) return;
+        const g = (window as any).google;
+        if (!g?.accounts?.id) return;
+        g.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (resp: { credential?: string }) => {
+            if (resp?.credential) onCredential(resp.credential);
+            else onError("Hyrja me Google dështoi");
+          },
+        });
+        g.accounts.id.renderButton(divRef.current, {
+          theme: "outline",
+          size: "large",
+          width: 280,
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+        });
+      })
+      .catch(() => onError("Nuk u ngarkua Google Sign-In"));
+    return () => { cancelled = true; };
+  }, [onCredential, onError]);
+
+  if (!GOOGLE_CLIENT_ID) return null;
+  return <div ref={divRef} className="flex justify-center" />;
+}
+
 function LanguageSwitcher() {
   const { lang, switchLang } = useLocale();
 
@@ -54,7 +111,7 @@ function LanguageSwitcher() {
 }
 
 function UserMenu() {
-  const { user, isPending, isAnonymous, login, loginWith2FA, register, logout, forgotPassword } = useAuth();
+  const { user, isPending, isAnonymous, login, loginWith2FA, register, googleLogin, logout, forgotPassword } = useAuth();
   const { localePath } = useLocale();
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -144,14 +201,33 @@ function UserMenu() {
     };
 
     const handleRegister = () => {
+      const trimmedName = regName.trim();
+      const trimmedEmail = regEmail.trim();
+      if (!trimmedName) { setRegError("Emri është i detyrueshëm"); return; }
+      // Basic RFC-ish email check — UX guard; backend re-validates.
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setRegError("Email i pavlefshëm"); return; }
       if (regPass !== regPass2) { setRegError("Fjalëkalimet nuk përputhen"); return; }
       if (regPass.length < 8) { setRegError("Fjalëkalimi duhet të ketë min 8 karaktere"); return; }
       setRegLoading(true);
       setRegError("");
-      register(regName, regEmail, regPass, regPhone)
+      register(trimmedName, trimmedEmail, regPass, regPhone.trim())
         .then(() => setShowAuth(false))
         .catch((err: Error) => setRegError(err.message || "Regjistrimi dështoi"))
         .finally(() => setRegLoading(false));
+    };
+
+    const handleGoogleCredential = (credential: string) => {
+      setLoginError("");
+      setRegError("");
+      setLoginLoading(true);
+      googleLogin(credential)
+        .then(() => setShowAuth(false))
+        .catch((err: Error) => {
+          const msg = err.message || "Hyrja me Google dështoi";
+          if (authTab === "register") setRegError(msg);
+          else setLoginError(msg);
+        })
+        .finally(() => setLoginLoading(false));
     };
 
     return (
@@ -287,6 +363,16 @@ function UserMenu() {
                   >
                     {loginLoading ? "Duke hyrë..." : "Hyr"}
                   </button>
+                  {GOOGLE_CLIENT_ID && (
+                    <>
+                      <div className="flex items-center gap-2 my-3">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wide">ose</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                      <GoogleSignInButton onCredential={handleGoogleCredential} onError={setLoginError} />
+                    </>
+                  )}
                   <p className="mt-3 text-xs text-center text-neutral-400">
                     Nuk ke llogari?{" "}
                     <button onClick={() => setAuthTab("register")} className="text-primary underline cursor-pointer bg-transparent border-0 text-xs">
@@ -341,6 +427,16 @@ function UserMenu() {
                   >
                     {regLoading ? "Duke regjistruar..." : "Krijo llogarinë"}
                   </button>
+                  {GOOGLE_CLIENT_ID && (
+                    <>
+                      <div className="flex items-center gap-2 my-3">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wide">ose</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                      <GoogleSignInButton onCredential={handleGoogleCredential} onError={setRegError} />
+                    </>
+                  )}
                   <p className="mt-3 text-xs text-center text-neutral-400">
                     Ke llogari?{" "}
                     <button onClick={() => setAuthTab("login")} className="text-primary underline cursor-pointer bg-transparent border-0 text-xs">

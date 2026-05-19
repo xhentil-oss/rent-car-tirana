@@ -111,6 +111,8 @@ function AdminLoginForm({
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                 required
                 autoFocus
+                aria-label="Kodi 6-shifror i autentifikimit dy-faktorësh"
+                autoComplete="one-time-code"
                 className="w-full px-4 py-3 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors tracking-widest text-center font-mono"
               />
               <button

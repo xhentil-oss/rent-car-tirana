@@ -36,9 +36,22 @@ export interface ContractData {
   total: number;
   signatureDataUrl: string;
   contractDate: string;
+  /** Company info — pulled from /api/settings/public to avoid hardcoded values. */
+  companyName?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyAddress?: string;
 }
 
 export function downloadContractPdf(data: ContractData): void {
+  const companyName    = (data.companyName    || "RentCar Albania").trim();
+  const companyPhone   = (data.companyPhone   || "").trim();
+  const companyEmail   = (data.companyEmail   || "info@rentcartiranaairport.com").trim();
+  const companyAddress = (data.companyAddress || "Tiran\u00eb, Shqip\u00ebri").trim();
+  const contactLine = [
+    companyPhone ? `Tel: ${companyPhone}` : null,
+    companyEmail,
+  ].filter(Boolean).join(" \u00b7 ");
   const extrasList = data.extras.length > 0
     ? data.extras.map(e => {
         const labels: Record<string, string> = {
@@ -131,9 +144,9 @@ export function downloadContractPdf(data: ContractData): void {
   <!-- HEADER -->
   <div class="header">
     <div class="logo-block">
-      <div class="company-name">🚗 RentCar Albania</div>
-      <div class="company-subtitle">Shërbim qiraje automjetesh · Tiranë, Shqipëri</div>
-      <div class="company-subtitle" style="margin-top:4px;">Tel: +355 69 000 0000 · info@rentcartiranaairport.com</div>
+      <div class="company-name">\u{1F697} ${escapeHtml(companyName)}</div>
+      <div class="company-subtitle">Shërbim qiraje automjetesh · ${escapeHtml(companyAddress)}</div>
+      <div class="company-subtitle" style="margin-top:4px;">${escapeHtml(contactLine)}</div>
     </div>
     <div class="contract-meta">
       <div class="contract-title">KONTRATË QIRAJE</div>
@@ -217,9 +230,9 @@ export function downloadContractPdf(data: ContractData): void {
       <div class="sig-box">
         <div class="sig-label">Nënshkrimi i kompanisë</div>
         <div style="height:72px;display:flex;align-items:flex-end;">
-          <div style="font-size:11px;color:#9ca3af;">Autorizuar nga RentCar Albania</div>
+          <div style="font-size:11px;color:#9ca3af;">Autorizuar nga ${escapeHtml(companyName)}</div>
         </div>
-        <div class="sig-name">RentCar Albania</div>
+        <div class="sig-name">${escapeHtml(companyName)}</div>
         <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Datë: ${data.contractDate}</div>
       </div>
     </div>
@@ -227,7 +240,7 @@ export function downloadContractPdf(data: ContractData): void {
 
   <!-- FOOTER -->
   <div class="doc-footer">
-    Ky dokument është gjeneruar automatikisht nga sistemi i rezervimeve të RentCar Albania.<br/>
+    Ky dokument është gjeneruar automatikisht nga sistemi i rezervimeve të ${escapeHtml(companyName)}.<br/>
     Kontratë e vlefshme ligjërisht sipas legjislacionit të Republikës së Shqipërisë · Gjykata kompetente: Tiranë
   </div>
 

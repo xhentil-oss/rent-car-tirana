@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useLocale } from "../hooks/useLocale";
 import { useTranslation } from "react-i18next";
@@ -33,6 +33,8 @@ import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
+import { useLocations } from "../hooks/useLocations";
+import { formatLocationOption } from "../lib/locations";
 
 interface BookingForm {
   pickup: string;
@@ -133,7 +135,7 @@ function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
 }
 
 export default function BookingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   useSEO({
     title: "Rezervo Makinën — Konfirmim i Menjëhershëm",
     description: "Rezervo makinën me qira online tani. Plotëso formularin, zglidh shteset e sigurimin, nënshkruaj kontratën dixhitale. Konfirmim i menjëhershëm me email.",
@@ -199,6 +201,31 @@ export default function BookingPage() {
   const [contractDownloaded, setContractDownloaded] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
+  // Public company info — used to populate the printable contract footer/header
+  // instead of hardcoded values (kept in sync with admin Settings panel).
+  const [companyInfo, setCompanyInfo] = useState<{
+    companyName?: string;
+    companyPhone?: string;
+    companyEmail?: string;
+    companyAddress?: string;
+  }>({});
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/settings/public")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        setCompanyInfo({
+          companyName: j.company_name || undefined,
+          companyPhone: j.company_phone || undefined,
+          companyEmail: j.company_email || undefined,
+          companyAddress: j.company_address || undefined,
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   // Load pricing rules and monthly rates from DB
   const { data: pricingRules } = useQuery("PricingRule", { where: { isActive: true } });
   const { data: monthlyRatesRaw } = useQuery("MonthlyRatePublic", { where: { year: new Date().getFullYear() } });
@@ -234,17 +261,10 @@ export default function BookingPage() {
     return getDominantSeason(start, end);
   }, [form.startDate, form.endDate]);
 
-  const LOCATION_FEES: Record<string, number> = {
-    "Aeroporti Nënë Tereza": 10,
-    "Aeroporti Ndërkombëtar": 10,
-    "Durrës": 15,
-    "Vlorë": 20,
-    "Sarandë": 25,
-    "Shkodër": 20,
-  };
-  const pickupFee = LOCATION_FEES[form.pickup] ?? 0;
-  const dropoffFee = form.pickup === form.dropoff ? 0 : (LOCATION_FEES[form.dropoff] ?? 0);
-  const locationFeeTotal = pickupFee + dropoffFee;
+  const { options: locationOptions, computeFee: computeLocFee } = useLocations(
+    (i18n?.language === "en" ? "en" : "sq") as "sq" | "en",
+  );
+  const { pickupFee, dropoffFee, total: locationFeeTotal } = computeLocFee(form.pickup, form.dropoff);
 
   const extrasTotal = form.extras.reduce((sum, id) => {
     const opt = extraOptions.find((e) => e.id === id);
@@ -535,12 +555,11 @@ export default function BookingPage() {
                       className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                     >
                       <option value="">{t("booking.selectPlace")}</option>
-                      <option value="Tiranë Qendër">Tiranë Qendër</option>
-                      <option value="Aeroporti Nënë Tereza">✈ Aeroporti Nënë Tereza (+€10)</option>
-                      <option value="Durrës">Durrës (+€15)</option>
-                      <option value="Vlorë">Vlorë (+€20)</option>
-                      <option value="Sarandë">Sarandë (+€25)</option>
-                      <option value="Shkodër">Shkodër (+€20)</option>
+                      {locationOptions.map((loc) => (
+                        <option key={loc.value} value={loc.value}>
+                          {formatLocationOption(loc)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   {pickupFee > 0 && (
@@ -576,12 +595,11 @@ export default function BookingPage() {
                       className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                     >
                       <option value="">{t("booking.selectPlace")}</option>
-                      <option value="Tiranë Qendër">Tiranë Qendër</option>
-                      <option value="Aeroporti Nënë Tereza">✈ Aeroporti Nënë Tereza (+€10)</option>
-                      <option value="Durrës">Durrës (+€15)</option>
-                      <option value="Vlorë">Vlorë (+€20)</option>
-                      <option value="Sarandë">Sarandë (+€25)</option>
-                      <option value="Shkodër">Shkodër (+€20)</option>
+                      {locationOptions.map((loc) => (
+                        <option key={loc.value} value={loc.value}>
+                          {formatLocationOption(loc)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   {dropoffFee > 0 && (
@@ -1078,6 +1096,10 @@ export default function BookingPage() {
                           total,
                           signatureDataUrl: signatureData,
                           contractDate: today,
+                          companyName: companyInfo.companyName,
+                          companyPhone: companyInfo.companyPhone,
+                          companyEmail: companyInfo.companyEmail,
+                          companyAddress: companyInfo.companyAddress,
                         });
                         setContractDownloaded(true);
                       }}

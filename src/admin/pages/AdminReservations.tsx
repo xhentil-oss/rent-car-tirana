@@ -7,6 +7,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import StatusBadge from "../../components/StatusBadge";
 import { sendPickupReminder, getTomorrowReservations } from "../../lib/emailService";
 import { Bell, EnvelopeSimple } from "@phosphor-icons/react";
+import { useLocations } from "../../hooks/useLocations";
 
 function useActivityLog() {
   const { create } = useMutation("ActivityLog");
@@ -41,13 +42,17 @@ const initialFormState: NewReservationForm = {
   endDate: "", endTime: "09:00", notes: "", source: "Telefon",
 };
 
-const locations = ["Tiranë Qendër","Aeroporti Nënë Tereza","Durrës","Vlorë","Sarandë","Shkodër"];
+// NOTE: Pickup / drop-off list now comes from the shared `useLocations()` hook
+// (which reads /api/settings/public — same source as BookingPage & CarDetailPage).
+// The previous hardcoded array led to drift between admin and public dropdowns.
 const timeOptions = Array.from({ length: 24 }, (_, i) => {
   const hour = i.toString().padStart(2, "0");
   return [`${hour}:00`, `${hour}:30`];
 }).flat();
 
 export default function AdminReservations() {
+  const { options: locationOptions } = useLocations("sq");
+  const locations = locationOptions.map((o) => o.value);
   const { data: reservations, isPending: resLoading, refetch: refetchReservations } = useQuery("Reservation", { orderBy: { createdAt: "desc" } });
   const { data: customers, refetch: refetchCustomers } = useQuery("Customer");
   const { data: cars } = useQuery("Car");

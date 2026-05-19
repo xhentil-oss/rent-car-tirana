@@ -47,6 +47,8 @@ import StatusBadge from "../components/StatusBadge";
 import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
 import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
+import { useLocations } from "../hooks/useLocations";
+import { formatLocationOption } from "../lib/locations";
 
 // Inline monthly rate resolution (avoids shared-module TDZ in Rollup bundle)
 interface MonthlyRate { id: string; year: number | null; month: number; appliesTo: string; appliesToValue: string | null; pricePerDay: number; }
@@ -113,7 +115,7 @@ function getCarImages(baseImage: string): string[] {
 }
 
 export default function CarDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { localePath } = useLocale();
@@ -129,8 +131,18 @@ export default function CarDetailPage() {
   const [tab, setTab] = useState<Tab>("specs");
   const [heroVisible, setHeroVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(false);
-  const [pickupLocation, setPickupLocation] = useState("Tiranë - Qendër");
-  const [dropoffLocation, setDropoffLocation] = useState("Tiranë - Qendër");
+  // Unified locations from /api/settings/public (single source of truth).
+  const { options: locationOptions, defaultLocation, computeFee } = useLocations(
+    (i18n?.language === "en" ? "en" : "sq") as "sq" | "en",
+  );
+  const [pickupLocation, setPickupLocation] = useState(defaultLocation);
+  const [dropoffLocation, setDropoffLocation] = useState(defaultLocation);
+  // Re-sync when the async fetch resolves and the default changes.
+  useEffect(() => {
+    if (!pickupLocation && defaultLocation) setPickupLocation(defaultLocation);
+    if (!dropoffLocation && defaultLocation) setDropoffLocation(defaultLocation);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultLocation]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryZoom, setGalleryZoom] = useState(1);
@@ -153,8 +165,8 @@ export default function CarDetailPage() {
     setCardVisible(false);
     setStartDate("");
     setEndDate("");
-    setPickupLocation("Tiranë - Qendër");
-    setDropoffLocation("Tiranë - Qendër");
+    setPickupLocation(defaultLocation);
+    setDropoffLocation(defaultLocation);
     setShowFloatingBtn(false);
     const t1 = setTimeout(() => setHeroVisible(true), 80);
     const t2 = setTimeout(() => setCardVisible(true), 280);
@@ -439,17 +451,7 @@ export default function CarDetailPage() {
     );
   }
 
-  const LOCATION_FEES: Record<string, number> = {
-    "Aeroporti Nënë Tereza": 10,
-    "Aeroporti Ndërkombëtar": 10,
-    "Durrës": 15,
-    "Vlorë": 20,
-    "Sarandë": 25,
-    "Shkodër": 20,
-  };
-  const pickupFee = LOCATION_FEES[pickupLocation] ?? 0;
-  const dropoffFee = pickupLocation === dropoffLocation ? 0 : (LOCATION_FEES[dropoffLocation] ?? 0);
-  const locationFee = pickupFee + dropoffFee;
+  const { pickupFee, dropoffFee, total: locationFee } = computeFee(pickupLocation, dropoffLocation);
 
   const total = (smartPricing ? smartPricing.finalPrice : days * effectivePricePerDay) + (days > 0 ? locationFee : 0);
   const baseTotal = smartPricing ? smartPricing.basePrice : days * effectivePricePerDay;
@@ -1171,9 +1173,9 @@ export default function CarDetailPage() {
                           onChange={(e) => setPickupLocation(e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 appearance-none cursor-pointer pr-8"
                         >
-                          {(t("carDetail.pickupLocations", { returnObjects: true }) as { value: string; label: string; icon: string }[]).map((loc) => (
+                          {locationOptions.map((loc) => (
                             <option key={loc.value} value={loc.value}>
-                              {loc.icon} {loc.label}{LOCATION_FEES[loc.value] ? ` (+€${LOCATION_FEES[loc.value]})` : ""}
+                              {formatLocationOption(loc)}
                             </option>
                           ))}
                         </select>
@@ -1199,9 +1201,9 @@ export default function CarDetailPage() {
                           onChange={(e) => setDropoffLocation(e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 appearance-none cursor-pointer pr-8"
                         >
-                          {(t("carDetail.pickupLocations", { returnObjects: true }) as { value: string; label: string; icon: string }[]).map((loc) => (
+                          {locationOptions.map((loc) => (
                             <option key={loc.value} value={loc.value}>
-                              {loc.icon} {loc.label}{LOCATION_FEES[loc.value] ? ` (+€${LOCATION_FEES[loc.value]})` : ""}
+                              {formatLocationOption(loc)}
                             </option>
                           ))}
                         </select>

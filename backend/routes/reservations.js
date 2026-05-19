@@ -5,22 +5,17 @@ const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../midd
 const { safePagination } = require('../lib/helpers');
 const { sendMail } = require('../lib/mailer');
 const tpl = require('../lib/emailTemplates');
+const {
+  loadLocations,
+  getLocationFee,
+  getAllowedLocations,
+  DEFAULT_LOCATION_FEES,
+  DEFAULT_FREE_LOCATIONS,
+} = require('../lib/locations');
 
-// Location fees (pickup or dropoff at these locations incur a surcharge)
-const LOCATION_FEES = {
-  'Aeroporti Nënë Tereza': 10,
-  'Durrës': 15,
-  'Vlorë': 20,
-  'Sarandë': 25,
-  'Shkodër': 20,
-};
-
-function getLocationFee(pickup, dropoff) {
-  const pFee = LOCATION_FEES[pickup] || 0;
-  const dFee = LOCATION_FEES[dropoff] || 0;
-  // If same location for pickup and dropoff, charge once; otherwise charge both
-  return pickup === dropoff ? pFee : pFee + dFee;
-}
+// Location fees & free locations are loaded from the `settings` table
+// (keys `location_fees` + `free_locations`) so admins can manage them from
+// the UI without redeploying. See backend/lib/locations.js for details.
 
 const fmt = (r) => ({
   id: r.id, carId: r.car_id, customerId: r.customer_id,
@@ -47,21 +42,23 @@ router.get('/availability', async (req, res) => {
 router.get('/', authenticate, async (req, res) => {
   try {
     const { status, carId, customerId, limit = 200, offset = 0 } = req.query;
-    let sql = 'SELECT * FROM reservations WHERE 1=1';
+    // Single-query approach: JOIN customers so non-admins can be scoped via c.user_id
+    // without an extra round-trip (fixes N+1).
+    let sql = 'SELECT r.* FROM reservations r';
     const params = [];
 
-    // Security: only admin roles see all reservations; everyone else sees only their own
     if (!ADMIN_ROLES.includes(req.user.role)) {
-      const [custRows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [req.user.id]);
-      if (!custRows.length) return res.json([]);
-      sql += ' AND customer_id = ?'; params.push(custRows[0].id);
-    } else if (customerId) {
-      sql += ' AND customer_id = ?'; params.push(customerId);
+      sql += ' INNER JOIN customers c ON c.id = r.customer_id AND c.user_id = ?';
+      params.push(req.user.id);
+      sql += ' WHERE 1=1';
+    } else {
+      sql += ' WHERE 1=1';
+      if (customerId) { sql += ' AND r.customer_id = ?'; params.push(customerId); }
     }
 
-    if (status)     { sql += ' AND status = ?';      params.push(status); }
-    if (carId)      { sql += ' AND car_id = ?';      params.push(carId); }
-    sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    if (status)     { sql += ' AND r.status = ?';      params.push(status); }
+    if (carId)      { sql += ' AND r.car_id = ?';      params.push(carId); }
+    sql += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
     params.push(...safePagination(limit, offset, 200));
     const [rows] = await pool.query(sql, params);
     res.json(rows.map(fmt));
@@ -85,7 +82,8 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, pickupLocation, dropoffLocation, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail } = req.body;
+    const { carId, customerId, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail } = req.body;
+    let { pickupLocation, dropoffLocation } = req.body;
     // Honeypot bot protection — real users never fill hidden 'website' field
     if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate) {
@@ -99,11 +97,23 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ error: 'Klient i pavlefshëm.' });
     }
 
-    // Validate locations against known list (prevent arbitrary values)
-    const ALLOWED_LOCATIONS = Object.keys(LOCATION_FEES).concat(['Tiranë', 'Tirana', 'Tirane', 'Tiranë Qendër']);
-    if (!ALLOWED_LOCATIONS.includes(pickupLocation) || !ALLOWED_LOCATIONS.includes(dropoffLocation)) {
+    // Validate locations against admin-managed list (prevent arbitrary values).
+    // Tolerant comparison: trim + Unicode NFC so admin-entered diacritics
+    // ("Tiranë Qendër" with NBSP, or NFD-decomposed ë) still match.
+    const normLoc = (s) => String(s || '').normalize('NFC').replace(/\s+/g, ' ').trim();
+    const allowedRaw = await getAllowedLocations();
+    const ALLOWED_LOCATIONS = allowedRaw.map(normLoc);
+    const pickupNorm = normLoc(pickupLocation);
+    const dropoffNorm = normLoc(dropoffLocation);
+    if (!ALLOWED_LOCATIONS.includes(pickupNorm) || !ALLOWED_LOCATIONS.includes(dropoffNorm)) {
+      console.warn('[reservations] Invalid location', {
+        pickupLocation, dropoffLocation, pickupNorm, dropoffNorm, ALLOWED_LOCATIONS,
+      });
       return res.status(400).json({ error: 'Lokacion i pavlefshëm.' });
     }
+    // Use canonical spelling going forward (consistent storage + fee lookup).
+    pickupLocation = allowedRaw[ALLOWED_LOCATIONS.indexOf(pickupNorm)];
+    dropoffLocation = allowedRaw[ALLOWED_LOCATIONS.indexOf(dropoffNorm)];
 
     // Validate free-text lengths
     if (notes && String(notes).length > 1000) return res.status(400).json({ error: 'Shënime shumë të gjata.' });
@@ -152,7 +162,7 @@ router.post('/', async (req, res) => {
 
       const msPerDay = 86400000;
       const days = Math.max(1, Math.ceil((new Date(ed) - new Date(sd)) / msPerDay));
-      const locationFee = getLocationFee(pickupLocation, dropoffLocation);
+      const locationFee = await getLocationFee(pickupLocation, dropoffLocation);
       const totalPrice = +(pricePerDay * days + locationFee).toFixed(2);
 
       // Count overlapping reservations vs car quantity
@@ -339,7 +349,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
         const days = Math.max(1, Math.ceil((new Date(newEd) - new Date(newSd)) / msPerDay));
         const newPickup = fields.pickup_location || current.pickup_location;
         const newDropoff = fields.dropoff_location || current.dropoff_location;
-        const newLocationFee = getLocationFee(newPickup, newDropoff);
+        const newLocationFee = await getLocationFee(newPickup, newDropoff);
         fields.location_fee = newLocationFee;
         fields.total_price = +(effectivePrice * days + newLocationFee).toFixed(2);
       }
@@ -372,5 +382,14 @@ router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req,
     res.json({ message: 'Rezervimi u fshi.' });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
+
+// Expose loader hooks for other modules (e.g. settings public endpoint).
+// Properties on a router are ignored by Express but available via require().
+router.loadLocations = loadLocations;
+// Deprecated direct references — kept for backward compatibility with any
+// caller that imported them previously. Reflect defaults only; use
+// `loadLocations()` for live values.
+router.LOCATION_FEES = DEFAULT_LOCATION_FEES;
+router.FREE_LOCATIONS = DEFAULT_FREE_LOCATIONS;
 
 module.exports = router;

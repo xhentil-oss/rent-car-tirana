@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash } from "@phosphor-icons/react";
 
 const API_BASE = "/api";
 
@@ -68,7 +68,6 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
       { key: "booking_min_days", label: "Ditë minimale", type: "number", placeholder: "1" },
       { key: "booking_max_days", label: "Ditë maksimale", type: "number", placeholder: "90" },
       { key: "booking_advance_hours", label: "Orë paraprake minimale", type: "number", placeholder: "24" },
-      { key: "booking_pickup_locations", label: "Vendndodhjet e tërheqjes (me presje)", type: "textarea", placeholder: "Aeroport Nënë Tereza, Tiranë Qendër, Durrës..." },
       { key: "booking_cancellation_hours", label: "Orë pa tarifë anulimi", type: "number", placeholder: "48" },
       { key: "booking_deposit_percent", label: "Depozitë % ", type: "number", placeholder: "0" },
     ],
@@ -105,6 +104,15 @@ export default function AdminSettings() {
   const [mediaTab, setMediaTab] = useState<"gallery" | "upload" | "url">("gallery");
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
+  // ── Locations editor state ──
+  // Each row represents one pickup/drop-off location. `fee = 0` means "free"
+  // (no surcharge). The full list is persisted as two JSON settings:
+  //   - `location_fees`    → { "<name>": <fee>, ... }  (ALL locations live here)
+  //   - `free_locations`   → [ "<name>", ... ]         (derived: rows with fee = 0)
+  type LocationRow = { name: string; fee: number };
+  const [locationRows, setLocationRows] = useState<LocationRow[]>([]);
+  const [locationsDirty, setLocationsDirty] = useState(false);
+
   useEffect(() => {
     fetch(`${API_BASE}/settings`, { headers: getHeaders() })
       .then((r) => r.json())
@@ -127,6 +135,30 @@ export default function AdminSettings() {
       .then((data) => {
         const list = Array.isArray(data) ? data : data.cars || [];
         setCars(list.map((c: any) => ({ id: c.id, brand: c.brand, model: c.model, image: c.image })));
+      })
+      .catch(() => {});
+
+    // Fetch the merged location list (paid + free) from the public endpoint.
+    // /api/settings/public returns `location_fees` (object) and `free_locations`
+    // (array). We merge them into a single editable list of rows.
+    fetch(`${API_BASE}/settings/public`)
+      .then((r) => r.json())
+      .then((j) => {
+        const fees: Record<string, number> = (j && j.location_fees) || {};
+        const free: string[] = (j && Array.isArray(j.free_locations) ? j.free_locations : []) as string[];
+        const seen = new Set<string>();
+        const rows: LocationRow[] = [];
+        for (const name of free) {
+          if (!name || seen.has(name)) continue;
+          seen.add(name);
+          rows.push({ name, fee: 0 });
+        }
+        for (const [name, fee] of Object.entries(fees)) {
+          if (!name || seen.has(name)) continue;
+          seen.add(name);
+          rows.push({ name, fee: Number(fee) || 0 });
+        }
+        setLocationRows(rows);
       })
       .catch(() => {});
   }, []);
@@ -180,16 +212,44 @@ export default function AdminSettings() {
     setError("");
     setSaved(false);
     try {
+      // Build payload from regular text settings plus the structured locations.
+      const payload: Record<string, unknown> = { ...settings };
+      // Validate & serialize locations.
+      const cleaned: { name: string; fee: number }[] = [];
+      const seen = new Set<string>();
+      for (const row of locationRows) {
+        const name = (row.name || "").trim();
+        if (!name) continue;
+        if (seen.has(name)) {
+          throw new Error(`Lokacion i përsëritur: “${name}”.`);
+        }
+        seen.add(name);
+        const fee = Number.isFinite(row.fee) && row.fee >= 0 ? Math.round(row.fee * 100) / 100 : 0;
+        cleaned.push({ name, fee });
+      }
+      if (cleaned.length === 0) {
+        throw new Error("Duhet të keni të paktën një lokacion.");
+      }
+      const fees: Record<string, number> = {};
+      const free: string[] = [];
+      for (const { name, fee } of cleaned) {
+        if (fee > 0) fees[name] = fee;
+        else free.push(name);
+      }
+      payload.location_fees = fees;
+      payload.free_locations = free;
+
       const res = await fetch(`${API_BASE}/settings`, {
         method: "PUT",
         headers: getHeaders(),
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings: payload }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Gabim gjatë ruajtjes.");
       }
       setSaved(true);
+      setLocationsDirty(false);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errors.generic"));
@@ -273,6 +333,96 @@ export default function AdminSettings() {
             </h2>
             <p className="text-sm text-neutral-500 mt-1">{activeSection.description}</p>
           </div>
+
+          {activeSection.id === "booking" && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                    <MapPin size={16} weight="duotone" className="text-primary" />
+                    Lokacionet e tërheqjes / kthimit
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Vendos çmimet e tarifës për çdo lokacion. Tarifa <strong>0</strong> do të thotë falas (Tiranë Qendër, etj.). Lista shfaqet automatikisht në faqen e rezervimit dhe detajeve të makinës.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocationRows((prev) => [...prev, { name: "", fee: 0 }]);
+                    setLocationsDirty(true);
+                    setSaved(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors cursor-pointer border-0"
+                >
+                  <Plus size={14} weight="bold" /> Shto
+                </button>
+              </div>
+
+              <div className="space-y-2 mt-3">
+                {locationRows.length === 0 && (
+                  <p className="text-xs italic text-neutral-400 py-3">
+                    Asnjë lokacion. Klikoni <em>Shto</em> për të shtuar të parin.
+                  </p>
+                )}
+                {locationRows.map((row, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setLocationRows((prev) => prev.map((r, i) => i === idx ? { ...r, name: v } : r));
+                          setLocationsDirty(true);
+                          setSaved(false);
+                        }}
+                        placeholder="p.sh. Tiranë Qendër, Aeroporti Nënë Tereza, Durrës..."
+                        className="w-full px-3 py-2 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
+                    <div className="w-32 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">€</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={row.fee}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setLocationRows((prev) => prev.map((r, i) => i === idx ? { ...r, fee: Number.isFinite(v) ? v : 0 } : r));
+                          setLocationsDirty(true);
+                          setSaved(false);
+                        }}
+                        className="w-full pl-7 pr-2 py-2 text-sm border border-border rounded-md outline-none focus:border-primary transition-colors text-right"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocationRows((prev) => prev.filter((_, i) => i !== idx));
+                        setLocationsDirty(true);
+                        setSaved(false);
+                      }}
+                      title="Fshi"
+                      className="p-2 rounded-md text-neutral-400 hover:bg-error/10 hover:text-error transition-colors cursor-pointer border-0 bg-transparent"
+                    >
+                      <Trash size={16} weight="bold" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {locationsDirty && (
+                <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+                  <WarningCircle size={12} weight="fill" />
+                  Ndryshimet ende nuk janë ruajtur — klikoni <strong>Ruaj</strong>.
+                </p>
+              )}
+
+              <div className="border-t border-border my-6" />
+            </div>
+          )}
 
           {activeSection.id === "homepage" ? (
             <div>
