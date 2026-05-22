@@ -63,8 +63,10 @@ function resolveMonthlyRate(rates: MonthlyRate[], carId: string, carCategory: st
 function calcMonthlyTotal(rates: MonthlyRate[], carId: string, carCategory: string, basePPD: number, startDate: Date, endDate: Date): number {
   const cur = new Date(startDate); cur.setHours(0,0,0,0);
   const end = new Date(endDate); end.setHours(0,0,0,0);
+  const msPerDay = 86400000;
+  const days = Math.max(1, Math.ceil((end.getTime() - cur.getTime()) / msPerDay));
   let total = 0;
-  while (cur < end) {
+  for (let i = 0; i < days; i += 1) {
     const r = resolveMonthlyRate(rates, carId, carCategory, cur.getMonth() + 1, cur.getFullYear());
     total += r !== null ? r : basePPD;
     cur.setDate(cur.getDate() + 1);
@@ -112,6 +114,20 @@ function getCarImages(baseImage: string): string[] {
     ];
   }
   return [baseImage, baseImage, baseImage];
+}
+
+function parseLocalDate(value: string): Date | null {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
 }
 
 export default function CarDetailPage() {
@@ -218,21 +234,28 @@ export default function CarDetailPage() {
     return () => { window.removeEventListener("keydown", handleKey); document.body.style.overflow = prevOverflow; };
   }, [galleryOpen, carImages.length]);
 
+  const startDateObj = useMemo(() => (startDate ? parseLocalDate(startDate) : null), [startDate]);
+  const endDateObj = useMemo(() => (endDate ? parseLocalDate(endDate) : null), [endDate]);
+  const invalidDateRange = useMemo(
+    () => Boolean(startDateObj && endDateObj && startDateObj > endDateObj),
+    [startDateObj, endDateObj]
+  );
+
   // Compute prices early so useSEO can use them
   const seasonalPricePerDay = useMemo(
-    () => car ? getSeasonalPricePerDay(car.pricePerDay, startDate ? new Date(startDate) : undefined) : 0,
-    [car?.pricePerDay, startDate]
+    () => car ? getSeasonalPricePerDay(car.pricePerDay, startDateObj ?? undefined) : 0,
+    [car?.pricePerDay, car, startDateObj]
   );
   const effectivePricePerDay = useMemo(() => {
     if (!car) return seasonalPricePerDay;
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
     if (rates.length > 0) {
-      const ref = startDate ? new Date(startDate) : new Date();
+      const ref = startDateObj ?? new Date();
       const monthly = resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear());
       if (monthly !== null) return monthly;
     }
     return seasonalPricePerDay;
-  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay, startDate]);
+  }, [car?.id, car?.category, car?.pricePerDay, monthlyRatesPublic, seasonalPricePerDay, startDateObj]);
 
   // Dynamic SEO per car — called unconditionally (hooks rule)
   useSEO(
@@ -265,25 +288,25 @@ export default function CarDetailPage() {
     .slice(0, 3), [allCars, car?.category, car?.id]);
 
   const days = useMemo(() => {
-    if (!startDate || !endDate) return 0;
-    const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }, [startDate, endDate]);
+    if (!startDateObj || !endDateObj || invalidDateRange) return 0;
+    const diff = endDateObj.getTime() - startDateObj.getTime();
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [startDateObj, endDateObj, invalidDateRange]);
 
   // Live availability check
   const dateConflict = useMemo(() => {
-    if (!startDate || !endDate || !car) return false;
-    const reqStart = new Date(startDate).getTime();
-    const reqEnd = new Date(endDate).getTime();
+    if (!startDateObj || !endDateObj || !car || invalidDateRange) return false;
+    const reqStart = startDateObj.getTime();
+    const reqEnd = endDateObj.getTime();
     const activeReservations = (allReservations ?? []).filter(
       (r) => r.carId === car.id && r.status !== "Cancelled" && r.status !== "Completed"
     );
     return activeReservations.some((r) => {
-      const rStart = new Date(r.startDate).getTime();
-      const rEnd = new Date(r.endDate).getTime();
-      return reqStart < rEnd && reqEnd > rStart;
+      const rStart = parseLocalDate(r.startDate)?.getTime();
+      const rEnd = parseLocalDate(r.endDate)?.getTime();
+      return rStart !== null && rEnd !== null && reqStart < rEnd && reqEnd > rStart;
     });
-  }, [startDate, endDate, allReservations, car?.id]);
+  }, [startDateObj, endDateObj, allReservations, car?.id, invalidDateRange]);
 
   // Reviews — Google Places API (priority) → DB approved → i18n static fallback
   const googleReviewsList = useMemo(() => {
@@ -351,40 +374,38 @@ export default function CarDetailPage() {
 
   // Is a monthly rate active for the selected start month?
   const monthlyRateActive = useMemo(() => {
-    if (!car || !startDate) return false;
+    if (!car || !startDateObj) return false;
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
     if (rates.length === 0) return false;
-    const ref = new Date(startDate);
+    const ref = startDateObj;
     return resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear()) !== null;
-  }, [car?.id, car?.category, monthlyRatesPublic, startDate]);
+  }, [car?.id, car?.category, monthlyRatesPublic, startDateObj]);
 
   // Smart pricing: monthly rates (priority) or seasonal + discount rules only
   const smartPricing = useMemo<PricingResult | null>(() => {
-    if (!car || !startDate || !endDate || days === 0) return null;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    if (!car || !startDateObj || !endDateObj || invalidDateRange) return null;
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
     const priceBase = rates.length > 0
-      ? calcMonthlyTotal(rates, car.id, car.category, car.pricePerDay, start, end)
-      : calculateSeasonalTotal(car.pricePerDay, start, end).total;
+      ? calcMonthlyTotal(rates, car.id, car.category, car.pricePerDay, startDateObj, endDateObj)
+      : calculateSeasonalTotal(car.pricePerDay, startDateObj, endDateObj).total;
     // Only discount rules (no surcharges) on top of base
     const rules = ((pricingRulesRaw ?? []) as PricingRule[])
       .filter(r => !r.direction || r.direction === "discount");
     return applyPricingRules(rules, priceBase, {
       carId: car.id,
       carCategory: car.category,
-      startDate: start,
-      endDate: end,
+      startDate: startDateObj,
+      endDate: endDateObj,
       days,
       bookingDate: new Date(),
     });
-  }, [car?.id, car?.category, car?.pricePerDay, startDate, endDate, days, pricingRulesRaw, monthlyRatesPublic]);
+  }, [car?.id, car?.category, car?.pricePerDay, startDateObj, endDateObj, days, pricingRulesRaw, monthlyRatesPublic, invalidDateRange]);
 
   // Seasonal breakdown for display
   const seasonalBreakdown = useMemo(() => {
-    if (!car || !startDate || !endDate) return null;
-    return calculateSeasonalTotal(car.pricePerDay, new Date(startDate), new Date(endDate));
-  }, [car?.pricePerDay, startDate, endDate]);
+    if (!car || !startDateObj || !endDateObj || invalidDateRange) return null;
+    return calculateSeasonalTotal(car.pricePerDay, startDateObj, endDateObj);
+  }, [car?.pricePerDay, startDateObj, endDateObj, invalidDateRange]);
 
   // Social share handler
   const handleShare = useCallback(async () => {
@@ -458,10 +479,12 @@ export default function CarDetailPage() {
   const today = new Date().toISOString().split("T")[0];
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
-  const available = !carIsUnavailable && !dateConflict;
+  const available = !carIsUnavailable && !dateConflict && !invalidDateRange && Boolean(startDate && endDate);
 
   const availabilityLabel = carIsUnavailable
     ? (car.status === "I rezervuar" ? t("carDetail.availability.booked") : t("carDetail.availability.maintenance"))
+    : invalidDateRange
+    ? "Zgjidh një interval datash të vlefshëm."
     : dateConflict
     ? t("carDetail.availability.dateTaken")
     : t("carDetail.availability.available");

@@ -82,14 +82,15 @@ export function calculateSeasonalTotal(
 ): { total: number; breakdown: { season: Season; days: number; pricePerDay: number; subtotal: number }[] } {
   const breakdown: { season: Season; days: number; pricePerDay: number; subtotal: number }[] = [];
 
-  // Build per-day array
   const current = new Date(startDate);
   current.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
   end.setHours(0, 0, 0, 0);
 
-  // Group consecutive days by season
-  while (current < end) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const days = Math.max(1, Math.ceil((end.getTime() - current.getTime()) / msPerDay));
+
+  for (let i = 0; i < days; i += 1) {
     const season = getSeasonForDate(current);
     const pricePerDay = Math.round(basePrice * season.multiplier * 100) / 100;
     const existing = breakdown.find((b) => b.season.id === season.id);

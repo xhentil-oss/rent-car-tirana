@@ -65,6 +65,25 @@ const insuranceOptions = [
   { id: "Premium", label: "Sigurim premium", price: 25 },
 ];
 
+function parseLocalDate(value: string): Date | null {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+}
+
+function formatLocalDate(value?: string): string {
+  const date = value ? parseLocalDate(value) : null;
+  return date ? date.toLocaleDateString("sq-AL") : "";
+}
+
 // ── Seasonal Price Table Component ──────────────────────────────────────────
 function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
   const [open, setOpen] = React.useState(false);
@@ -177,14 +196,14 @@ export default function BookingPage() {
     // Block if car status is not available regardless of dates
     if (car.status === "I rezervuar" || car.status === "Në mirëmbajtje") return false;
     if (!form.startDate || !form.endDate) return true;
-    const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
+    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
+    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
     return !(allReservations ?? []).some((r) => {
       if (r.carId !== car.id) return false;
       if (r.status === "Cancelled" || r.status === "Completed") return false;
-      const rStart = new Date(r.startDate);
-      const rEnd = new Date(r.endDate);
-      return start <= rEnd && end >= rStart;
+      const rStart = new Date(`${r.startDate}T${r.startTime || "10:00"}`);
+      const rEnd = new Date(`${r.endDate}T${r.endTime || "10:00"}`);
+      return start < rEnd && end > rStart;
     });
   }, [car, form.startDate, form.endDate, allReservations]);
 
@@ -247,19 +266,19 @@ export default function BookingPage() {
   // Seasonal pricing calculation
   const seasonalData = React.useMemo(() => {
     if (!form.startDate || !form.endDate || !car) return null;
-    const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
+    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
+    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
     if (end <= start) return null;
     return calculateSeasonalTotal(car.pricePerDay, start, end);
-  }, [form.startDate, form.endDate, car]);
+  }, [form.startDate, form.endDate, form.startTime, form.endTime, car]);
 
   const dominantSeason = React.useMemo(() => {
     if (!form.startDate || !form.endDate) return getSeasonForDate(new Date());
-    const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
+    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
+    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
     if (end <= start) return getSeasonForDate(new Date());
     return getDominantSeason(start, end);
-  }, [form.startDate, form.endDate]);
+  }, [form.startDate, form.endDate, form.startTime, form.endTime]);
 
   const { options: locationOptions, computeFee: computeLocFee } = useLocations(
     (i18n?.language === "en" ? "en" : "sq") as "sq" | "en",
@@ -277,15 +296,15 @@ export default function BookingPage() {
 
   // Monthly rates as primary price source (priority 1 over seasonal)
   const monthlyRatesCalc = React.useMemo(() => {
-    if (!car || !form.startDate || !form.endDate || days === 0) return null;
+    if (!car || !startDateObj || !endDateObj || days === 0) return null;
     const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
     if (rates.length === 0) return null;
     return calcTotalWithMonthlyRates(
       rates, car.id, car.category, car.pricePerDay,
-      new Date(form.startDate), new Date(form.endDate)
+      startDateObj, endDateObj
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlyRatesRaw, car, form.startDate, form.endDate, days]);
+  }, [monthlyRatesRaw, car, startDateObj, endDateObj, days]);
 
   // Pre-discount base: monthly rates → seasonal → flat
   const preDiscountBase = monthlyRatesCalc
@@ -294,19 +313,19 @@ export default function BookingPage() {
 
   // Apply only DISCOUNT (not surcharge) pricing rules on top of pre-discount base
   const pricingRuleResult = React.useMemo(() => {
-    if (!car || !form.startDate || !form.endDate || days === 0 || preDiscountBase === 0) return null;
+    if (!car || !startDateObj || !endDateObj || days === 0 || preDiscountBase === 0) return null;
     const rules = ((pricingRules ?? []) as PricingRule[])
       .filter(r => !r.direction || r.direction === "discount");
     if (rules.length === 0) return null;
     const ctx = {
       carId: car.id, carCategory: car.category,
-      startDate: new Date(form.startDate), endDate: new Date(form.endDate),
+      startDate: startDateObj, endDate: endDateObj,
       days, bookingDate: new Date(), promoCode: form.discountCode || undefined,
     };
     const res = applyPricingRules(rules, preDiscountBase, ctx);
     return res.appliedDiscounts.length > 0 ? res : null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingRules, car, form.startDate, form.endDate, form.discountCode, days, preDiscountBase]);
+  }, [pricingRules, car, startDateObj, endDateObj, form.discountCode, days, preDiscountBase]);
 
   const insuranceTotal = insurancePrice * days;
 
@@ -333,12 +352,12 @@ export default function BookingPage() {
     if (!car) return 0;
     const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
     if (rates.length > 0) {
-      const ref = form.startDate ? new Date(form.startDate) : new Date();
+      const ref = startDateObj ?? new Date();
       const monthly = resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear());
       if (monthly !== null) return monthly;
     }
     return car.pricePerDay;
-  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay, form.startDate]);
+  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay, startDateObj]);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
@@ -395,9 +414,9 @@ export default function BookingPage() {
         customerId: customer.id,
         pickupLocation: form.pickup,
         dropoffLocation: form.dropoff,
-        startDate: new Date(`${form.startDate}T${form.startTime}`),
+        startDate: form.startDate,
         startTime: form.startTime,
-        endDate: new Date(`${form.endDate}T${form.endTime}`),
+        endDate: form.endDate,
         endTime: form.endTime,
         notes: "",
         source: "Web",
@@ -415,8 +434,8 @@ export default function BookingPage() {
           name: `${form.firstName.trim()} ${form.lastName.trim()}`,
           car: `${car.brand} ${car.model}`,
           pickup: form.pickup,
-          start: new Date(`${form.startDate}T${form.startTime}`).toLocaleDateString("sq-AL"),
-          end: new Date(`${form.endDate}T${form.endTime}`).toLocaleDateString("sq-AL"),
+          start: formatLocalDate(form.startDate),
+          end: formatLocalDate(form.endDate),
           total: String(total),
         },
       });
@@ -1079,11 +1098,11 @@ export default function BookingPage() {
                           pickupLocation: form.pickup || "—",
                           dropoffLocation: form.dropoff || "—",
                           startDate: form.startDate
-                            ? new Date(form.startDate).toLocaleDateString("sq-AL")
+                            ? formatLocalDate(form.startDate)
                             : "—",
                           startTime: form.startTime,
                           endDate: form.endDate
-                            ? new Date(form.endDate).toLocaleDateString("sq-AL")
+                            ? formatLocalDate(form.endDate)
                             : "—",
                           endTime: form.endTime,
                           days,

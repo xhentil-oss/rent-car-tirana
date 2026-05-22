@@ -72,11 +72,13 @@ export function calcTotalWithMonthlyRates(
   const end = new Date(endDate);
   end.setHours(0, 0, 0, 0);
 
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const days = Math.max(1, Math.ceil((end.getTime() - current.getTime()) / msPerDay));
+
   let total = 0;
   let usedMonthlyRate = false;
-  let days = 0;
 
-  while (current < end) {
+  for (let i = 0; i < days; i += 1) {
     const month = current.getMonth() + 1;
     const year = current.getFullYear();
     const rate = resolveMonthlyRate(rates, carId, carCategory, month, year);
@@ -86,7 +88,6 @@ export function calcTotalWithMonthlyRates(
     } else {
       total += basePricePerDay;
     }
-    days++;
     current.setDate(current.getDate() + 1);
   }
 
