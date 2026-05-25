@@ -130,6 +130,61 @@ function pickupReminder({ customerName, carName, pickupLocation, startDate, star
   return layout('Kujtesë Rezervimi', body);
 }
 
+function adminBookingNotification({
+  reservationId, customerName, customerEmail, customerPhone,
+  carName, carCategory, pickupLocation, dropoffLocation,
+  startDate, startTime, endDate, endTime, days,
+  totalPrice, locationFee, insurance, extrasList, source,
+  adminPanelUrl,
+}) {
+  const extrasHtml = Array.isArray(extrasList) && extrasList.length > 0
+    ? `<tr>
+        <td style="padding:7px 0;color:#666;font-size:14px;width:42%;vertical-align:top">Extras</td>
+        <td style="padding:7px 0;color:#111;font-size:14px;font-weight:600">
+          <ul style="margin:0;padding-left:18px">
+            ${extrasList.map(e => `<li>${esc(e.name)}${e.quantity > 1 ? ` × ${e.quantity}` : ''} <span style="color:#6b7280;font-weight:400">€${e.totalPrice}</span></li>`).join('')}
+          </ul>
+        </td>
+      </tr>`
+    : '';
+
+  const body = `
+    <h2 style="margin:0 0 6px;color:#1d4ed8;font-size:20px">🔔 Rezervim i ri</h2>
+    <p style="margin:0 0 18px;color:#4b5563;font-size:14px">Një klient sapo ka bërë një rezervim të ri në sistem.</p>
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:20px">
+      <p style="margin:0 0 6px;color:#1e40af;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Klienti</p>
+      <p style="margin:0;color:#111827;font-size:15px;font-weight:600">${esc(customerName)}</p>
+      <p style="margin:4px 0 0;color:#374151;font-size:13px">
+        ${customerEmail ? `<a href="mailto:${esc(customerEmail)}" style="color:#2563eb;text-decoration:none">${esc(customerEmail)}</a>` : ''}
+        ${customerPhone ? ` &bull; <a href="tel:${esc(customerPhone)}" style="color:#2563eb;text-decoration:none">${esc(customerPhone)}</a>` : ''}
+      </p>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px">
+      ${row('Makina', `${carName}${carCategory ? ` (${carCategory})` : ''}`)}
+      ${row('Tërhiqja', pickupLocation)}
+      ${row('Kthimi', dropoffLocation)}
+      ${row('Nisja', `${startDate} ${startTime || ''}`)}
+      ${row('Kthimi', `${endDate} ${endTime || ''}`)}
+      ${days ? row('Numri i ditëve', `${days} ditë`) : ''}
+      ${insurance ? row('Sigurim', insurance) : ''}
+      ${extrasHtml}
+      ${locationFee > 0 ? row('Tarifë lokacioni', `€${locationFee}`) : ''}
+      ${row('Çmimi total', `<span style="color:#15803d">€${totalPrice}</span>`)}
+      ${source ? row('Burimi', source) : ''}
+      ${row('Nr. Rezervimit', String(reservationId).slice(0,8).toUpperCase())}
+    </table>
+
+    ${adminPanelUrl ? `
+    <p style="margin:0 0 16px">
+      <a href="${esc(adminPanelUrl)}" style="display:inline-block;background:#1d4ed8;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600">Hap në Admin Panel →</a>
+    </p>` : ''}
+
+    <p style="margin:0;color:#6b7280;font-size:12px">Ky email u dërgua automatikisht nga sistemi.</p>`;
+  return layout('Rezervim i ri — ' + COMPANY.name, body);
+}
+
 function contactForm({ fromName, fromEmail, fromPhone, subject, message }) {
   const body = `
     <h2 style="margin:0 0 6px;color:#111827;font-size:20px">Mesazh i ri nga formulari 📬</h2>
@@ -146,4 +201,4 @@ function contactForm({ fromName, fromEmail, fromPhone, subject, message }) {
   return layout('Kontakt — ' + COMPANY.name, body);
 }
 
-module.exports = { bookingConfirmation, reservationConfirmed, reservationCancelled, invoiceEmail, pickupReminder, contactForm };
+module.exports = { bookingConfirmation, reservationConfirmed, reservationCancelled, invoiceEmail, pickupReminder, contactForm, adminBookingNotification };

@@ -361,15 +361,18 @@ router.post('/', async (req, res) => {
       conn.release();
 
       const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
-      const [custRows] = await pool.query('SELECT name, email FROM customers WHERE id = ?', [customerId]);
+      const [custRows] = await pool.query('SELECT name, email, phone FROM customers WHERE id = ?', [customerId]);
+      const fmtLocale = formatDateOnlyToLocale;
+      const carName = `${carRows[0].brand || ''} ${carRows[0].model || ''}`.trim();
+
+      // ── Customer confirmation ──
       if (custRows.length && custRows[0].email) {
-        const fmtLocale = formatDateOnlyToLocale;
         sendMail(
           custRows[0].email,
           'Konfirmim Rezervimi — Rent Car Tirana',
           tpl.bookingConfirmation({
             customerName: custRows[0].name,
-            carName: `${carRows[0].brand || ''} ${carRows[0].model || ''}`.trim(),
+            carName,
             pickupLocation,
             dropoffLocation,
             startDate: fmtLocale(sd),
@@ -382,6 +385,38 @@ router.post('/', async (req, res) => {
           })
         ).catch((e) => console.error('[Email] booking confirmation failed:', e));
       }
+
+      // ── Admin notification ──
+      const adminEmail = process.env.ADMIN_EMAIL || process.env.MAIL_USER;
+      if (adminEmail) {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
+        sendMail(
+          adminEmail,
+          `🔔 Rezervim i ri — ${carName} — €${totalPrice}`,
+          tpl.adminBookingNotification({
+            reservationId: id,
+            customerName: custRows[0]?.name || 'Klient',
+            customerEmail: custRows[0]?.email || customerEmail || '',
+            customerPhone: custRows[0]?.phone || '',
+            carName,
+            carCategory: carRows[0].category || '',
+            pickupLocation,
+            dropoffLocation,
+            startDate: fmtLocale(sd),
+            startTime: st,
+            endDate: fmtLocale(ed),
+            endTime: et,
+            days,
+            totalPrice,
+            locationFee,
+            insurance: insurance || '',
+            extrasList: extrasResolved.map((e) => ({ name: e.name, quantity: e.quantity, totalPrice: e.totalPrice })),
+            source: source || 'Web',
+            adminPanelUrl: `${frontendUrl}/admin/rezervime`,
+          })
+        ).catch((e) => console.error('[Email] admin notification failed:', e));
+      }
+
       const outBody = fmt(rows[0]);
       outBody.extrasDetail = extrasResolved;
       res.status(201).json(outBody);
