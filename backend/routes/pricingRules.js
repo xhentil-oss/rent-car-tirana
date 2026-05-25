@@ -45,24 +45,19 @@ router.get('/admin', authenticate, requireRole('admin', 'manager'), async (req, 
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.post('/', authenticate, requireRole('admin', 'manager'), [
-  body('name').notEmpty().isLength({ max: 200 }),
-  body('type').optional().isIn(VALID_TYPES),
-  body('discountType').optional().isIn(VALID_DISCOUNT_TYPES),
-  body('discountValue').optional({ nullable: true }).isFloat({ min: 0 }),
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const { name, type, discountType, discountValue, direction, startDate, endDate, minDays, maxDays, advanceBookingDays, lastMinuteHours, promoCode, applicableTo, isActive, priority, description, maxUsages } = req.body;
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'Emri është i detyrueshëm.' });
     const id = uuidv4();
     const sd = startDate && startDate !== '' ? startDate : null;
     const ed = endDate && endDate !== '' ? endDate : null;
     const dir = direction === 'surcharge' ? 'surcharge' : 'discount';
     const dv = (discountValue !== undefined && discountValue !== null) ? Number(discountValue) : 0;
+    const dt = discountType || 'percent';
     await pool.query(
       'INSERT INTO pricing_rules (id, name, type, discount_type, discount_value, direction, start_date, end_date, min_days, max_days, advance_booking_days, last_minute_hours, promo_code, applicable_to, is_active, priority, description, max_usages, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, name, type, discountType ?? 'percent', dv, dir, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.user.id]
+      [id, String(name).trim(), type || 'seasonal', dt, dv, dir, sd, ed, minDays || null, maxDays || null, advanceBookingDays || null, lastMinuteHours || null, promoCode || null, applicableTo || 'all', isActive ? 1 : 0, priority || 0, description || null, maxUsages || 0, req.user.id]
     );
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
