@@ -45,7 +45,7 @@ import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import StatusBadge from "../components/StatusBadge";
 import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
-import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
+import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
 import { formatLocationOption } from "../lib/locations";
@@ -420,6 +420,17 @@ export default function CarDetailPage() {
       bookingDate: new Date(),
     });
   }, [car?.id, car?.category, car?.pricePerDay, startDateObj, endDateObj, days, pricingRulesRaw, monthlyRatesPublic, invalidDateRange]);
+
+  // Minimum days restriction
+  const minDaysRequired = useMemo(() => {
+    if (!car || !startDateObj || !endDateObj) return 0;
+    return getMinDaysRequirement(
+      (pricingRulesRaw ?? []) as PricingRule[],
+      { carId: car.id, carCategory: car.category, startDate: startDateObj, endDate: endDateObj }
+    );
+  }, [pricingRulesRaw, car, startDateObj, endDateObj]);
+
+  const minDaysViolation = days > 0 && minDaysRequired > 0 && days < minDaysRequired;
 
   // Seasonal breakdown for display
   const seasonalBreakdown = useMemo(() => {
@@ -1200,8 +1211,13 @@ export default function CarDetailPage() {
                         value={endDate}
                         min={startDate || today}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
+                        className={`w-full px-4 py-3 rounded-xl border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 ${minDaysViolation ? "border-amber-400" : "border-border"}`}
                       />
+                      {minDaysViolation && (
+                        <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                          <span>⚠️</span> Minimumi i rezervimit është <strong className="ml-1">{minDaysRequired} ditë</strong>.
+                        </p>
+                      )}
                     </div>
 
                     {/* Pickup Location Selector */}
@@ -1359,7 +1375,7 @@ export default function CarDetailPage() {
                         localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}&dropoff=${encodeURIComponent(dropoffLocation)}`),
                       )
                     }
-                    disabled={!available || (!!startDate && !!endDate && dateConflict)}
+                    disabled={!available || (!!startDate && !!endDate && dateConflict) || minDaysViolation}
                     className="w-full py-4 rounded-xl text-sm font-bold bg-gradient-primary text-white hover:opacity-90 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 shadow-btn-primary text-base"
                   >
                     {carIsUnavailable ? (

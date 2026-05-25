@@ -29,7 +29,7 @@ import {
   getDominantSeason,
   getAllSeasonPrices,
 } from "../lib/seasonalPricing";
-import { applyPricingRules, RULE_TYPE_LABELS } from "../lib/pricingRules";
+import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
@@ -355,6 +355,17 @@ export default function BookingPage() {
 
   const insuranceTotal = insurancePrice * days;
 
+  // Minimum days restriction
+  const minDaysRequired = React.useMemo(() => {
+    if (!car || !startDateObj || !endDateObj) return 0;
+    return getMinDaysRequirement(
+      (pricingRules ?? []) as import("../lib/pricingRules").PricingRule[],
+      { carId: car.id, carCategory: car.category, startDate: startDateObj, endDate: endDateObj }
+    );
+  }, [pricingRules, car, startDateObj, endDateObj]);
+
+  const minDaysViolation = days > 0 && minDaysRequired > 0 && days < minDaysRequired;
+
   // basePrice: after discounts applied (or pre-discount base if no discounts)
   const basePrice = pricingRuleResult
     ? pricingRuleResult.finalPrice
@@ -400,6 +411,7 @@ export default function BookingPage() {
       } else {
         if (start < new Date()) newErrors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren.";
         if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
+        if (minDaysRequired > 0 && days < minDaysRequired) newErrors.endDate = `Minimumi i ditëve të rezervimit është ${minDaysRequired} ditë.`;
       }
     }
     if (!form.firstName) newErrors.firstName = t("booking.validation.firstName");
@@ -764,6 +776,12 @@ export default function BookingPage() {
                       </select>
                     </div>
                   </div>
+                  {minDaysViolation && !errors.endDate && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <WarningCircle size={13} weight="regular" />
+                      Minimumi i ditëve të rezervimit është <strong className="ml-1">{minDaysRequired} ditë</strong>.
+                    </p>
+                  )}
                   {errors.endDate && (
                     <p className="text-xs text-error mt-1">{errors.endDate}</p>
                   )}
@@ -1193,7 +1211,7 @@ export default function BookingPage() {
             )}
             <button
               type="submit"
-              disabled={saving || !isCarAvailable}
+              disabled={saving || !isCarAvailable || minDaysViolation}
               className="w-full py-4 rounded-md text-base font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 cursor-pointer disabled:opacity-60"
             >
               {saving ? t("booking.submitting") : !isCarAvailable ? t("booking.unavailableBtn") : t("booking.submit")}

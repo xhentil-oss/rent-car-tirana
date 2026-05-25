@@ -48,6 +48,7 @@ const RULE_TYPE_ICONS: Record<string, React.ReactNode> = {
   promo_code:     <Tag size={16} weight="bold" />,
   length_of_stay: <Timer size={16} weight="bold" />,
   weekend:        <Sun size={16} weight="bold" />,
+  min_duration:   <Warning size={16} weight="bold" />,
 };
 
 const CAR_CATEGORIES = ["Ekonomike", "SUV", "Luksoze", "Familjare", "Sportive", "Minivan"];
@@ -138,16 +139,19 @@ export default function AdminPricingRules() {
   function validate(): boolean {
     const e: Partial<Record<keyof RuleForm, string>> = {};
     if (!form.name.trim()) e.name = "Emri është i detyrueshëm";
-    if (!form.startDate) e.startDate = "Data e fillimit është e detyrueshme";
-    if (!form.endDate) e.endDate = "Data e mbarimit është e detyrueshme";
-    if (form.startDate && form.endDate && new Date(form.startDate) >= new Date(form.endDate)) {
-      e.endDate = "Data e mbarimit duhet të jetë pas fillimit";
+    if (form.type !== "min_duration") {
+      if (!form.startDate) e.startDate = "Data e fillimit është e detyrueshme";
+      if (!form.endDate) e.endDate = "Data e mbarimit është e detyrueshme";
+      if (form.startDate && form.endDate && new Date(form.startDate) >= new Date(form.endDate)) {
+        e.endDate = "Data e mbarimit duhet të jetë pas fillimit";
+      }
+      if (form.discountValue <= 0) e.discountValue = "Vlera duhet të jetë > 0";
+      if (form.discountType === "percent" && form.discountValue > 100) e.discountValue = "Përqindja nuk mund të jetë > 100";
     }
-    if (form.discountValue <= 0) e.discountValue = "Vlera duhet të jetë > 0";
-    if (form.discountType === "percent" && form.discountValue > 100) e.discountValue = "Përqindja nuk mund të jetë > 100";
     if (form.type === "early_bird" && !form.advanceBookingDays) e.advanceBookingDays = "Vendosni ditët";
     if (form.type === "last_minute" && !form.lastMinuteHours) e.lastMinuteHours = "Vendosni orët";
     if (form.type === "promo_code" && !form.promoCode.trim()) e.promoCode = "Vendosni kodin";
+    if (form.type === "min_duration" && (!form.minDays || Number(form.minDays) < 1)) e.minDays = "Vendosni numrin minimal të ditëve";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -499,12 +503,14 @@ export default function AdminPricingRules() {
                       {form.type === "promo_code" && "Klienti fut kodin promocional gjatë rezervimit."}
                       {form.type === "length_of_stay" && "Zbatohet kur numri i ditëve është brenda intervalit."}
                       {form.type === "weekend" && "Zbatohet kur marrja e makinës fillon të premten ose të shtunën."}
+                      {form.type === "min_duration" && "Bllokon rezervimin nëse klienti zgjedh më pak ditë se minimumi i vendosur. Datat janë opsionale."}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Direction: discount or surcharge */}
+              {/* Direction & Discount — hidden for min_duration */}
+              {form.type !== "min_duration" && (<>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Lloji i efektit *</label>
                 <div className="flex border border-border rounded-lg overflow-hidden">
@@ -517,7 +523,6 @@ export default function AdminPricingRules() {
                 </div>
               </div>
 
-              {/* Discount/Surcharge value */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">{form.direction === "surcharge" ? "Rritja *" : "Zbritja *"}</label>
                 <div className="flex gap-2">
@@ -549,11 +554,14 @@ export default function AdminPricingRules() {
                 </div>
                 {errors.discountValue && <p className="text-xs text-error mt-1">{errors.discountValue}</p>}
               </div>
+              </>)}
 
-              {/* Dates */}
+              {/* Dates — optional for min_duration */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Data e fillimit *</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Data e fillimit {form.type === "min_duration" ? <span className="text-neutral-400 font-normal">(opsionale)</span> : "*"}
+                  </label>
                   <input
                     type="date"
                     value={form.startDate}
@@ -563,7 +571,9 @@ export default function AdminPricingRules() {
                   {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Data e skadimit *</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Data e skadimit {form.type === "min_duration" ? <span className="text-neutral-400 font-normal">(opsionale)</span> : "*"}
+                  </label>
                   <input
                     type="date"
                     value={form.endDate}
@@ -574,6 +584,31 @@ export default function AdminPricingRules() {
                   {errors.endDate && <p className="text-xs text-error mt-1">{errors.endDate}</p>}
                 </div>
               </div>
+
+              {/* min_duration specific field */}
+              {form.type === "min_duration" && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Minimum ditë rezervimi *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.minDays}
+                      onChange={(e) => setForm((f) => ({ ...f, minDays: e.target.value }))}
+                      placeholder="p.sh. 3"
+                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${errors.minDays ? "border-error" : "border-border"}`}
+                    />
+                    {form.minDays && Number(form.minDays) > 0 && (
+                      <p className="text-xs text-neutral-500 mt-1.5">
+                        Klientët duhet të rezervojnë të paktën <strong>{form.minDays} ditë</strong> për të vazhduar me checkout.
+                      </p>
+                    )}
+                  </div>
+                  {errors.minDays && <p className="text-xs text-error mt-1">{errors.minDays}</p>}
+                </div>
+              )}
 
               {/* Type-specific fields */}
               {form.type === "early_bird" && (

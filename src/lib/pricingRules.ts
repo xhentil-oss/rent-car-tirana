@@ -55,12 +55,13 @@ export interface PricingResult {
 }
 
 export const RULE_TYPE_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  seasonal:        { label: "Sezonale",      emoji: "📅", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  early_bird:      { label: "Early Bird",    emoji: "🐦", color: "bg-green-100 text-green-700 border-green-200" },
-  last_minute:     { label: "Last Minute",   emoji: "⚡", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  promo_code:      { label: "Kod Promovues", emoji: "🎟️", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  seasonal:        { label: "Sezonale",        emoji: "📅", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  early_bird:      { label: "Early Bird",      emoji: "🐦", color: "bg-green-100 text-green-700 border-green-200" },
+  last_minute:     { label: "Last Minute",     emoji: "⚡", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  promo_code:      { label: "Kod Promovues",   emoji: "🎟️", color: "bg-purple-100 text-purple-700 border-purple-200" },
   length_of_stay:  { label: "Qëndrim i gjatë", emoji: "📆", color: "bg-teal-100 text-teal-700 border-teal-200" },
-  weekend:         { label: "Fundjavë",      emoji: "🎉", color: "bg-pink-100 text-pink-700 border-pink-200" },
+  weekend:         { label: "Fundjavë",        emoji: "🎉", color: "bg-pink-100 text-pink-700 border-pink-200" },
+  min_duration:    { label: "Minimum ditësh",  emoji: "⏱️", color: "bg-red-100 text-red-700 border-red-200" },
 };
 
 /** Check if a rule's date window covers the reservation period */
@@ -133,9 +134,28 @@ export function doesRuleMatch(rule: PricingRule, ctx: RuleMatchContext): boolean
       return dayOfWeek === 5 || dayOfWeek === 6;
     }
 
+    case "min_duration":
+      // Not a discount — handled separately via getMinDaysRequirement()
+      return false;
+
     default:
       return false;
   }
+}
+
+/**
+ * Returns the minimum booking days required for the given car/context,
+ * based on active min_duration rules. Returns 0 if no restriction applies.
+ */
+export function getMinDaysRequirement(rules: PricingRule[], ctx: Omit<RuleMatchContext, 'days' | 'bookingDate' | 'promoCode'>): number {
+  const matching = rules.filter(r =>
+    r.type === "min_duration" &&
+    r.isActive &&
+    isApplicableTocar(r, ctx.carId, ctx.carCategory) &&
+    isDateWindowActive(r, ctx.startDate, ctx.endDate)
+  );
+  if (matching.length === 0) return 0;
+  return Math.max(...matching.map(r => r.minDays ?? 0));
 }
 
 /**
@@ -271,6 +291,9 @@ export function ruleConditionSummary(rule: PricingRule): string {
   }
   if (rule.type === "promo_code" && rule.promoCode) {
     parts.push(`Kod: ${rule.promoCode}`);
+  }
+  if (rule.type === "min_duration" && rule.minDays) {
+    parts.push(`Minimum: ${rule.minDays} ditë`);
   }
   if (rule.applicableTo !== "all") {
     parts.push(`Vetëm: ${rule.applicableTo.startsWith("category:") ? rule.applicableTo.replace("category:", "Kategoria ") : "Makinë specifike"}`);
