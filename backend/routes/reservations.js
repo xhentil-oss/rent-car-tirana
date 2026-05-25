@@ -197,9 +197,9 @@ router.post('/', async (req, res) => {
     // Validate free-text lengths
     if (notes && String(notes).length > 1000) return res.status(400).json({ error: 'Shënime shumë të gjata.' });
     if (discountCode && String(discountCode).length > 50) return res.status(400).json({ error: 'Kodi i zbritjes i pavlefshëm.' });
-    const ALLOWED_INSURANCE = ['basic', 'standard', 'premium', 'full'];
-    const insuranceNorm = insurance ? String(insurance).charAt(0).toUpperCase() + String(insurance).slice(1).toLowerCase() : null;
-    if (insuranceNorm && !ALLOWED_INSURANCE.includes(insuranceNorm.toLowerCase())) return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
+    // Insurance is now sourced from the extras catalog (selectedExtras) — the
+    // `insurance` field is kept only as a display label for back-compat.
+    const insuranceNorm = insurance ? String(insurance).trim().slice(0, 100) : null;
     if (extras && String(extras).length > 500) return res.status(400).json({ error: 'Ekstra shumë të gjata.' });
 
     // Convert incoming date values to YYYY-MM-DD without timezone shifting.
@@ -519,14 +519,10 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
     if (fields.status && !VALID_STATUSES.includes(fields.status)) {
       return res.status(400).json({ error: `Statusi duhet të jetë një nga: ${VALID_STATUSES.join(', ')}` });
     }
-    // Validate and normalize insurance if provided
-    const ALLOWED_INSURANCE = ['basic', 'standard', 'premium', 'full'];
+    // Insurance is sourced from the extras catalog — accept any reasonable
+    // label here (display only) without a hardcoded whitelist.
     if (fields.insurance) {
-      const insNorm = String(fields.insurance).charAt(0).toUpperCase() + String(fields.insurance).slice(1).toLowerCase();
-      if (!ALLOWED_INSURANCE.includes(insNorm.toLowerCase())) {
-        return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
-      }
-      fields.insurance = insNorm;
+      fields.insurance = String(fields.insurance).trim().slice(0, 100);
     }
     // Validate source if provided
     const ALLOWED_SOURCES = ['Web', 'Telefon', 'Walk-in'];
