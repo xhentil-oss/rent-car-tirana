@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Load .env from backend/ regardless of where this script is invoked from
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const mysql = require('mysql2/promise');
 
 // Each table as a separate statement — if one fails we still continue others
