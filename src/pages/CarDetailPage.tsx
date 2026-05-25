@@ -1187,7 +1187,7 @@ export default function CarDetailPage() {
                         type="date"
                         value={startDate}
                         min={today}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => { const newStart = e.target.value; setStartDate(newStart); if (endDate && endDate < newStart) setEndDate(""); }}
                         className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
                       />
                     </div>
