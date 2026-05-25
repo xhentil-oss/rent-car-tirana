@@ -66,16 +66,12 @@ export default function AdminPricingRules() {
   const [form, setForm] = useState<RuleForm>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof RuleForm, string>>>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [quickMinDays, setQuickMinDays] = useState("");
-  const [quickApplicableTo, setQuickApplicableTo] = useState("all");
 
   const today = new Date();
   const allRules = rules ?? [];
-  const minDurationRules = useMemo(() => allRules.filter((r) => r.type === "min_duration"), [allRules]);
-  const mainRules = useMemo(() => allRules.filter((r) => r.type !== "min_duration"), [allRules]);
 
   const filtered = useMemo(() => {
-    return mainRules.filter((r) => {
+    return allRules.filter((r) => {
       if (filterType && r.type !== filterType) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -83,19 +79,19 @@ export default function AdminPricingRules() {
       }
       return true;
     });
-  }, [mainRules, filterType, search]);
+  }, [allRules, filterType, search]);
 
   const stats = useMemo(() => {
-    const active = mainRules.filter((r) => r.isActive && r.endDate && new Date(r.endDate) >= today && r.startDate && new Date(r.startDate) <= today);
-    const expiring = mainRules.filter((r) => {
+    const active = allRules.filter((r) => r.isActive && r.endDate && new Date(r.endDate) >= today && r.startDate && new Date(r.startDate) <= today);
+    const expiring = allRules.filter((r) => {
       if (!r.endDate) return false;
       const end = new Date(r.endDate);
       const diff = (end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
       return r.isActive && diff >= 0 && diff <= 7;
     });
-    const expired = mainRules.filter((r) => r.endDate && new Date(r.endDate) < today);
-    return { total: mainRules.length, active: active.length, expiring: expiring.length, expired: expired.length };
-  }, [mainRules, today]);
+    const expired = allRules.filter((r) => r.endDate && new Date(r.endDate) < today);
+    return { total: allRules.length, active: active.length, expiring: expiring.length, expired: expired.length };
+  }, [allRules, today]);
 
   function getRuleStatus(rule: typeof allRules[0]) {
     const now = today;
@@ -223,44 +219,10 @@ export default function AdminPricingRules() {
     }
   }
 
-  async function handleQuickMinDuration() {
-    const minD = Number(quickMinDays);
-    if (!minD || minD < 1) return;
-    const appLabel =
-      quickApplicableTo === "all"
-        ? "Të gjitha"
-        : quickApplicableTo.startsWith("category:")
-        ? quickApplicableTo.replace("category:", "")
-        : (cars ?? []).find((c) => c.id === quickApplicableTo)?.model ?? "Makinë";
-    const payload = {
-      name: `Minimum ${minD} ditë — ${appLabel}`,
-      type: "min_duration",
-      direction: "discount",
-      discountType: "percent",
-      discountValue: 0,
-      minDays: minD,
-      applicableTo: quickApplicableTo,
-      priority: 100,
-      isActive: true,
-      usageCount: 0,
-    };
-    try {
-      const created = await create(payload);
-      await log("CREATE", "PricingRule", created.id, `Min. ditësh: ${minD} ditë për ${quickApplicableTo}`);
-      await refetch();
-      setQuickMinDays("");
-      setQuickApplicableTo("all");
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  const typeOptions = Object.entries(RULE_TYPE_LABELS)
-    .filter(([value]) => value !== "min_duration")
-    .map(([value, meta]) => ({
-      value,
-      label: `${meta.emoji} ${meta.label}`,
-    }));
+  const typeOptions = Object.entries(RULE_TYPE_LABELS).map(([value, meta]) => ({
+    value,
+    label: `${meta.emoji} ${meta.label}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -294,111 +256,6 @@ export default function AdminPricingRules() {
             <p className="text-xs text-neutral-500 mt-1">{s.label}</p>
           </div>
         ))}
-      </div>
-
-      {/* Minimum Duration Section */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center flex-shrink-0">
-            <Warning size={18} weight="bold" className="text-amber-700" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-amber-900">Minimum ditësh rezervimi</h2>
-            <p className="text-xs text-amber-700">Klientët nuk mund të rezervojnë për më pak ditë se minimumi i vendosur</p>
-          </div>
-        </div>
-
-        {/* Existing min_duration rules */}
-        {minDurationRules.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {minDurationRules.map((rule) => (
-              <div
-                key={rule.id}
-                className={`flex items-center justify-between bg-white border rounded-lg px-4 py-3 ${rule.isActive ? "border-amber-200" : "border-border opacity-60"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">⏱️</span>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-800">{rule.name}</p>
-                    <p className="text-xs text-neutral-500">
-                      Minimum <strong>{rule.minDays} ditë</strong>
-                      {" · "}
-                      {rule.applicableTo === "all"
-                        ? "🚗 Të gjitha makinat"
-                        : rule.applicableTo.startsWith("category:")
-                        ? `📂 ${rule.applicableTo.replace("category:", "Kategoria ")}`
-                        : "🔑 Makinë specifike"}
-                      {!rule.isActive && " · Çaktivizuar"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleToggle(rule)}
-                    disabled={isMutating}
-                    className={`p-1.5 rounded-lg cursor-pointer transition-colors ${rule.isActive ? "text-green-600 hover:bg-green-50" : "text-neutral-400 hover:bg-neutral-100"}`}
-                    title={rule.isActive ? "Çaktivizo" : "Aktivizo"}
-                  >
-                    {rule.isActive ? <ToggleRight size={22} weight="fill" /> : <ToggleLeft size={22} weight="regular" />}
-                  </button>
-                  <button
-                    onClick={() => openEdit(rule)}
-                    className="p-1.5 rounded-lg text-neutral-400 hover:text-primary hover:bg-secondary transition-colors cursor-pointer"
-                    title="Ndrysho"
-                  >
-                    <Pencil size={15} weight="regular" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirmId(rule.id)}
-                    className="p-1.5 rounded-lg text-neutral-400 hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
-                    title="Fshi"
-                  >
-                    <Trash size={15} weight="regular" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Quick-add form */}
-        <div className="flex flex-wrap gap-3 items-end">
-          <div>
-            <label className="block text-xs font-medium text-amber-900 mb-1">Minimum ditë *</label>
-            <input
-              type="number"
-              min={1}
-              value={quickMinDays}
-              onChange={(e) => setQuickMinDays(e.target.value)}
-              placeholder="p.sh. 3"
-              className="w-24 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-amber-900 mb-1">Zbatohet për</label>
-            <select
-              value={quickApplicableTo}
-              onChange={(e) => setQuickApplicableTo(e.target.value)}
-              className="px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 bg-white"
-            >
-              <option value="all">🚗 Të gjitha makinat</option>
-              {CAR_CATEGORIES.map((cat) => (
-                <option key={cat} value={`category:${cat}`}>📂 Kategoria: {cat}</option>
-              ))}
-              {(cars ?? []).map((car) => (
-                <option key={car.id} value={car.id}>🔑 {car.brand} {car.model}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={handleQuickMinDuration}
-            disabled={!quickMinDays || Number(quickMinDays) < 1 || isMutating}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <Plus size={16} weight="bold" />
-            Shto rregull
-          </button>
-        </div>
       </div>
 
       {/* Filters */}
@@ -455,7 +312,7 @@ export default function AdminPricingRules() {
           filtered.map((rule) => {
             const meta = RULE_TYPE_LABELS[rule.type] ?? { label: rule.type, emoji: "🏷️", color: "bg-neutral-100 text-neutral-600 border-neutral-200" };
             const status = getRuleStatus(rule);
-            const isExpired = new Date(rule.endDate) < today;
+            const isExpired = rule.endDate ? new Date(rule.endDate) < today : false;
 
             return (
               <div
@@ -488,14 +345,20 @@ export default function AdminPricingRules() {
                         )}
 
                         <div className="flex flex-wrap items-center gap-3">
-                          {/* Discount badge */}
-                          <div className={`flex items-center gap-1 rounded-lg px-3 py-1.5 border ${rule.direction === "surcharge" ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
-                            <span className="text-base font-bold">
-                              {rule.direction === "surcharge"
-                                ? (rule.discountType === "percent" ? `+${rule.discountValue}%` : `+€${rule.discountValue}`)
-                                : (rule.discountType === "percent" ? `-${rule.discountValue}%` : `-€${rule.discountValue}`)}
-                            </span>
-                          </div>
+                          {/* Discount / min-duration badge */}
+                          {rule.type === "min_duration" ? (
+                            <div className="flex items-center gap-1 rounded-lg px-3 py-1.5 border bg-red-50 border-red-200 text-red-700">
+                              <span className="text-base font-bold">⏱️ Min. {rule.minDays} ditë</span>
+                            </div>
+                          ) : (
+                            <div className={`flex items-center gap-1 rounded-lg px-3 py-1.5 border ${rule.direction === "surcharge" ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
+                              <span className="text-base font-bold">
+                                {rule.direction === "surcharge"
+                                  ? (rule.discountType === "percent" ? `+${rule.discountValue}%` : `+€${rule.discountValue}`)
+                                  : (rule.discountType === "percent" ? `-${rule.discountValue}%` : `-€${rule.discountValue}`)}
+                              </span>
+                            </div>
+                          )}
 
                           {/* Applicability */}
                           <div className="text-xs text-neutral-500 flex items-center gap-1">
