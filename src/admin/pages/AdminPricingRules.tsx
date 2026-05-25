@@ -557,7 +557,7 @@ export default function AdminPricingRules() {
                   <input
                     type="date"
                     value={form.startDate}
-                    onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+                    onChange={(e) => { const newStart = e.target.value; setForm((f) => ({ ...f, startDate: newStart, endDate: f.endDate && f.endDate < newStart ? "" : f.endDate })); }}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${errors.startDate ? "border-error" : "border-border"}`}
                   />
                   {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate}</p>}

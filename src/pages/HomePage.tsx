@@ -88,6 +88,7 @@ export default function HomePage() {
   const [dropoff, setDropoff] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
   const [promoDismissed, setPromoDismissed] = useState(false);
 
   const { data: allCars } = useQuery("Car");
@@ -287,7 +288,8 @@ export default function HomePage() {
                     id="startDate"
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    min={todayStr}
+                    onChange={(e) => { const newStart = e.target.value; setStartDate(newStart); if (endDate && endDate < newStart) setEndDate(""); }}
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                   />
                 </div>
@@ -303,6 +305,7 @@ export default function HomePage() {
                     id="endDate"
                     type="date"
                     value={endDate}
+                    min={startDate || todayStr}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                   />
