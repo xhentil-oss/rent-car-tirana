@@ -118,7 +118,7 @@ function getCarImages(baseImage: string): string[] {
 
 function parseLocalDate(value: string): Date | null {
   const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
   if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -128,6 +128,24 @@ function parseLocalDate(value: string): Date | null {
     return null;
   }
   return date;
+}
+
+function buildLocalDateTime(dateValue: string, timeValue = "10:00"): Date | null {
+  const date = parseLocalDate(dateValue);
+  const match = String(timeValue || "10:00").match(/^(\d{2}):(\d{2})$/);
+  if (!date || !match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function formatDateInputValue(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export default function CarDetailPage() {
@@ -296,17 +314,19 @@ export default function CarDetailPage() {
   // Live availability check
   const dateConflict = useMemo(() => {
     if (!startDateObj || !endDateObj || !car || invalidDateRange) return false;
-    const reqStart = startDateObj.getTime();
-    const reqEnd = endDateObj.getTime();
+    const reqStart = buildLocalDateTime(startDate, "10:00");
+    const reqEnd = buildLocalDateTime(endDate, "10:00");
+    if (!reqStart || !reqEnd || reqEnd <= reqStart) return false;
     const activeReservations = (allReservations ?? []).filter(
       (r) => r.carId === car.id && r.status !== "Cancelled" && r.status !== "Completed"
     );
-    return activeReservations.some((r) => {
-      const rStart = parseLocalDate(r.startDate)?.getTime();
-      const rEnd = parseLocalDate(r.endDate)?.getTime();
-      return rStart !== null && rEnd !== null && reqStart < rEnd && reqEnd > rStart;
-    });
-  }, [startDateObj, endDateObj, allReservations, car?.id, invalidDateRange]);
+    const overlappingCount = activeReservations.filter((r) => {
+      const rStart = buildLocalDateTime(r.startDate, r.startTime || "10:00");
+      const rEnd = buildLocalDateTime(r.endDate, r.endTime || "10:00");
+      return Boolean(rStart && rEnd && reqStart < rEnd && reqEnd > rStart);
+    }).length;
+    return overlappingCount >= (Number(car.quantity) || 1);
+  }, [startDateObj, endDateObj, startDate, endDate, allReservations, car?.id, car?.quantity, invalidDateRange]);
 
   // Reviews — Google Places API (priority) → DB approved → i18n static fallback
   const googleReviewsList = useMemo(() => {
@@ -476,7 +496,7 @@ export default function CarDetailPage() {
 
   const total = (smartPricing ? smartPricing.finalPrice : days * effectivePricePerDay) + (days > 0 ? locationFee : 0);
   const baseTotal = smartPricing ? smartPricing.basePrice : days * effectivePricePerDay;
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatDateInputValue();
 
   const carIsUnavailable = car.status === "I rezervuar" || car.status === "Në mirëmbajtje";
   const available = !carIsUnavailable && !dateConflict && !invalidDateRange && Boolean(startDate && endDate);

@@ -67,7 +67,7 @@ const insuranceOptions = [
 
 function parseLocalDate(value: string): Date | null {
   const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
   if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -77,6 +77,24 @@ function parseLocalDate(value: string): Date | null {
     return null;
   }
   return date;
+}
+
+function buildLocalDateTime(dateValue: string, timeValue = "10:00"): Date | null {
+  const date = parseLocalDate(dateValue);
+  const match = String(timeValue || "10:00").match(/^(\d{2}):(\d{2})$/);
+  if (!date || !match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function formatDateInputValue(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatLocalDate(value?: string): string {
@@ -185,6 +203,9 @@ export default function BookingPage() {
     insurance: "Basic",
     discountCode: "",
   });
+  const todayInputValue = formatDateInputValue();
+  const startDateObj = React.useMemo(() => (form.startDate ? parseLocalDate(form.startDate) : null), [form.startDate]);
+  const endDateObj = React.useMemo(() => (form.endDate ? parseLocalDate(form.endDate) : null), [form.endDate]);
 
   // Check if car is available (status + date conflict)
   const carStatusBlocked = car
@@ -196,16 +217,18 @@ export default function BookingPage() {
     // Block if car status is not available regardless of dates
     if (car.status === "I rezervuar" || car.status === "Në mirëmbajtje") return false;
     if (!form.startDate || !form.endDate) return true;
-    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
-    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
-    return !(allReservations ?? []).some((r) => {
+    const start = buildLocalDateTime(form.startDate, form.startTime);
+    const end = buildLocalDateTime(form.endDate, form.endTime);
+    if (!start || !end || end <= start) return true;
+    const overlappingCount = (allReservations ?? []).filter((r) => {
       if (r.carId !== car.id) return false;
       if (r.status === "Cancelled" || r.status === "Completed") return false;
-      const rStart = new Date(`${r.startDate}T${r.startTime || "10:00"}`);
-      const rEnd = new Date(`${r.endDate}T${r.endTime || "10:00"}`);
-      return start < rEnd && end > rStart;
-    });
-  }, [car, form.startDate, form.endDate, allReservations]);
+      const rStart = buildLocalDateTime(r.startDate, r.startTime || "10:00");
+      const rEnd = buildLocalDateTime(r.endDate, r.endTime || "10:00");
+      return Boolean(rStart && rEnd && start < rEnd && end > rStart);
+    }).length;
+    return overlappingCount < (Number(car.quantity) || 1);
+  }, [car, form.startDate, form.endDate, form.startTime, form.endTime, allReservations]);
 
   const { create: createCustomer } = useMutation("Customer");
   const { create: createReservation } = useMutation("Reservation");
@@ -251,8 +274,9 @@ export default function BookingPage() {
 
   const { days, hours } = (() => {
     if (!form.startDate || !form.endDate) return { days: 0, hours: 0 };
-    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
-    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
+    const start = buildLocalDateTime(form.startDate, form.startTime);
+    const end = buildLocalDateTime(form.endDate, form.endTime);
+    if (!start || !end) return { days: 0, hours: 0 };
     const diffMs = end.getTime() - start.getTime();
     if (diffMs <= 0) return { days: 0, hours: 0 };
     const totalHours = diffMs / (1000 * 60 * 60);
@@ -266,16 +290,18 @@ export default function BookingPage() {
   // Seasonal pricing calculation
   const seasonalData = React.useMemo(() => {
     if (!form.startDate || !form.endDate || !car) return null;
-    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
-    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
+    const start = buildLocalDateTime(form.startDate, form.startTime);
+    const end = buildLocalDateTime(form.endDate, form.endTime);
+    if (!start || !end) return null;
     if (end <= start) return null;
     return calculateSeasonalTotal(car.pricePerDay, start, end);
   }, [form.startDate, form.endDate, form.startTime, form.endTime, car]);
 
   const dominantSeason = React.useMemo(() => {
     if (!form.startDate || !form.endDate) return getSeasonForDate(new Date());
-    const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
-    const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
+    const start = buildLocalDateTime(form.startDate, form.startTime);
+    const end = buildLocalDateTime(form.endDate, form.endTime);
+    if (!start || !end) return getSeasonForDate(new Date());
     if (end <= start) return getSeasonForDate(new Date());
     return getDominantSeason(start, end);
   }, [form.startDate, form.endDate, form.startTime, form.endTime]);
@@ -339,6 +365,7 @@ export default function BookingPage() {
     !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
       ? Math.round(basePrice * 0.1)
       : 0;
+  const totalDiscount = Math.max(0, pricingRuleResult?.totalDiscount ?? 0) + legacyDiscount;
 
   const total = basePrice + extrasTotal + insuranceTotal + locationFeeTotal - legacyDiscount;
 
@@ -366,9 +393,14 @@ export default function BookingPage() {
     if (!form.startDate) newErrors.startDate = t("booking.validation.startDate");
     if (!form.endDate) newErrors.endDate = t("booking.validation.endDate");
     if (form.startDate && form.endDate) {
-      const start = new Date(`${form.startDate}T${form.startTime || "10:00"}`);
-      const end = new Date(`${form.endDate}T${form.endTime || "10:00"}`);
-      if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
+      const start = buildLocalDateTime(form.startDate, form.startTime);
+      const end = buildLocalDateTime(form.endDate, form.endTime);
+      if (!start || !end) {
+        newErrors.endDate = t("booking.validation.endDateAfter");
+      } else {
+        if (start < new Date()) newErrors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren.";
+        if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
+      }
     }
     if (!form.firstName) newErrors.firstName = t("booking.validation.firstName");
     if (!form.lastName) newErrors.lastName = t("booking.validation.lastName");
@@ -648,6 +680,7 @@ export default function BookingPage() {
                         id="b-start"
                         type="date"
                         value={form.startDate}
+                        min={todayInputValue}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, startDate: e.target.value }))
                         }
@@ -697,6 +730,7 @@ export default function BookingPage() {
                         id="b-end"
                         type="date"
                         value={form.endDate}
+                        min={form.startDate || todayInputValue}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, endDate: e.target.value }))
                         }
@@ -1108,10 +1142,10 @@ export default function BookingPage() {
                           days,
                           insurance: form.insurance,
                           extras: form.extras,
-                          basePrice,
+                          basePrice: preDiscountBase,
                           extrasTotal,
                           insuranceTotal,
-                          discount,
+                          discount: totalDiscount,
                           total,
                           signatureDataUrl: signatureData,
                           contractDate: today,

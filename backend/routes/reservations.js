@@ -17,11 +17,63 @@ const {
 // (keys `location_fees` + `free_locations`) so admins can manage them from
 // the UI without redeploying. See backend/lib/locations.js for details.
 
+const BLOCKING_STATUSES = ['Pending', 'Confirmed', 'Active'];
+
+const toDateOnly = (value) => {
+  if (value === null || value === undefined || value === '') return value;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : raw;
+};
+
+const parseDateOnly = (value) => {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new Error('Date e pavlefshme.');
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const dt = new Date(year, month - 1, day);
+  if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) {
+    throw new Error('Date e pavlefshme.');
+  }
+  return `${match[1]}-${match[2]}-${match[3]}`;
+};
+
+const parseTimeOnly = (value) => {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{2}):(\d{2})$/);
+  if (!match) throw new Error('Ora eshte e pavlefshme.');
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) throw new Error('Ora eshte e pavlefshme.');
+  return `${match[1]}:${match[2]}`;
+};
+
+const buildDateTime = (dateValue, timeValue) => {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue.split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes);
+};
+
+const formatDateOnlyToLocale = (value) => {
+  const raw = toDateOnly(value);
+  const match = String(raw || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return String(value || '');
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day).toLocaleDateString('sq-AL');
+};
+
 const fmt = (r) => ({
   id: r.id, carId: r.car_id, customerId: r.customer_id,
   pickupLocation: r.pickup_location, dropoffLocation: r.dropoff_location,
-  startDate: r.start_date, startTime: r.start_time,
-  endDate: r.end_date, endTime: r.end_time,
+  startDate: toDateOnly(r.start_date), startTime: r.start_time,
+  endDate: toDateOnly(r.end_date), endTime: r.end_time,
   notes: r.notes, source: r.source, status: r.status,
   totalPrice: r.total_price, locationFee: r.location_fee || 0,
   insurance: r.insurance, extras: r.extras,
@@ -37,8 +89,8 @@ router.get('/availability', async (req, res) => {
     );
     res.json(rows.map(r => ({
       carId: r.car_id,
-      startDate: r.start_date,
-      endDate: r.end_date,
+      startDate: toDateOnly(r.start_date),
+      endDate: toDateOnly(r.end_date),
       startTime: r.start_time,
       endTime: r.end_time,
       status: r.status,
@@ -174,6 +226,9 @@ router.post('/', async (req, res) => {
     }
     const startDateTime = buildDateTime(sd, st);
     const endDateTime = buildDateTime(ed, et);
+    if (startDateTime < new Date()) {
+      return res.status(400).json({ error: 'Data dhe ora e nisjes nuk mund te jene ne te kaluaren.' });
+    }
     if (endDateTime <= startDateTime) {
       return res.status(400).json({ error: 'Data dhe ora e mbarimit duhet të jenë pas datës dhe orës së fillimit.' });
     }
@@ -206,10 +261,8 @@ router.post('/', async (req, res) => {
       else if (mrCat) pricePerDay = Number(mrCat.price_per_day);
       else if (mrAll) pricePerDay = Number(mrAll.price_per_day);
 
-      const [edYear, edMonth, edDay] = ed.split('-').map(Number);
-      const [sdYear2, sdMonth2, sdDay2] = sd.split('-').map(Number);
       const msPerDay = 86400000;
-      const days = Math.max(1, Math.ceil((new Date(edYear, edMonth - 1, edDay).getTime() - new Date(sdYear2, sdMonth2 - 1, sdDay2).getTime()) / msPerDay));
+      const days = Math.max(1, Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / msPerDay));
       const locationFee = await getLocationFee(pickupLocation, dropoffLocation);
       const totalPrice = +(pricePerDay * days + locationFee).toFixed(2);
 
@@ -223,7 +276,7 @@ router.post('/', async (req, res) => {
              AND
              (end_date > ? OR (end_date = ? AND end_time > ?))
            )`,
-        [carId, ed, ed, endTime || '10:00', sd, sd, startTime || '10:00']
+        [carId, ed, ed, et, sd, sd, st]
       );
       if (overlap[0].cnt >= carQuantity) {
         await conn.rollback(); conn.release();
@@ -233,7 +286,7 @@ router.post('/', async (req, res) => {
       const id = uuidv4();
       await conn.query(
         'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, startTime || '10:00', ed, endTime || '10:00', notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extras || '', discountCode || null, null]
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extras || '', discountCode || null, null]
       );
 
       await conn.commit();
@@ -242,13 +295,7 @@ router.post('/', async (req, res) => {
       const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [id]);
       const [custRows] = await pool.query('SELECT name, email FROM customers WHERE id = ?', [customerId]);
       if (custRows.length && custRows[0].email) {
-        const fmtLocale = (d) => {
-          const raw = String(d || '').trim();
-          const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (!match) return String(d || '');
-          const [year, month, day] = match[1].split('-').map(Number);
-          return new Date(year, month - 1, day).toLocaleDateString('sq-AL');
-        };
+        const fmtLocale = formatDateOnlyToLocale;
         sendMail(
           custRows[0].email,
           'Konfirmim Rezervimi — Rent Car Tirana',
@@ -259,8 +306,8 @@ router.post('/', async (req, res) => {
             dropoffLocation,
             startDate: fmtLocale(sd),
             endDate: fmtLocale(ed),
-            startTime: startTime || '10:00',
-            endTime: endTime || '10:00',
+            startTime: st,
+            endTime: et,
             totalPrice,
             insurance: insurance || null,
             reservationId: id,
@@ -303,13 +350,7 @@ router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff
       ).then(([eRows]) => {
         if (!eRows.length || !eRows[0].customer_email) return;
         const r = eRows[0];
-        const fmtLocale = (d) => {
-          const raw = String(d || '').trim();
-          const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (!match) return String(d || '');
-          const [year, month, day] = match[1].split('-').map(Number);
-          return new Date(year, month - 1, day).toLocaleDateString('sq-AL');
-        };
+        const fmtLocale = formatDateOnlyToLocale;
         const emailData = {
           customerName: r.customer_name,
           carName: `${r.brand} ${r.model}`,
@@ -342,10 +383,12 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
       if (isNaN(dt.getTime())) throw new Error('Datë e pavlefshme.');
       return dt.toISOString().slice(0, 10);
     };
-    let sd, ed;
+    let sd, ed, st, et;
     try {
-      sd = req.body.startDate ? fmtDate(req.body.startDate) : undefined;
-      ed = req.body.endDate ? fmtDate(req.body.endDate) : undefined;
+      sd = req.body.startDate ? parseDateOnly(req.body.startDate) : undefined;
+      ed = req.body.endDate ? parseDateOnly(req.body.endDate) : undefined;
+      st = req.body.startTime ? parseTimeOnly(req.body.startTime) : undefined;
+      et = req.body.endTime ? parseTimeOnly(req.body.endTime) : undefined;
     } catch { return res.status(400).json({ error: 'Datat janë të pavlefshme.' }); }
 
     const fields = {
@@ -354,9 +397,9 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
       pickup_location: req.body.pickupLocation,
       dropoff_location: req.body.dropoffLocation,
       start_date: sd,
-      start_time: req.body.startTime,
+      start_time: st,
       end_date: ed,
-      end_time: req.body.endTime,
+      end_time: et,
       notes: req.body.notes,
       source: req.body.source,
       status: req.body.status,
@@ -379,23 +422,44 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
       if (!currentRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Rezervimi nuk u gjet.' }); }
       const current = currentRows[0];
       const newCarId = fields.car_id || current.car_id;
-      const newSd = fields.start_date || current.start_date;
-      const newEd = fields.end_date || current.end_date;
-      const datesOrCarChanged = fields.car_id || fields.start_date || fields.end_date;
+      const newSd = fields.start_date || toDateOnly(current.start_date);
+      const newEd = fields.end_date || toDateOnly(current.end_date);
+      const newSt = fields.start_time || current.start_time || '10:00';
+      const newEt = fields.end_time || current.end_time || '10:00';
+      const newStatus = fields.status || current.status;
+      const scheduleOrCarChanged = fields.car_id || fields.start_date || fields.end_date || fields.start_time || fields.end_time;
+      const locationChanged = fields.pickup_location || fields.dropoff_location;
+      const statusBecomesBlocking = fields.status && BLOCKING_STATUSES.includes(fields.status) && !BLOCKING_STATUSES.includes(current.status);
+      const newStartDateTime = buildDateTime(newSd, newSt);
+      const newEndDateTime = buildDateTime(newEd, newEt);
+      if (newEndDateTime <= newStartDateTime) {
+        await conn.rollback(); conn.release();
+        return res.status(400).json({ error: 'Data dhe ora e mbarimit duhet te jene pas dates dhe ores se fillimit.' });
+      }
 
-      if (datesOrCarChanged) {
+      if (scheduleOrCarChanged || locationChanged || statusBecomesBlocking) {
         // Lock car row and check overlap
         const [carRows] = await conn.query('SELECT price_per_day, quantity, category FROM cars WHERE id = ? FOR UPDATE', [newCarId]);
         if (!carRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Makina nuk u gjet.' }); }
         const carQuantity = Number(carRows[0].quantity) || 1;
 
-        const [overlap] = await conn.query(
-          "SELECT COUNT(*) AS cnt FROM reservations WHERE car_id = ? AND id != ? AND status IN ('Pending','Confirmed','Active') AND start_date <= ? AND end_date >= ?",
-          [newCarId, req.params.id, newEd, newSd]
+        if (BLOCKING_STATUSES.includes(newStatus) && (scheduleOrCarChanged || statusBecomesBlocking)) {
+          const [overlap] = await conn.query(
+          `SELECT COUNT(*) AS cnt FROM reservations
+           WHERE car_id = ?
+             AND id != ?
+             AND status IN ('Pending','Confirmed','Active')
+             AND (
+               (start_date < ? OR (start_date = ? AND start_time < ?))
+               AND
+               (end_date > ? OR (end_date = ? AND end_time > ?))
+             )`,
+          [newCarId, req.params.id, newEd, newEd, newEt, newSd, newSd, newSt]
         );
         if (overlap[0].cnt >= carQuantity) {
           await conn.rollback(); conn.release();
           return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
+        }
         }
         // Check monthly rate override for new dates
         const [nSdYear, nSdMonth] = newSd.split('-').map(Number);
@@ -413,10 +477,8 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
         else if (mrCat) effectivePrice = Number(mrCat.price_per_day);
         else if (mrAll) effectivePrice = Number(mrAll.price_per_day);
 
-        const [nEdYear, nEdMonth, nEdDay] = newEd.split('-').map(Number);
-        const [nSdYear2, nSdMonth2, nSdDay2] = newSd.split('-').map(Number);
         const msPerDay = 86400000;
-        const days = Math.max(1, Math.ceil((new Date(nEdYear, nEdMonth - 1, nEdDay).getTime() - new Date(nSdYear2, nSdMonth2 - 1, nSdDay2).getTime()) / msPerDay));
+        const days = Math.max(1, Math.ceil((newEndDateTime.getTime() - newStartDateTime.getTime()) / msPerDay));
         const newPickup = fields.pickup_location || current.pickup_location;
         const newDropoff = fields.dropoff_location || current.dropoff_location;
         const newLocationFee = await getLocationFee(newPickup, newDropoff);

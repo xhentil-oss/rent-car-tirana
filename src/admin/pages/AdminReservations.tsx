@@ -50,6 +50,46 @@ const timeOptions = Array.from({ length: 24 }, (_, i) => {
   return [`${hour}:00`, `${hour}:30`];
 }).flat();
 
+function parseLocalDate(value: string): Date | null {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date;
+}
+
+function buildLocalDateTime(dateValue: string, timeValue = "09:00"): Date | null {
+  const date = parseLocalDate(dateValue);
+  const match = String(timeValue || "09:00").match(/^(\d{2}):(\d{2})$/);
+  if (!date || !match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function formatDateInputValue(value: string | Date = new Date()): string {
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isMaintenanceStatus(status?: string): boolean {
+  return String(status || "").toLowerCase().includes("mir");
+}
+
 export default function AdminReservations() {
   const { options: locationOptions } = useLocations("sq");
   const locations = locationOptions.map((o) => o.value);
@@ -77,6 +117,7 @@ export default function AdminReservations() {
   const [editResId, setEditResId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ status: string; pickupLocation: string; dropoffLocation: string; startDate: string; endDate: string; startTime: string; endTime: string; notes: string; totalPrice: string }>({ status: "", pickupLocation: "", dropoffLocation: "", startDate: "", endDate: "", startTime: "09:00", endTime: "09:00", notes: "", totalPrice: "" });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const todayInputValue = formatDateInputValue();
 
   const selectedRes = (reservations ?? []).find(r => r.id === selectedResId) ?? null;
 
@@ -97,14 +138,15 @@ export default function AdminReservations() {
 
   const availableCars = useMemo(() => {
     if (!formData.startDate || !formData.endDate) return (cars ?? []).filter(c => c.status !== "Në mirëmbajtje");
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
+    const start = buildLocalDateTime(formData.startDate, formData.startTime);
+    const end = buildLocalDateTime(formData.endDate, formData.endTime);
+    if (!start || !end || end <= start) return (cars ?? []).filter(c => c.status !== "NÃ« mirÃ«mbajtje");
     const bookedCarIds = (reservations ?? [])
       .filter((r) => {
         if (r.status === "Cancelled" || r.status === "Completed") return false;
-        const resStart = new Date(r.startDate);
-        const resEnd = new Date(r.endDate);
-        return start <= resEnd && end >= resStart;
+        const resStart = buildLocalDateTime(r.startDate, r.startTime || "09:00");
+        const resEnd = buildLocalDateTime(r.endDate, r.endTime || "09:00");
+        return Boolean(resStart && resEnd && start < resEnd && end > resStart);
       })
       .map((r) => r.carId);
     return (cars ?? []).filter((c) => !bookedCarIds.includes(c.id) && c.status !== "Në mirëmbajtje");
