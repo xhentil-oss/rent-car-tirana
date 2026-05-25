@@ -412,11 +412,48 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
     if (fields.status && !VALID_STATUSES.includes(fields.status)) {
       return res.status(400).json({ error: `Statusi duhet të jetë një nga: ${VALID_STATUSES.join(', ')}` });
     }
+    // Validate and normalize insurance if provided
+    const ALLOWED_INSURANCE = ['basic', 'standard', 'premium', 'full'];
+    if (fields.insurance) {
+      const insNorm = String(fields.insurance).charAt(0).toUpperCase() + String(fields.insurance).slice(1).toLowerCase();
+      if (!ALLOWED_INSURANCE.includes(insNorm.toLowerCase())) {
+        return res.status(400).json({ error: 'Siguracion i pavlefshëm.' });
+      }
+      fields.insurance = insNorm;
+    }
+    // Validate source if provided
+    const ALLOWED_SOURCES = ['Web', 'Telefon', 'Walk-in'];
+    if (fields.source && !ALLOWED_SOURCES.includes(fields.source)) {
+      return res.status(400).json({ error: `Burimi duhet të jetë një nga: ${ALLOWED_SOURCES.join(', ')}` });
+    }
+
+    // Validate locations if provided
+    if (fields.pickup_location || fields.dropoff_location) {
+      const normLoc = (s) => String(s || '').normalize('NFC').replace(/\s+/g, ' ').trim();
+      const allowedRaw = await getAllowedLocations();
+      const ALLOWED_LOCATIONS = allowedRaw.map(normLoc);
+      if (fields.pickup_location) {
+        const norm = normLoc(fields.pickup_location);
+        if (!ALLOWED_LOCATIONS.includes(norm)) return res.status(400).json({ error: 'Lokacion i pavlefshëm.' });
+        fields.pickup_location = allowedRaw[ALLOWED_LOCATIONS.indexOf(norm)];
+      }
+      if (fields.dropoff_location) {
+        const norm = normLoc(fields.dropoff_location);
+        if (!ALLOWED_LOCATIONS.includes(norm)) return res.status(400).json({ error: 'Lokacion i pavlefshëm.' });
+        fields.dropoff_location = allowedRaw[ALLOWED_LOCATIONS.indexOf(norm)];
+      }
+    }
 
     // Transaction with row lock for date/car changes
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+
+      // Validate customer exists if being changed
+      if (fields.customer_id) {
+        const [custCheck] = await conn.query('SELECT id FROM customers WHERE id = ?', [fields.customer_id]);
+        if (!custCheck.length) { await conn.rollback(); conn.release(); return res.status(400).json({ error: 'Klient i pavlefshëm.' }); }
+      }
 
       const [currentRows] = await conn.query('SELECT * FROM reservations WHERE id = ? FOR UPDATE', [req.params.id]);
       if (!currentRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Rezervimi nuk u gjet.' }); }
