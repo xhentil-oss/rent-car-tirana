@@ -86,6 +86,12 @@ router.post(
       const [existingUser] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
       if (existingUser.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
 
+      // Phone uniqueness — only enforced when a phone is provided.
+      if (phone) {
+        const [existingPhone] = await pool.query('SELECT id FROM users WHERE phone = ?', [phone]);
+        if (existingPhone.length) return res.status(409).json({ error: 'Ky numër telefoni është tashmë i regjistruar.' });
+      }
+
       // A `customers` row with this email is COMMON: it's created every time
       // someone books as a guest. We don't refuse — we attach that existing
       // customer record to the new user account so booking history is kept.

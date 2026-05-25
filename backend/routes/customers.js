@@ -46,14 +46,26 @@ router.post('/', async (req, res) => {
     // phone is NOT NULL in DB — coerce to empty string if missing
     const safePhone = (phone || '').toString().trim().slice(0, 30);
 
-    // Check if customer with this email already exists
-    const [existing] = await pool.query(
+    // Reuse existing customer by email (most common — return user signed up before)
+    const [existingByEmail] = await pool.query(
       'SELECT id FROM customers WHERE email = ?', [email]
     );
-    if (existing.length) {
+    if (existingByEmail.length) {
       // Identical shape/status to prevent email enumeration
-      return res.status(201).json({ id: existing[0].id });
+      return res.status(201).json({ id: existingByEmail[0].id });
     }
+
+    // Reuse existing customer by phone — same person booking again with a
+    // different email (or a typo) shouldn't fragment into multiple records.
+    if (safePhone) {
+      const [existingByPhone] = await pool.query(
+        'SELECT id FROM customers WHERE phone = ?', [safePhone]
+      );
+      if (existingByPhone.length) {
+        return res.status(201).json({ id: existingByPhone[0].id });
+      }
+    }
+
     const id = uuidv4();
     const createdBy = req.user ? req.user.id : null;
     const safeName = name || `${firstName || ''} ${lastName || ''}`.trim() || email;

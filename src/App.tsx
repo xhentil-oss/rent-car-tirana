@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { LocaleProvider } from "./hooks/useLocale";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
+import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
 
@@ -88,6 +89,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       </a>
       <Header />
       <main id="main-content"><ErrorBoundary><Suspense fallback={<LazyFallback />}>{children}</Suspense></ErrorBoundary></main>
+      <FloatingWhatsAppButton />
     </div>
   );
 }

@@ -184,20 +184,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
-      {/* ── Floating WhatsApp Button ─────────────────────────────── */}
-      <a
-        href="https://wa.me/355697562951?text=Përshëndetje!%20Dëshiroj%20të%20rezervoj%20një%20makinë."
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Kontaktoni ne WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 no-underline group px-4 py-3"
-      >
-        <WhatsappLogo size={22} weight="fill" />
-        <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
-          Na kontaktoni
-        </span>
-      </a>
-
       {/* ── Promo Banner ─────────────────────────────────────────── */}
       {!promoDismissed && (
         <div className="bg-gradient-to-r from-accent/90 to-primary text-white py-2.5 px-4 text-center relative">
