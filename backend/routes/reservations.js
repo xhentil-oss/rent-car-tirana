@@ -430,6 +430,44 @@ router.post('/', async (req, res) => {
 
 const VALID_STATUSES = ['Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled'];
 
+// Fire-and-forget status-change email to the customer. Safe to call from any
+// status-change path (PATCH or PUT) — only sends for Confirmed/Cancelled/Completed.
+function notifyStatusChange(reservationId, status) {
+  if (!['Confirmed', 'Cancelled', 'Completed'].includes(status)) return;
+  pool.query(
+    `SELECT r.total_price, r.pickup_location, r.start_date, r.end_date,
+            cu.name AS customer_name, cu.email AS customer_email,
+            ca.brand, ca.model
+     FROM reservations r
+     JOIN customers cu ON cu.id = r.customer_id
+     JOIN cars ca ON ca.id = r.car_id
+     WHERE r.id = ?`,
+    [reservationId]
+  ).then(([eRows]) => {
+    if (!eRows.length || !eRows[0].customer_email) return;
+    const r = eRows[0];
+    const emailData = {
+      customerName: r.customer_name,
+      carName: `${r.brand} ${r.model}`,
+      startDate: formatDateOnlyToLocale(r.start_date),
+      endDate: formatDateOnlyToLocale(r.end_date),
+      pickupLocation: r.pickup_location,
+      totalPrice: r.total_price,
+      reservationId,
+    };
+    if (status === 'Confirmed') {
+      sendMail(r.customer_email, 'Rezervimi u konfirmua — Rent Car Tirana', tpl.reservationConfirmed(emailData)).catch((e) => console.error('[Email] confirmed failed:', e?.message));
+    } else if (status === 'Cancelled') {
+      sendMail(r.customer_email, 'Rezervimi u anulua — Rent Car Tirana', tpl.reservationCancelled(emailData)).catch((e) => console.error('[Email] cancelled failed:', e?.message));
+    } else if (status === 'Completed') {
+      sendMail(r.customer_email, 'Fatura juaj — Rent Car Tirana', tpl.invoiceEmail({
+        ...emailData,
+        invoiceNo: `INV-${String(reservationId).slice(0, 8).toUpperCase()}`,
+      })).catch((e) => console.error('[Email] invoice failed:', e?.message));
+    }
+  }).catch((e) => console.error('[Email] status-change query failed:', e?.message));
+}
+
 router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { status } = req.body;
@@ -440,43 +478,7 @@ router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Reservation', entityId: req.params.id, description: `Status ndryshoi në: ${status}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
-
-    // Send status email non-blocking — after response is sent
-    if (['Confirmed', 'Cancelled', 'Completed'].includes(status)) {
-      pool.query(
-        `SELECT r.total_price, r.pickup_location, r.start_date, r.end_date,
-                cu.name AS customer_name, cu.email AS customer_email,
-                ca.brand, ca.model
-         FROM reservations r
-         JOIN customers cu ON cu.id = r.customer_id
-         JOIN cars ca ON ca.id = r.car_id
-         WHERE r.id = ?`,
-        [req.params.id]
-      ).then(([eRows]) => {
-        if (!eRows.length || !eRows[0].customer_email) return;
-        const r = eRows[0];
-        const fmtLocale = formatDateOnlyToLocale;
-        const emailData = {
-          customerName: r.customer_name,
-          carName: `${r.brand} ${r.model}`,
-          startDate: fmtLocale(r.start_date),
-          endDate: fmtLocale(r.end_date),
-          pickupLocation: r.pickup_location,
-          totalPrice: r.total_price,
-          reservationId: req.params.id,
-        };
-        if (status === 'Confirmed') {
-          sendMail(r.customer_email, 'Rezervimi u konfirmua — Rent Car Tirana', tpl.reservationConfirmed(emailData)).catch(() => {});
-        } else if (status === 'Cancelled') {
-          sendMail(r.customer_email, 'Rezervimi u anulua — Rent Car Tirana', tpl.reservationCancelled(emailData)).catch(() => {});
-        } else if (status === 'Completed') {
-          sendMail(r.customer_email, 'Fatura juaj — Rent Car Tirana', tpl.invoiceEmail({
-            ...emailData,
-            invoiceNo: `INV-${String(req.params.id).slice(0, 8).toUpperCase()}`,
-          })).catch(() => {});
-        }
-      }).catch(() => {});
-    }
+    notifyStatusChange(req.params.id, status);
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
@@ -551,6 +553,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
 
     // Transaction with row lock for date/car changes
     const conn = await pool.getConnection();
+    let prevStatus = null;
     try {
       await conn.beginTransaction();
 
@@ -563,6 +566,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
       const [currentRows] = await conn.query('SELECT * FROM reservations WHERE id = ? FOR UPDATE', [req.params.id]);
       if (!currentRows.length) { await conn.rollback(); conn.release(); return res.status(404).json({ error: 'Rezervimi nuk u gjet.' }); }
       const current = currentRows[0];
+      prevStatus = current.status;
       const newCarId = fields.car_id || current.car_id;
       const newSd = fields.start_date || toDateOnly(current.start_date);
       const newEd = fields.end_date || toDateOnly(current.end_date);
@@ -646,6 +650,11 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
     await logActivity({ userId: req.user.id, action: 'UPDATE', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u ndryshua`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
     res.json(fmt(rows[0]));
+
+    // Notify customer when status changed via PUT (admin UI uses PUT, not PATCH)
+    if (req.body.status && req.body.status !== prevStatus) {
+      notifyStatusChange(req.params.id, req.body.status);
+    }
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
