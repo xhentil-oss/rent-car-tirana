@@ -137,9 +137,10 @@ export default function AdminReservations() {
   });
 
   const availableCars = useMemo(() => {
-    if (!formData.startDate || !formData.endDate) return (cars ?? []).filter(c => c.status !== "Në mirëmbajtje");
+    if (!formData.startDate || !formData.endDate) return (cars ?? []).filter(c => !isMaintenanceStatus(c.status));
     const start = buildLocalDateTime(formData.startDate, formData.startTime);
     const end = buildLocalDateTime(formData.endDate, formData.endTime);
+    if (!start || !end || end <= start) return (cars ?? []).filter(c => !isMaintenanceStatus(c.status));
     if (!start || !end || end <= start) return (cars ?? []).filter(c => c.status !== "NÃ« mirÃ«mbajtje");
     const bookedCarIds = (reservations ?? [])
       .filter((r) => {
@@ -149,15 +150,16 @@ export default function AdminReservations() {
         return Boolean(resStart && resEnd && start < resEnd && end > resStart);
       })
       .map((r) => r.carId);
-    return (cars ?? []).filter((c) => !bookedCarIds.includes(c.id) && c.status !== "Në mirëmbajtje");
-  }, [formData.startDate, formData.endDate, reservations, cars]);
+    return (cars ?? []).filter((c) => !isMaintenanceStatus(c.status) && bookedCarIds.filter((id) => id === c.id).length < (Number(c.quantity) || 1));
+  }, [formData.startDate, formData.endDate, formData.startTime, formData.endTime, reservations, cars]);
 
   const selectedCar = useMemo(() => (cars ?? []).find((c) => c.id === formData.carId), [formData.carId, cars]);
 
   const calculatedPrice = useMemo(() => {
     if (!formData.startDate || !formData.endDate || !selectedCar) return null;
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
+    const start = buildLocalDateTime(formData.startDate, formData.startTime);
+    const end = buildLocalDateTime(formData.endDate, formData.endTime);
+    if (!start || !end) return null;
     if (end <= start) return null;
     const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     const seasonal = calculateSeasonalTotal(selectedCar.pricePerDay, start, end);
@@ -169,7 +171,7 @@ export default function AdminReservations() {
       breakdown: seasonal.breakdown,
       dominantSeason,
     };
-  }, [formData.startDate, formData.endDate, selectedCar]);
+  }, [formData.startDate, formData.endDate, formData.startTime, formData.endTime, selectedCar]);
 
   const validateNewCustomer = (): boolean => {
     const errors: Partial<Record<keyof NewCustomerForm, string>> = {};
@@ -204,7 +206,16 @@ export default function AdminReservations() {
     if (!formData.carId) errors.carId = "Zgjidhni makinën";
     if (!formData.startDate) errors.startDate = "Zgjidhni datën e nisjes";
     if (!formData.endDate) errors.endDate = "Zgjidhni datën e kthimit";
-    if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+    if (formData.startDate && formData.endDate) {
+      const start = buildLocalDateTime(formData.startDate, formData.startTime);
+      const end = buildLocalDateTime(formData.endDate, formData.endTime);
+      if (!start || !end || end <= start) {
+        errors.endDate = "Data/ora e kthimit duhet te jete pas nisjes";
+      } else if (start < new Date()) {
+        errors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren";
+      }
+    }
+    if (false && formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
       errors.endDate = "Data e kthimit duhet të jetë pas nisjes";
     }
     setFormErrors(errors);
@@ -328,8 +339,8 @@ export default function AdminReservations() {
       status: res.status,
       pickupLocation: res.pickupLocation || "Tiranë Qendër",
       dropoffLocation: res.dropoffLocation || "Tiranë Qendër",
-      startDate: res.startDate ? new Date(res.startDate).toISOString().split("T")[0] : "",
-      endDate: res.endDate ? new Date(res.endDate).toISOString().split("T")[0] : "",
+      startDate: res.startDate ? formatDateInputValue(res.startDate) : "",
+      endDate: res.endDate ? formatDateInputValue(res.endDate) : "",
       startTime: res.startTime || "09:00",
       endTime: res.endTime || "09:00",
       notes: res.notes || "",
@@ -339,6 +350,12 @@ export default function AdminReservations() {
 
   const handleSaveEdit = async () => {
     if (!editResId) return;
+    const start = buildLocalDateTime(editForm.startDate, editForm.startTime);
+    const end = buildLocalDateTime(editForm.endDate, editForm.endTime);
+    if (!start || !end || end <= start) {
+      alert("Data/ora e kthimit duhet te jete pas nisjes");
+      return;
+    }
     await updateReservation(editResId, {
       status: editForm.status,
       pickupLocation: editForm.pickupLocation,
@@ -646,7 +663,7 @@ export default function AdminReservations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e nisjes *</label>
-                  <input type="date" value={formData.startDate} min={new Date().toISOString().split("T")[0]} onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.startDate ? "border-error" : "border-border"}`} />
+                  <input type="date" value={formData.startDate} min={todayInputValue} onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.startDate ? "border-error" : "border-border"}`} />
                   {formErrors.startDate && <p className="text-xs text-error mt-1">{formErrors.startDate}</p>}
                 </div>
                 <div>
@@ -660,7 +677,7 @@ export default function AdminReservations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e kthimit *</label>
-                  <input type="date" value={formData.endDate} min={formData.startDate || new Date().toISOString().split("T")[0]} onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.endDate ? "border-error" : "border-border"}`} />
+                  <input type="date" value={formData.endDate} min={formData.startDate || todayInputValue} onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.endDate ? "border-error" : "border-border"}`} />
                   {formErrors.endDate && <p className="text-xs text-error mt-1">{formErrors.endDate}</p>}
                 </div>
                 <div>
