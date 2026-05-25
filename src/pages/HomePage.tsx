@@ -30,6 +30,8 @@ import { useQuery } from "../hooks/useApi";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
+import { getMinDaysRequirement } from "../lib/pricingRules";
+import type { PricingRule } from "../lib/pricingRules";
 
 const whyUsIcons = [CurrencyDollar, Clock, ShieldCheck, MapPin];
 const howItWorksIcons = [Car, CalendarBlank, Key];
@@ -92,7 +94,24 @@ export default function HomePage() {
   const [promoDismissed, setPromoDismissed] = useState(false);
 
   const { data: allCars } = useQuery("Car");
+  const { data: pricingRules } = useQuery("PricingRule");
   const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
+
+  const selectedDays = React.useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    const ms = new Date(endDate).getTime() - new Date(startDate).getTime();
+    return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+  }, [startDate, endDate]);
+
+  const globalMinDays = React.useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    return getMinDaysRequirement(
+      (pricingRules ?? []) as PricingRule[],
+      { carId: "", carCategory: "", startDate: new Date(startDate), endDate: new Date(endDate) }
+    );
+  }, [pricingRules, startDate, endDate]);
+
+  const minDaysViolation = selectedDays > 0 && globalMinDays > 0 && selectedDays < globalMinDays;
   const [bannerAbout, setBannerAbout] = useState("https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&q=80");
   const [heroSlides, setHeroSlides] = useState([
     { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1400&q=80", alt: "Rent car tirana airport — Albania car rental coastal road" },
@@ -148,6 +167,7 @@ export default function HomePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (minDaysViolation) return;
     const params = new URLSearchParams();
     if (pickup) params.set("pickup", pickup);
     if (dropoff) params.set("dropoff", dropoff);
@@ -315,12 +335,22 @@ export default function HomePage() {
               <div className="lg:col-span-1 flex items-end">
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 flex items-center justify-center gap-2"
+                  disabled={minDaysViolation}
+                  className="w-full py-3 px-4 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Car size={16} weight="regular" />
                   {t("home.hero.searchBtn")}
                 </button>
               </div>
+
+              {minDaysViolation && (
+                <div className="lg:col-span-5 -mt-2">
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                    <span className="font-medium">⏱️ Minimum {globalMinDays} ditë rezervimi.</span>
+                    <span>Ke zgjedhur vetëm {selectedDays} {selectedDays === 1 ? "ditë" : "ditë"} — zgjat datën e kthimit.</span>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
         </div>
