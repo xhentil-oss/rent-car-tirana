@@ -681,9 +681,14 @@ export default function BookingPage() {
                         type="date"
                         value={form.startDate}
                         min={todayInputValue}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, startDate: e.target.value }))
-                        }
+                        onChange={(e) => {
+                          const newStart = e.target.value;
+                          setForm((f) => ({
+                            ...f,
+                            startDate: newStart,
+                            endDate: f.endDate && f.endDate < newStart ? "" : f.endDate,
+                          }));
+                        }}
                         className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                       />
                     </div>
