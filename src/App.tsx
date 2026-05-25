@@ -23,6 +23,7 @@ const AdminUsers = React.lazy(() => import("./admin/pages/AdminUsers"));
 const AdminFleetManagement = React.lazy(() => import("./admin/pages/AdminFleetManagement"));
 const AdminReviews = React.lazy(() => import("./admin/pages/AdminReviews"));
 const AdminPricingRules = React.lazy(() => import("./admin/pages/AdminPricingRules"));
+const AdminExtras = React.lazy(() => import("./admin/pages/AdminExtras"));
 const AdminMonthlyRates = React.lazy(() => import("./admin/pages/AdminMonthlyRates"));
 const AdminCarEdit = React.lazy(() => import("./admin/pages/AdminCarEdit"));
 const AdminMedia = React.lazy(() => import("./admin/pages/AdminMedia"));
@@ -117,6 +118,7 @@ export default function App() {
             <Route path="fleet" element={<AdminFleetManagement />} />
             <Route path="vleresimet" element={<AdminReviews />} />
             <Route path="ofertat" element={<AdminPricingRules />} />
+            <Route path="extras" element={<AdminExtras />} />
             <Route path="cmime-mujore" element={<AdminMonthlyRates />} />
             <Route path="flota/:id" element={<AdminCarEdit />} />
             <Route path="media" element={<AdminMedia />} />

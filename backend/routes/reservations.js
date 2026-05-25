@@ -124,6 +124,24 @@ router.get('/', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
+async function fetchReservationExtras(reservationId) {
+  const [rows] = await pool.query(
+    'SELECT id, extra_id, extra_code, extra_name, category, quantity, unit_price, price_type, total_price FROM reservation_extras WHERE reservation_id = ? ORDER BY category, extra_name',
+    [reservationId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    extraId: r.extra_id,
+    code: r.extra_code,
+    name: r.extra_name,
+    category: r.category,
+    quantity: r.quantity,
+    unitPrice: Number(r.unit_price),
+    priceType: r.price_type,
+    totalPrice: Number(r.total_price),
+  }));
+}
+
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
@@ -134,14 +152,16 @@ router.get('/:id', authenticate, async (req, res) => {
       const custId = custRows.length ? custRows[0].id : null;
       if (rows[0].customer_id !== custId) return res.status(403).json({ error: 'Nuk keni leje.' });
     }
-    res.json(fmt(rows[0]));
+    const out = fmt(rows[0]);
+    out.extrasDetail = await fetchReservationExtras(req.params.id);
+    res.json(out);
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail } = req.body;
+    const { carId, customerId, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail, selectedExtras } = req.body;
     let { pickupLocation, dropoffLocation } = req.body;
     // Honeypot bot protection — real users never fill hidden 'website' field
     if (website) return res.status(400).json({ error: 'Gabim.' });
@@ -264,7 +284,47 @@ router.post('/', async (req, res) => {
       const msPerDay = 86400000;
       const days = Math.max(1, Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / msPerDay));
       const locationFee = await getLocationFee(pickupLocation, dropoffLocation);
-      const totalPrice = +(pricePerDay * days + locationFee).toFixed(2);
+
+      // ── Resolve selected extras server-side (never trust client prices) ──
+      const extrasRequested = Array.isArray(selectedExtras) ? selectedExtras : [];
+      let extrasTotal = 0;
+      const extrasResolved = [];
+      if (extrasRequested.length > 0) {
+        const ids = extrasRequested.map((x) => String(x.extraId)).filter(Boolean);
+        if (ids.length > 0) {
+          const placeholders = ids.map(() => '?').join(',');
+          const [extraRows] = await conn.query(
+            `SELECT id, code, name_sq, name_en, category, price, price_type, max_quantity FROM extras WHERE id IN (${placeholders}) AND is_active = 1`,
+            ids
+          );
+          const byId = new Map(extraRows.map((r) => [r.id, r]));
+          for (const sel of extrasRequested) {
+            const row = byId.get(sel.extraId);
+            if (!row) continue;
+            const qty = Math.max(1, Math.min(Number(sel.quantity) || 1, Number(row.max_quantity) || 1));
+            const unit = Number(row.price);
+            const multiplier = row.price_type === 'per_day' ? days : 1;
+            const lineTotal = +(unit * qty * multiplier).toFixed(2);
+            extrasTotal += lineTotal;
+            extrasResolved.push({
+              extraId: row.id,
+              code: row.code,
+              name: row.name_sq,
+              category: row.category,
+              quantity: qty,
+              unitPrice: unit,
+              priceType: row.price_type,
+              totalPrice: lineTotal,
+            });
+          }
+        }
+      }
+
+      const totalPrice = +(pricePerDay * days + locationFee + extrasTotal).toFixed(2);
+      // Build legacy comma-separated extras string for back-compat with old views
+      const extrasLegacy = extrasResolved.length > 0
+        ? extrasResolved.map((e) => e.quantity > 1 ? `${e.name} x${e.quantity}` : e.name).join(', ')
+        : (extras || '');
 
       // Count overlapping reservations vs car quantity, including time-of-day when available.
       const [overlap] = await conn.query(
@@ -286,8 +346,16 @@ router.post('/', async (req, res) => {
       const id = uuidv4();
       await conn.query(
         'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extras || '', discountCode || null, null]
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extrasLegacy, discountCode || null, null]
       );
+
+      // Persist selected extras with price snapshot
+      for (const e of extrasResolved) {
+        await conn.query(
+          'INSERT INTO reservation_extras (id, reservation_id, extra_id, extra_code, extra_name, category, quantity, unit_price, price_type, total_price) VALUES (?,?,?,?,?,?,?,?,?,?)',
+          [uuidv4(), id, e.extraId, e.code, e.name, e.category, e.quantity, e.unitPrice, e.priceType, e.totalPrice]
+        );
+      }
 
       await conn.commit();
       conn.release();
@@ -314,7 +382,9 @@ router.post('/', async (req, res) => {
           })
         ).catch((e) => console.error('[Email] booking confirmation failed:', e));
       }
-      res.status(201).json(fmt(rows[0]));
+      const outBody = fmt(rows[0]);
+      outBody.extrasDetail = extrasResolved;
+      res.status(201).json(outBody);
     } catch (txErr) {
       await conn.rollback();
       conn.release();

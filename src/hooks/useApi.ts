@@ -15,6 +15,8 @@ const ENTITY_MAP: Record<string, string> = {
   ReviewAdmin: "/reviews/admin",
   PricingRule: "/pricing-rules",
   PricingRuleAdmin: "/pricing-rules/admin",
+  Extra: "/extras",
+  ExtraAdmin: "/extras/admin",
   MonthlyRate: "/monthly-rates",
   MonthlyRatePublic: "/monthly-rates/public",
   UserAdminProfile: "/users",

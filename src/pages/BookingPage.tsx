@@ -47,23 +47,51 @@ interface BookingForm {
   lastName: string;
   phone: string;
   email: string;
-  extras: string[];
-  insurance: string;
+  /** Map of extra.id → quantity. Includes the single chosen insurance and any other extras. */
+  selectedExtras: Record<string, number>;
   discountCode: string;
 }
 
-const extraOptions = [
-  { id: "gps", label: "GPS Navigator", price: 5 },
-  { id: "child-seat", label: "Karrige për fëmijë", price: 8 },
-  { id: "extra-driver", label: "Shtesë shoferi", price: 10 },
-  { id: "wifi", label: "Wi-Fi Portativ", price: 6 },
-];
+type ExtraCategory = "insurance" | "equipment" | "service" | "addon";
+type ExtraPriceType = "per_day" | "per_rental" | "one_time";
 
-const insuranceOptions = [
-  { id: "Basic", label: "Sigurim bazë (përfshirë)", price: 0 },
-  { id: "Full", label: "Sigurim i plotë", price: 15 },
-  { id: "Premium", label: "Sigurim premium", price: 25 },
-];
+interface ApiExtra {
+  id: string;
+  code: string;
+  nameSq: string;
+  nameEn: string;
+  descriptionSq?: string | null;
+  descriptionEn?: string | null;
+  category: ExtraCategory;
+  price: number;
+  priceType: ExtraPriceType;
+  icon?: string | null;
+  maxQuantity: number;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+const CATEGORY_META: Record<ExtraCategory, { sq: string; en: string; emoji: string; color: string; description: { sq: string; en: string } }> = {
+  insurance: { sq: "Sigurim", en: "Insurance", emoji: "🛡️", color: "border-blue-200 bg-blue-50/40", description: { sq: "Zgjidh nivelin e mbulimit", en: "Choose your coverage level" } },
+  equipment: { sq: "Pajisje", en: "Equipment", emoji: "🎒", color: "border-emerald-200 bg-emerald-50/40", description: { sq: "GPS, sedilje fëmijësh, Wi-Fi & më shumë", en: "GPS, child seats, Wi-Fi & more" } },
+  service:   { sq: "Shërbime", en: "Services", emoji: "🌍", color: "border-purple-200 bg-purple-50/40", description: { sq: "Cross-border, dorëzim, kthim me vonesë", en: "Cross-border permits, delivery, late return" } },
+  addon:     { sq: "Shtesa", en: "Add-ons", emoji: "✨", color: "border-amber-200 bg-amber-50/40", description: { sq: "Shofer shtesë, karburant, km të pakufizuara", en: "Extra driver, fuel, unlimited km" } },
+};
+
+function extraDisplayName(e: ApiExtra, lang: "sq" | "en"): string {
+  return lang === "en" ? e.nameEn : e.nameSq;
+}
+function extraDisplayDesc(e: ApiExtra, lang: "sq" | "en"): string {
+  return (lang === "en" ? e.descriptionEn : e.descriptionSq) || "";
+}
+function priceTypeLabel(pt: ExtraPriceType, lang: "sq" | "en"): string {
+  if (lang === "en") return pt === "per_day" ? "/day" : pt === "per_rental" ? "/rental" : "";
+  return pt === "per_day" ? "/ditë" : pt === "per_rental" ? "/rezervim" : "";
+}
+function calcExtraLineTotal(e: ApiExtra, quantity: number, days: number): number {
+  const multiplier = e.priceType === "per_day" ? Math.max(1, days) : 1;
+  return +(Number(e.price) * quantity * multiplier).toFixed(2);
+}
 
 function parseLocalDate(value: string): Date | null {
   const raw = String(value || "").trim();
@@ -199,10 +227,56 @@ export default function BookingPage() {
     lastName: "",
     phone: "",
     email: "",
-    extras: [],
-    insurance: "Basic",
+    selectedExtras: {},
     discountCode: "",
   });
+
+  // Load extras catalog from admin-managed API
+  const { data: extrasData } = useQuery("Extra");
+  const extras = (extrasData ?? []) as ApiExtra[];
+  const uiLang: "sq" | "en" = (i18n?.language === "en" ? "en" : "sq");
+
+  const extrasByCategory = React.useMemo(() => {
+    const map: Record<ExtraCategory, ApiExtra[]> = { insurance: [], equipment: [], service: [], addon: [] };
+    for (const e of extras) if (e.isActive) map[e.category]?.push(e);
+    return map;
+  }, [extras]);
+
+  // Auto-select free Basic insurance once catalog loads (only on initial mount if nothing chosen yet)
+  const insuranceAutoSelected = React.useRef(false);
+  React.useEffect(() => {
+    if (insuranceAutoSelected.current) return;
+    if (extrasByCategory.insurance.length === 0) return;
+    const hasInsuranceSelected = extrasByCategory.insurance.some((e) => (form.selectedExtras[e.id] ?? 0) > 0);
+    if (hasInsuranceSelected) { insuranceAutoSelected.current = true; return; }
+    const free = extrasByCategory.insurance.find((e) => Number(e.price) === 0) ?? extrasByCategory.insurance[0];
+    if (free) {
+      setForm((f) => ({ ...f, selectedExtras: { ...f.selectedExtras, [free.id]: 1 } }));
+      insuranceAutoSelected.current = true;
+    }
+  }, [extrasByCategory.insurance]);
+
+  function selectInsurance(extraId: string) {
+    setForm((f) => {
+      const next: Record<string, number> = { ...f.selectedExtras };
+      // Clear all other insurance picks (single-select)
+      for (const ins of extrasByCategory.insurance) {
+        if (ins.id !== extraId) delete next[ins.id];
+      }
+      next[extraId] = 1;
+      return { ...f, selectedExtras: next };
+    });
+  }
+
+  function setExtraQuantity(extra: ApiExtra, qty: number) {
+    setForm((f) => {
+      const next = { ...f.selectedExtras };
+      const clamped = Math.max(0, Math.min(qty, extra.maxQuantity));
+      if (clamped === 0) delete next[extra.id];
+      else next[extra.id] = clamped;
+      return { ...f, selectedExtras: next };
+    });
+  }
   const todayInputValue = formatDateInputValue();
   const startDateObj = React.useMemo(() => (form.startDate ? parseLocalDate(form.startDate) : null), [form.startDate]);
   const endDateObj = React.useMemo(() => (form.endDate ? parseLocalDate(form.endDate) : null), [form.endDate]);
@@ -311,13 +385,19 @@ export default function BookingPage() {
   );
   const { pickupFee, dropoffFee, total: locationFeeTotal } = computeLocFee(form.pickup, form.dropoff);
 
-  const extrasTotal = form.extras.reduce((sum, id) => {
-    const opt = extraOptions.find((e) => e.id === id);
-    return sum + (opt ? opt.price * days : 0);
-  }, 0);
+  // Resolved extras = selected catalog items with computed line totals
+  const resolvedExtras = React.useMemo(() => {
+    const out: { extra: ApiExtra; quantity: number; lineTotal: number }[] = [];
+    for (const e of extras) {
+      const qty = form.selectedExtras[e.id] ?? 0;
+      if (qty > 0) out.push({ extra: e, quantity: qty, lineTotal: calcExtraLineTotal(e, qty, days) });
+    }
+    return out;
+  }, [extras, form.selectedExtras, days]);
 
-  const insurancePrice =
-    insuranceOptions.find((i) => i.id === form.insurance)?.price || 0;
+  const selectedInsurance = resolvedExtras.find((r) => r.extra.category === "insurance")?.extra ?? null;
+  const insurancePrice = resolvedExtras.filter((r) => r.extra.category === "insurance").reduce((s, r) => s + r.lineTotal, 0);
+  const extrasTotal = resolvedExtras.filter((r) => r.extra.category !== "insurance").reduce((s, r) => s + r.lineTotal, 0);
   const flatBasePrice = days * (car?.pricePerDay ?? 0);
 
   // Monthly rates as primary price source (priority 1 over seasonal)
@@ -353,7 +433,8 @@ export default function BookingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricingRules, car, startDateObj, endDateObj, form.discountCode, days, preDiscountBase]);
 
-  const insuranceTotal = insurancePrice * days;
+  // insurancePrice already accounts for days via calcExtraLineTotal (multiplier=days for per_day)
+  const insuranceTotal = insurancePrice;
 
   // Minimum days restriction
   const minDaysRequired = React.useMemo(() => {
@@ -466,8 +547,10 @@ export default function BookingPage() {
         source: "Web",
         status: "Pending",
         totalPrice: total,
-        insurance: form.insurance,
-        extras: form.extras.join(","),
+        insurance: selectedInsurance ? selectedInsurance.nameSq : undefined,
+        selectedExtras: Object.entries(form.selectedExtras)
+          .filter(([, q]) => q > 0)
+          .map(([extraId, quantity]) => ({ extraId, quantity })),
         discountCode: form.discountCode || undefined,
       });
       setSubmitted(true);
@@ -490,13 +573,14 @@ export default function BookingPage() {
     }
   };
 
-  const toggleExtra = (id: string) => {
-    setForm((f) => ({
-      ...f,
-      extras: f.extras.includes(id)
-        ? f.extras.filter((e) => e !== id)
-        : [...f.extras, id],
-    }));
+  const toggleExtra = (extra: ApiExtra) => {
+    setForm((f) => {
+      const current = f.selectedExtras[extra.id] ?? 0;
+      const next = { ...f.selectedExtras };
+      if (current > 0) delete next[extra.id];
+      else next[extra.id] = 1;
+      return { ...f, selectedExtras: next };
+    });
   };
 
   // No carId in URL → show clear error immediately (don't wait for data)
@@ -915,69 +999,120 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Extras */}
+            {/* Extras & Insurance */}
             <div className="bg-white rounded-lg border border-border p-6">
-              <h2 className="text-lg font-medium text-neutral-900 mb-4">
+              <h2 className="text-lg font-medium text-neutral-900 mb-1">
                 {t("booking.extrasInsurance")}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                {extraOptions.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors duration-200 ${
-                      form.extras.includes(opt.id)
-                        ? "border-primary bg-secondary"
-                        : "border-border hover:border-neutral-400"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.extras.includes(opt.id)}
-                      onChange={() => toggleExtra(opt.id)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <span className="text-sm text-neutral-800 flex-1">
-                      {opt.label}
-                    </span>
-                    <span className="text-sm font-medium text-primary">
-                      +€{opt.price}/ditë
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <p className="text-sm text-neutral-500 mb-5">
+                {uiLang === "en" ? "Personalize your rental with insurance and add-ons." : "Personalizo rezervimin me sigurim dhe shtesa."}
+              </p>
 
-              <h3 className="text-sm font-medium text-neutral-700 mb-3">
-                {t("booking.insuranceType")}
-              </h3>
-              <div className="space-y-2">
-                {insuranceOptions.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors duration-200 ${
-                      form.insurance === opt.id
-                        ? "border-primary bg-secondary"
-                        : "border-border hover:border-neutral-400"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="insurance"
-                      value={opt.id}
-                      checked={form.insurance === opt.id}
-                      onChange={() =>
-                        setForm((f) => ({ ...f, insurance: opt.id }))
-                      }
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <span className="text-sm text-neutral-800 flex-1">
-                      {opt.label}
-                    </span>
-                    <span className="text-sm font-medium text-primary">
-                      {opt.price === 0 ? t("booking.free") : `+€${opt.price}${t("booking.perDay")}`}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              {/* INSURANCE — radio (single select) */}
+              {extrasByCategory.insurance.length > 0 && (
+                <section className={`rounded-lg border p-4 mb-4 ${CATEGORY_META.insurance.color}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">{CATEGORY_META.insurance.emoji}</span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-neutral-800">{CATEGORY_META.insurance[uiLang]}</h3>
+                      <p className="text-xs text-neutral-500">{CATEGORY_META.insurance.description[uiLang]}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {extrasByCategory.insurance.map((e) => {
+                      const isChecked = (form.selectedExtras[e.id] ?? 0) > 0;
+                      const desc = extraDisplayDesc(e, uiLang);
+                      return (
+                        <label
+                          key={e.id}
+                          className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${isChecked ? "border-primary bg-white shadow-sm" : "border-border bg-white/70 hover:border-neutral-400"}`}
+                        >
+                          <input
+                            type="radio"
+                            name="insurance"
+                            checked={isChecked}
+                            onChange={() => selectInsurance(e.id)}
+                            className="w-4 h-4 mt-0.5 accent-primary"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium text-neutral-800">{extraDisplayName(e, uiLang)}</span>
+                              <span className="text-sm font-semibold text-primary whitespace-nowrap">
+                                {Number(e.price) === 0 ? t("booking.free") : `+€${e.price}${priceTypeLabel(e.priceType, uiLang)}`}
+                              </span>
+                            </div>
+                            {desc && <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* EQUIPMENT / SERVICE / ADDON — checkboxes with optional quantity */}
+              {(["equipment", "service", "addon"] as ExtraCategory[]).map((cat) => {
+                const items = extrasByCategory[cat];
+                if (items.length === 0) return null;
+                const meta = CATEGORY_META[cat];
+                return (
+                  <section key={cat} className={`rounded-lg border p-4 mb-4 ${meta.color}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">{meta.emoji}</span>
+                      <div>
+                        <h3 className="text-sm font-semibold text-neutral-800">{meta[uiLang]}</h3>
+                        <p className="text-xs text-neutral-500">{meta.description[uiLang]}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {items.map((e) => {
+                        const qty = form.selectedExtras[e.id] ?? 0;
+                        const checked = qty > 0;
+                        const desc = extraDisplayDesc(e, uiLang);
+                        return (
+                          <div
+                            key={e.id}
+                            className={`flex items-start gap-3 p-3 rounded-md border bg-white transition-colors ${checked ? "border-primary shadow-sm" : "border-border hover:border-neutral-400"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleExtra(e)}
+                              className="w-4 h-4 mt-0.5 accent-primary cursor-pointer"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-medium text-neutral-800">{extraDisplayName(e, uiLang)}</span>
+                                <span className="text-sm font-semibold text-primary whitespace-nowrap">
+                                  +€{e.price}{priceTypeLabel(e.priceType, uiLang)}
+                                </span>
+                              </div>
+                              {desc && <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>}
+                              {checked && e.maxQuantity > 1 && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExtraQuantity(e, qty - 1)}
+                                    className="w-6 h-6 rounded-md border border-border flex items-center justify-center text-sm hover:bg-secondary cursor-pointer"
+                                  >−</button>
+                                  <span className="text-xs font-medium text-neutral-700 min-w-[1.5rem] text-center">{qty}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setExtraQuantity(e, qty + 1)}
+                                    disabled={qty >= e.maxQuantity}
+                                    className="w-6 h-6 rounded-md border border-border flex items-center justify-center text-sm hover:bg-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >+</button>
+                                  <span className="text-[10px] text-neutral-400">max {e.maxQuantity}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
 
             {/* Seasonal Pricing Banner — hidden when monthly rates are active */}
@@ -1163,8 +1298,10 @@ export default function BookingPage() {
                             : "—",
                           endTime: form.endTime,
                           days,
-                          insurance: form.insurance,
-                          extras: form.extras,
+                          insurance: selectedInsurance ? extraDisplayName(selectedInsurance, uiLang) : "",
+                          extras: resolvedExtras
+                            .filter((r) => r.extra.category !== "insurance")
+                            .map((r) => r.quantity > 1 ? `${extraDisplayName(r.extra, uiLang)} x${r.quantity}` : extraDisplayName(r.extra, uiLang)),
                           basePrice: preDiscountBase,
                           extrasTotal,
                           insuranceTotal,
