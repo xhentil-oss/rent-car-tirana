@@ -32,6 +32,8 @@ import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import { getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
+import { useLocations } from "../hooks/useLocations";
+import { formatLocationOption } from "../lib/locations";
 
 const whyUsIcons = [CurrencyDollar, Clock, ShieldCheck, MapPin];
 const howItWorksIcons = [Car, CalendarBlank, Key];
@@ -95,6 +97,9 @@ export default function HomePage() {
 
   const { data: allCars } = useQuery("Car");
   const { data: pricingRules } = useQuery("PricingRule");
+  const { options: locationOptions } = useLocations(
+    (i18n?.language === "en" ? "en" : "sq") as "sq" | "en",
+  );
   const [featuredCarIds, setFeaturedCarIds] = useState<string[]>([]);
 
   const selectedDays = React.useMemo(() => {
@@ -273,8 +278,11 @@ export default function HomePage() {
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                   >
                     <option value="">{t("home.hero.selectPlace")}</option>
-                    <option value="Tiranë Qendër">{t("home.hero.centerTirana")}</option>
-                    <option value="Aeroporti">{t("home.hero.airport")}</option>
+                    {locationOptions.map((loc) => (
+                      <option key={loc.value} value={loc.value}>
+                        {formatLocationOption(loc)}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -292,8 +300,11 @@ export default function HomePage() {
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                   >
                     <option value="">{t("home.hero.selectPlace")}</option>
-                    <option value="Tiranë Qendër">{t("home.hero.centerTirana")}</option>
-                    <option value="Aeroporti">{t("home.hero.airport")}</option>
+                    {locationOptions.map((loc) => (
+                      <option key={loc.value} value={loc.value}>
+                        {formatLocationOption(loc)}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
