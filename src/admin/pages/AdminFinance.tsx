@@ -106,7 +106,7 @@ export default function AdminFinance() {
       const vatAmount = Math.round(subtotal * VAT_RATE * 100) / 100;
       const total = subtotal + vatAmount;
       const statusMap: Record<string, InvoiceStatus> = { Completed: "Paguar", Active: "Paguar", Confirmed: "Pa paguar", Pending: "Pa paguar", Cancelled: "Anuluar" };
-      const status: InvoiceStatus = i === 2 ? "Vonuar" : i === 5 ? "Anuluar" : statusMap[r.status] ?? "Pa paguar";
+      const status: InvoiceStatus = statusMap[r.status] ?? "Pa paguar";
       const customer = (sdkCustomers ?? []).find(c => c.id === r.customerId);
       const car = (sdkCars ?? []).find(c => c.id === r.carId);
       return {

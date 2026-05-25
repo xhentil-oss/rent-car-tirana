@@ -87,7 +87,7 @@ function formatDateInputValue(value: string | Date = new Date()): string {
 }
 
 function isMaintenanceStatus(status?: string): boolean {
-  return String(status || "").toLowerCase().includes("mir");
+  return String(status || "") === "Në mirëmbajtje";
 }
 
 export default function AdminReservations() {
