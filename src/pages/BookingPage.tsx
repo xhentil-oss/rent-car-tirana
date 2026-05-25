@@ -359,7 +359,7 @@ export default function BookingPage() {
   const minDaysRequired = React.useMemo(() => {
     if (!car || !startDateObj || !endDateObj) return 0;
     return getMinDaysRequirement(
-      (pricingRules ?? []) as import("../lib/pricingRules").PricingRule[],
+      (pricingRules ?? []) as PricingRule[],
       { carId: car.id, carCategory: car.category, startDate: startDateObj, endDate: endDateObj }
     );
   }, [pricingRules, car, startDateObj, endDateObj]);
