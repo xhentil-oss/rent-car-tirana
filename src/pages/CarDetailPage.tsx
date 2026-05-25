@@ -162,6 +162,8 @@ export default function CarDetailPage() {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [startTime, setStartTime] = useState("10:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [tab, setTab] = useState<Tab>("specs");
   const [heroVisible, setHeroVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(false);
@@ -1194,25 +1196,41 @@ export default function CarDetailPage() {
                       <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
                         {t("carDetail.booking.departure")}
                       </label>
-                      <input
-                        type="date"
-                        value={startDate}
-                        min={today}
-                        onChange={(e) => { const newStart = e.target.value; setStartDate(newStart); if (endDate && endDate < newStart) setEndDate(""); }}
-                        className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
-                      />
+                      <div className="grid grid-cols-[1fr_auto] gap-2">
+                        <input
+                          type="date"
+                          value={startDate}
+                          min={today}
+                          onChange={(e) => { const newStart = e.target.value; setStartDate(newStart); if (endDate && endDate < newStart) setEndDate(""); }}
+                          className="w-full px-4 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
+                        />
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="px-3 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
+                        />
+                      </div>
                     </div>
                     <div className="relative">
                       <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">
                         {t("carDetail.booking.return")}
                       </label>
-                      <input
-                        type="date"
-                        value={endDate}
-                        min={startDate || today}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className={`w-full px-4 py-3 rounded-xl border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 ${minDaysViolation ? "border-amber-400" : "border-border"}`}
-                      />
+                      <div className="grid grid-cols-[1fr_auto] gap-2">
+                        <input
+                          type="date"
+                          value={endDate}
+                          min={startDate || today}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className={`w-full px-4 py-3 rounded-xl border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200 ${minDaysViolation ? "border-amber-400" : "border-border"}`}
+                        />
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="px-3 py-3 rounded-xl border border-border text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white transition-all duration-200"
+                        />
+                      </div>
                       {minDaysViolation && (
                         <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
                           <span>⚠️</span> Minimumi i rezervimit është <strong className="ml-1">{minDaysRequired} ditë</strong>.
@@ -1372,7 +1390,7 @@ export default function CarDetailPage() {
                   <button
                     onClick={() =>
                       navigate(
-                        localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&pickup=${encodeURIComponent(pickupLocation)}&dropoff=${encodeURIComponent(dropoffLocation)}`),
+                        localePath(`/rezervo?car=${car.id}${startDate ? `&start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}&pickup=${encodeURIComponent(pickupLocation)}&dropoff=${encodeURIComponent(dropoffLocation)}`),
                       )
                     }
                     disabled={!available || (!!startDate && !!endDate && dateConflict) || minDaysViolation}

@@ -67,8 +67,10 @@ export function getSeasonForDate(date: Date = new Date()): Season {
 
 /** Returns the seasonal price per day (rounded to 2 decimals) */
 export function getSeasonalPricePerDay(basePrice: number, date: Date = new Date()): number {
+  const base = Number(basePrice);
+  if (!Number.isFinite(base)) return 0;
   const season = getSeasonForDate(date);
-  return Math.round(basePrice * season.multiplier * 100) / 100;
+  return Math.round(base * season.multiplier * 100) / 100;
 }
 
 /**
@@ -81,6 +83,7 @@ export function calculateSeasonalTotal(
   endDate: Date
 ): { total: number; breakdown: { season: Season; days: number; pricePerDay: number; subtotal: number }[] } {
   const breakdown: { season: Season; days: number; pricePerDay: number; subtotal: number }[] = [];
+  const base = Number.isFinite(Number(basePrice)) ? Number(basePrice) : 0;
 
   const current = new Date(startDate);
   current.setHours(0, 0, 0, 0);
@@ -92,7 +95,7 @@ export function calculateSeasonalTotal(
 
   for (let i = 0; i < days; i += 1) {
     const season = getSeasonForDate(current);
-    const pricePerDay = Math.round(basePrice * season.multiplier * 100) / 100;
+    const pricePerDay = Math.round(base * season.multiplier * 100) / 100;
     const existing = breakdown.find((b) => b.season.id === season.id);
     if (existing) {
       existing.days += 1;
