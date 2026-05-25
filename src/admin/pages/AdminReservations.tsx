@@ -215,7 +215,7 @@ export default function AdminReservations() {
         errors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren";
       }
     }
-    if (false && formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+    if (formData.startDate && formData.endDate && formData.endDate <= formData.startDate) {
       errors.endDate = "Data e kthimit duhet të jetë pas nisjes";
     }
     setFormErrors(errors);
@@ -663,7 +663,7 @@ export default function AdminReservations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e nisjes *</label>
-                  <input type="date" value={formData.startDate} min={todayInputValue} onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.startDate ? "border-error" : "border-border"}`} />
+                  <input type="date" value={formData.startDate} min={todayInputValue} onChange={(e) => { const newStart = e.target.value; setFormData((prev) => ({ ...prev, startDate: newStart, endDate: prev.endDate && prev.endDate < newStart ? "" : prev.endDate })); }} className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${formErrors.startDate ? "border-error" : "border-border"}`} />
                   {formErrors.startDate && <p className="text-xs text-error mt-1">{formErrors.startDate}</p>}
                 </div>
                 <div>
@@ -873,7 +873,7 @@ export default function AdminReservations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e nisjes</label>
-                  <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((prev) => ({ ...prev, startDate: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                  <input type="date" value={editForm.startDate} onChange={(e) => { const newStart = e.target.value; setEditForm((prev) => ({ ...prev, startDate: newStart, endDate: prev.endDate && prev.endDate < newStart ? "" : prev.endDate })); }} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-700 mb-2 block">Ora e nisjes</label>
@@ -886,7 +886,7 @@ export default function AdminReservations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 mb-2"><Calendar size={16} className="text-neutral-400" />Data e kthimit</label>
-                  <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((prev) => ({ ...prev, endDate: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                  <input type="date" value={editForm.endDate} min={editForm.startDate || undefined} onChange={(e) => setEditForm((prev) => ({ ...prev, endDate: e.target.value }))} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-700 mb-2 block">Ora e kthimit</label>
