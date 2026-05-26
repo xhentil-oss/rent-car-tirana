@@ -7,6 +7,8 @@ import {
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { RULE_TYPE_LABELS, ruleConditionSummary } from "../../lib/pricingRules";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 function useActivityLog() {
   const { create } = useMutation("ActivityLog");
@@ -66,6 +68,7 @@ export default function AdminPricingRules() {
   const [form, setForm] = useState<RuleForm>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof RuleForm, string>>>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "activate" | "deactivate">(null);
 
   const today = new Date();
   const allRules = rules ?? [];
@@ -224,6 +227,30 @@ export default function AdminPricingRules() {
     label: `${meta.emoji} ${meta.label}`,
   }));
 
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((r) => remove(r.id)));
+      await Promise.all(items.map((r) => log("DELETE", "PricingRule", r.id, `Rregull i çmimit u fshi: ${r.name}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleBulkActive = async (active: boolean) => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((r) => update(r.id, { isActive: active })));
+      await Promise.all(items.map((r) => log("UPDATE", "PricingRule", r.id, `${active ? "Aktivizuar" : "Çaktivizuar"}: ${r.name}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (err) { console.error(err); }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -289,6 +316,29 @@ export default function AdminPricingRules() {
         </div>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        onClear={bulk.clear}
+        itemLabel="rregull"
+        actions={[
+          { label: "Aktivizo", icon: ToggleRight, variant: "success", onClick: () => setBulkConfirm("activate"), disabled: isMutating },
+          { label: "Çaktivizo", icon: ToggleLeft, variant: "warning", onClick: () => setBulkConfirm("deactivate"), disabled: isMutating },
+          { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+        ]}
+      />
+
+      {filtered.length > 0 && (
+        <label className="flex items-center gap-2 text-xs text-neutral-500 cursor-pointer">
+          <BulkCheckbox
+            checked={bulk.isAllSelected}
+            indeterminate={bulk.isSomeSelected}
+            onChange={bulk.toggleAll}
+            ariaLabel="Zgjidh të gjitha rregullat"
+          />
+          Zgjidh të gjitha ({filtered.length})
+        </label>
+      )}
+
       {/* Rules List */}
       <div className="space-y-3">
         {isPending ? (
@@ -317,11 +367,18 @@ export default function AdminPricingRules() {
             return (
               <div
                 key={rule.id}
-                className={`bg-white rounded-xl border transition-all duration-200 ${rule.isActive && !isExpired ? "border-border hover:border-primary/30 hover:shadow-sm" : "border-border opacity-70"}`}
+                className={`bg-white rounded-xl border transition-all duration-200 ${bulk.isSelected(rule.id) ? "border-primary/50 bg-primary/5" : rule.isActive && !isExpired ? "border-border hover:border-primary/30 hover:shadow-sm" : "border-border opacity-70"}`}
               >
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="pt-1">
+                        <BulkCheckbox
+                          checked={bulk.isSelected(rule.id)}
+                          onChange={() => bulk.toggleOne(rule.id)}
+                          ariaLabel={`Zgjidh ${rule.name}`}
+                        />
+                      </div>
                       {/* Type Icon */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 border ${meta.color}`}>
                         {RULE_TYPE_ICONS[rule.type] ?? <Tag size={16} weight="bold" />}
@@ -428,6 +485,33 @@ export default function AdminPricingRules() {
           })
         )}
       </div>
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi rregullat" : bulkConfirm === "activate" ? "Aktivizo rregullat" : "Çaktivizo rregullat"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete" ? `${bulk.selectedCount} rregulla do të fshihen.` : `Statusi i ${bulk.selectedCount} rregullave do të ndryshojë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkActive(bulkConfirm === "activate");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-white" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirm */}
       {deleteConfirmId && (

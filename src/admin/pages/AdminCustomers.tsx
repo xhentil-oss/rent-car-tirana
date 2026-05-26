@@ -7,6 +7,8 @@ import {
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 function useActivityLog() {
   const { create } = useMutation("ActivityLog");
@@ -50,6 +52,7 @@ export default function AdminCustomers() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "blacklist" | "unblacklist">(null);
 
   // Chat
   const [chatInput, setChatInput] = useState("");
@@ -67,6 +70,31 @@ export default function AdminCustomers() {
     if (filterType && c.type !== filterType) return false;
     return true;
   });
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((c) => removeCustomer(c.id)));
+      await Promise.all(items.map((c) => log("DELETE", "Customer", c.id, `Klient u fshi: ${c.name}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      if (selectedCustomerId && items.some((i) => i.id === selectedCustomerId)) setSelectedCustomerId(null);
+      await refetchCustomers();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkBlacklist = async (value: boolean) => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((c) => updateCustomer(c.id, { isBlacklisted: value })));
+      await Promise.all(items.map((c) => log("UPDATE", "Customer", c.id, `${c.name} — blacklist: ${value ? "Bllokuar" : "Zhbllokuar"}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetchCustomers();
+    } catch (e) { console.error(e); }
+  };
 
   const selectedCustomer = selectedCustomerId ? (customers ?? []).find(c => c.id === selectedCustomerId) ?? null : null;
 
@@ -198,11 +226,30 @@ export default function AdminCustomers() {
         </select>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        onClear={bulk.clear}
+        itemLabel="klient"
+        actions={[
+          { label: "Bllokoj", icon: ShieldSlash, variant: "warning", onClick: () => setBulkConfirm("blacklist"), disabled: isMutating },
+          { label: "Zhblloko", icon: Shield, variant: "success", onClick: () => setBulkConfirm("unblacklist"), disabled: isMutating },
+          { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+        ]}
+      />
+
       <div className="bg-white rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
               <tr className="border-b border-border bg-neutral-50">
+                <th className="px-4 py-3 w-10">
+                  <BulkCheckbox
+                    checked={bulk.isAllSelected}
+                    indeterminate={bulk.isSomeSelected}
+                    onChange={bulk.toggleAll}
+                    ariaLabel="Zgjidh të gjithë klientët"
+                  />
+                </th>
                 {["Emri","Telefoni","Email","Tipi","Tier","Statusi","Veprimet"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wide">{h}</th>
                 ))}
@@ -210,11 +257,18 @@ export default function AdminCustomers() {
             </thead>
             <tbody>
               {isPending ? (
-                <TableSkeleton rows={5} columns={7} />
+                <TableSkeleton rows={5} columns={8} />
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7}><EmptyState type={search || filterType ? "search" : "customers"} title={search || filterType ? "Nuk u gjetën klientë" : undefined} description={search || filterType ? "Provoni kritere të tjera kërkimi" : undefined} /></td></tr>
+                <tr><td colSpan={8}><EmptyState type={search || filterType ? "search" : "customers"} title={search || filterType ? "Nuk u gjetën klientë" : undefined} description={search || filterType ? "Provoni kritere të tjera kërkimi" : undefined} /></td></tr>
               ) : filtered.map((customer) => (
-                <tr key={customer.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${customer.isBlacklisted ? "bg-red-50/40" : ""}`}>
+                <tr key={customer.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${customer.isBlacklisted ? "bg-red-50/40" : ""} ${bulk.isSelected(customer.id) ? "bg-primary/5" : ""}`}>
+                  <td className="px-4 py-3">
+                    <BulkCheckbox
+                      checked={bulk.isSelected(customer.id)}
+                      onChange={() => bulk.toggleOne(customer.id)}
+                      ariaLabel={`Zgjidh ${customer.name}`}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
@@ -561,6 +615,52 @@ export default function AdminCustomers() {
                 className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-error text-error-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
               >
                 Po, fshi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Action Confirmation */}
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${bulkConfirm === "delete" ? "bg-error/10" : "bg-warning/10"}`}>
+                {bulkConfirm === "delete"
+                  ? <Trash size={20} className="text-error" />
+                  : bulkConfirm === "blacklist"
+                    ? <ShieldSlash size={20} className="text-warning" />
+                    : <Shield size={20} className="text-success" />}
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900">
+                  {bulkConfirm === "delete" ? "Fshi klientët e zgjedhur" : bulkConfirm === "blacklist" ? "Bllokoj klientët" : "Zhblloko klientët"}
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  {bulkConfirm === "delete" ? "Ky veprim është i pakthyeshëm" : "Statusi do të ndryshojë për të gjithë të zgjedhurit"}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600 mb-5">
+              {bulkConfirm === "delete"
+                ? `A jeni të sigurt që dëshironi të fshini ${bulk.selectedCount} klientë?`
+                : `Do të ${bulkConfirm === "blacklist" ? "bllokohen" : "zhbllokohen"} ${bulk.selectedCount} klientë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">
+                Anulo
+              </button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkBlacklist(bulkConfirm === "blacklist");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-opacity cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground hover:opacity-90" : "bg-primary text-primary-foreground hover:opacity-90"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
               </button>
             </div>
           </div>

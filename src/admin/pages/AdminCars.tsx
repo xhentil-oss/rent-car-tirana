@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import StatusBadge from "../../components/StatusBadge";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 // ActivityLog helper
 function useActivityLog() {
@@ -310,6 +312,7 @@ export default function AdminCars() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingCarId, setEditingCarId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "available" | "maintenance">(null);
   const [form, setForm] = useState<CarDraftForm>(emptyForm);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -318,6 +321,30 @@ export default function AdminCars() {
     if (filterCategory && c.category !== filterCategory) return false;
     return true;
   });
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems() as any[];
+    try {
+      await Promise.all(items.map((c) => remove(c.id)));
+      await Promise.all(items.map((c) => log("DELETE", "Car", c.id, `Makinë e fshirë: ${c.brand} ${c.model}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    const items = bulk.getSelectedItems() as any[];
+    try {
+      await Promise.all(items.map((c) => update(c.id, { status })));
+      await Promise.all(items.map((c) => log("UPDATE", "Car", c.id, `${c.brand} ${c.model} — statusi → ${status}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
 
   const openAdd = () => { setEditingCarId(null); setForm(emptyForm); setFormErrors({}); setDrawerOpen(true); };
   const openEdit = (car: any) => {
@@ -420,11 +447,30 @@ export default function AdminCars() {
         </select>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        onClear={bulk.clear}
+        itemLabel="makinë"
+        actions={[
+          { label: "Bëji të disponueshme", icon: Check, variant: "success", onClick: () => setBulkConfirm("available"), disabled: isMutating },
+          { label: "Në mirëmbajtje", icon: X, variant: "warning", onClick: () => setBulkConfirm("maintenance"), disabled: isMutating },
+          { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+        ]}
+      />
+
       <div className="bg-white rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
               <tr className="border-b border-border bg-neutral-50">
+                <th className="px-4 py-3 w-10">
+                  <BulkCheckbox
+                    checked={bulk.isAllSelected}
+                    indeterminate={bulk.isSomeSelected}
+                    onChange={bulk.toggleAll}
+                    ariaLabel="Zgjidh të gjitha makinat"
+                  />
+                </th>
                 {["Makina","Kategoria","Sasia","Statusi","Çmimi/ditë","Veprimet"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wide">{h}</th>
                 ))}
@@ -432,11 +478,18 @@ export default function AdminCars() {
             </thead>
             <tbody>
               {isPending ? (
-                <TableSkeleton rows={5} columns={5} />
+                <TableSkeleton rows={5} columns={6} />
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6}><EmptyState type={filterStatus || filterCategory ? "search" : "cars"} actionLabel={!filterStatus && !filterCategory ? "Shto makinë" : undefined} onAction={!filterStatus && !filterCategory ? openAdd : undefined} /></td></tr>
+                <tr><td colSpan={7}><EmptyState type={filterStatus || filterCategory ? "search" : "cars"} actionLabel={!filterStatus && !filterCategory ? "Shto makinë" : undefined} onAction={!filterStatus && !filterCategory ? openAdd : undefined} /></td></tr>
               ) : filtered.map((car) => (
-                <tr key={car.id} className="border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150">
+                <tr key={car.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${bulk.isSelected(car.id) ? "bg-primary/5" : ""}`}>
+                  <td className="px-4 py-3">
+                    <BulkCheckbox
+                      checked={bulk.isSelected(car.id)}
+                      onChange={() => bulk.toggleOne(car.id)}
+                      ariaLabel={`Zgjidh ${car.brand} ${car.model}`}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <img src={car.image} alt={`${car.brand} ${car.model}`} loading="lazy" className="w-10 h-8 rounded object-cover" />
@@ -472,6 +525,35 @@ export default function AdminCars() {
           </table>
         </div>
       </div>
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 bg-neutral-900/55 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi makinat e zgjedhura" : bulkConfirm === "available" ? "Bëji të disponueshme" : "Vendos në mirëmbajtje"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete"
+                ? `${bulk.selectedCount} makina do të fshihen përgjithmonë. Ky veprim nuk mund të kthehet.`
+                : `Statusi do të ndryshojë për ${bulk.selectedCount} makina.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 bg-white hover:bg-secondary transition-colors cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else if (bulkConfirm === "available") handleBulkStatus("Në dispozicion");
+                  else handleBulkStatus("Në mirëmbajtje");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {deleteConfirm && (
         <div className="fixed inset-0 bg-neutral-900/55 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">

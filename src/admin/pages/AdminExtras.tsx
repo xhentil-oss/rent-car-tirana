@@ -5,6 +5,8 @@ import {
 } from "@phosphor-icons/react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 type Category = "insurance" | "equipment" | "service" | "addon";
 type PriceType = "per_day" | "per_rental" | "one_time";
@@ -86,6 +88,7 @@ export default function AdminExtras() {
   const [form, setForm] = useState<ExtraForm>(emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof ExtraForm, string>>>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "activate" | "deactivate">(null);
 
   const all = (data ?? []) as ExtraRecord[];
 
@@ -117,6 +120,35 @@ export default function AdminExtras() {
     insurance: all.filter((e) => e.category === "insurance" && e.isActive).length,
     services: all.filter((e) => e.category === "service" && e.isActive).length,
   }), [all]);
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((e) => remove(e.id)));
+      await Promise.all(items.map((e) => log("DELETE", "Extra", e.id, `Extra u fshi: ${e.nameSq}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleBulkActive = async (active: boolean) => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((e) => update(e.id, {
+        code: e.code, nameSq: e.nameSq, nameEn: e.nameEn,
+        descriptionSq: e.descriptionSq, descriptionEn: e.descriptionEn,
+        category: e.category, price: e.price, priceType: e.priceType,
+        icon: e.icon, maxQuantity: e.maxQuantity, isActive: active, sortOrder: e.sortOrder,
+      })));
+      await Promise.all(items.map((e) => log("UPDATE", "Extra", e.id, `${active ? "Aktivizuar" : "Çaktivizuar"}: ${e.nameSq}`)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (err) { console.error(err); }
+  };
 
   function openNew() {
     setEditId(null);
@@ -311,6 +343,28 @@ export default function AdminExtras() {
           />
         </div>
       ) : (
+        <>
+        <BulkActionBar
+          selectedCount={bulk.selectedCount}
+          onClear={bulk.clear}
+          itemLabel="extra"
+          actions={[
+            { label: "Aktivizo", icon: ToggleRight, variant: "success", onClick: () => setBulkConfirm("activate"), disabled: isMutating },
+            { label: "Çaktivizo", icon: ToggleLeft, variant: "warning", onClick: () => setBulkConfirm("deactivate"), disabled: isMutating },
+            { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+          ]}
+        />
+
+        <label className="flex items-center gap-2 text-xs text-neutral-500 cursor-pointer">
+          <BulkCheckbox
+            checked={bulk.isAllSelected}
+            indeterminate={bulk.isSomeSelected}
+            onChange={bulk.toggleAll}
+            ariaLabel="Zgjidh të gjitha extras"
+          />
+          Zgjidh të gjitha ({filtered.length})
+        </label>
+
         <div className="space-y-6">
           {CATEGORIES.filter((c) => (grouped.get(c.value) ?? []).length > 0).map((cat) => {
             const items = grouped.get(cat.value) ?? [];
@@ -326,10 +380,17 @@ export default function AdminExtras() {
                   {items.map((e) => (
                     <div
                       key={e.id}
-                      className={`bg-white rounded-lg border transition-all ${e.isActive ? "border-border hover:border-primary/30 hover:shadow-sm" : "border-border opacity-60"}`}
+                      className={`bg-white rounded-lg border transition-all ${bulk.isSelected(e.id) ? "border-primary/50 bg-primary/5" : e.isActive ? "border-border hover:border-primary/30 hover:shadow-sm" : "border-border opacity-60"}`}
                     >
                       <div className="p-4 flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="pt-1">
+                            <BulkCheckbox
+                              checked={bulk.isSelected(e.id)}
+                              onChange={() => bulk.toggleOne(e.id)}
+                              ariaLabel={`Zgjidh ${e.nameSq}`}
+                            />
+                          </div>
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border ${cat.color}`}>
                             {cat.icon}
                           </div>
@@ -392,6 +453,34 @@ export default function AdminExtras() {
               </div>
             );
           })}
+        </div>
+        </>
+      )}
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi extras" : bulkConfirm === "activate" ? "Aktivizo extras" : "Çaktivizo extras"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete" ? `${bulk.selectedCount} extra do të fshihen.` : `Statusi i ${bulk.selectedCount} extras do të ndryshojë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkActive(bulkConfirm === "activate");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-md text-sm font-medium hover:opacity-90 cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

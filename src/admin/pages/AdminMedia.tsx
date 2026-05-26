@@ -16,6 +16,8 @@ import {
 } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation } from "../../hooks/useApi";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 type MediaItem = {
   id: string;
@@ -66,6 +68,18 @@ export default function AdminMedia() {
   });
 
   const selectedItem = selected ? mediaItems.find((m) => m.id === selected) : null;
+
+  const bulk = useBulkSelection(filtered);
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((m) => update(m.id, { image: "/placeholder-car.svg" })));
+      bulk.clear();
+      setBulkConfirm(false);
+    } catch (e) { console.error(e); }
+  };
 
   const handleFileChange = (file: File | null) => {
     if (!file) return;
@@ -266,6 +280,15 @@ export default function AdminMedia() {
         </div>
       )}
 
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        onClear={bulk.clear}
+        itemLabel="imazh"
+        actions={[
+          { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm(true) },
+        ]}
+      />
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
@@ -304,17 +327,38 @@ export default function AdminMedia() {
               <p className="text-sm">Nuk u gjetën imazhe.</p>
             </div>
           ) : (
+            <>
+            {filtered.length > 0 && (
+              <label className="flex items-center gap-2 text-xs text-neutral-500 cursor-pointer mb-3">
+                <BulkCheckbox
+                  checked={bulk.isAllSelected}
+                  indeterminate={bulk.isSomeSelected}
+                  onChange={bulk.toggleAll}
+                  ariaLabel="Zgjidh të gjitha imazhet"
+                />
+                Zgjidh të gjitha ({filtered.length})
+              </label>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {filtered.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => setSelected(selected === item.id ? null : item.id)}
                   className={`group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
-                    selected === item.id
+                    bulk.isSelected(item.id)
+                      ? "border-primary shadow-md ring-2 ring-primary/30"
+                      : selected === item.id
                       ? "border-primary shadow-md"
                       : "border-transparent hover:border-primary/40"
                   }`}
                 >
+                  <div className="absolute top-2 left-2 z-10 bg-white/90 rounded p-0.5 shadow-sm" onClick={(e) => e.stopPropagation()}>
+                    <BulkCheckbox
+                      checked={bulk.isSelected(item.id)}
+                      onChange={() => bulk.toggleOne(item.id)}
+                      ariaLabel={`Zgjidh ${item.name}`}
+                    />
+                  </div>
                   <img
                     src={item.url}
                     alt={item.name}
@@ -353,6 +397,7 @@ export default function AdminMedia() {
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
 
@@ -407,6 +452,21 @@ export default function AdminMedia() {
           </div>
         )}
       </div>
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 bg-neutral-900/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-base font-semibold text-neutral-900 mb-2">Fshi imazhet</h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulk.selectedCount} imazhe do të zëvendësohen me imazhin standard.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(false)} className="flex-1 py-2.5 rounded-lg border border-border text-sm font-medium text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button onClick={handleBulkDelete} className="flex-1 py-2.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 cursor-pointer">Po, fshi</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirm modal */}
       {deleteConfirm && (

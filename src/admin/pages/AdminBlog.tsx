@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "../../hooks/useApi";
-import { PencilSimple, Trash, Plus, Eye, EyeSlash, MagnifyingGlass, Article } from "@phosphor-icons/react";
+import { PencilSimple, Trash, Plus, Eye, EyeSlash, MagnifyingGlass, Article, Check } from "@phosphor-icons/react";
 import RichEditor from "../RichEditor";
 import ImagePicker from "../ImagePicker";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 function slugify(text: string) {
   return text
@@ -47,11 +49,34 @@ export default function AdminBlog() {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"sq" | "en">("sq");
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "published" | "draft">(null);
 
   const filtered = posts.filter(p =>
     p.titleSq.toLowerCase().includes(search.toLowerCase()) ||
     (p.titleEn || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((p) => deletePost(p.id)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkStatus = async (status: "published" | "draft") => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((p) => updatePost(p.id, { status })));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -283,9 +308,38 @@ export default function AdminBlog() {
           </button>
         </div>
       ) : (
+        <>
+        <BulkActionBar
+          selectedCount={bulk.selectedCount}
+          onClear={bulk.clear}
+          itemLabel="postim"
+          actions={[
+            { label: "Publiko", icon: Check, variant: "success", onClick: () => setBulkConfirm("published"), disabled: mutating },
+            { label: "Bëj draft", icon: EyeSlash, variant: "warning", onClick: () => setBulkConfirm("draft"), disabled: mutating },
+            { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: mutating },
+          ]}
+        />
+
+        {filtered.length > 0 && (
+          <label className="flex items-center gap-2 text-xs text-neutral-500 cursor-pointer">
+            <BulkCheckbox
+              checked={bulk.isAllSelected}
+              indeterminate={bulk.isSomeSelected}
+              onChange={bulk.toggleAll}
+              ariaLabel="Zgjidh të gjitha postimet"
+            />
+            Zgjidh të gjitha
+          </label>
+        )}
+
         <div className="space-y-3">
           {filtered.map(post => (
-            <div key={post.id} className="bg-white rounded-xl border border-border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+            <div key={post.id} className={`bg-white rounded-xl border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow ${bulk.isSelected(post.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+              <BulkCheckbox
+                checked={bulk.isSelected(post.id)}
+                onChange={() => bulk.toggleOne(post.id)}
+                ariaLabel={`Zgjidh ${post.titleSq}`}
+              />
               {post.coverImage ? (
                 <img src={post.coverImage} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
               ) : (
@@ -322,6 +376,34 @@ export default function AdminBlog() {
               </div>
             </div>
           ))}
+        </div>
+        </>
+      )}
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi postimet" : bulkConfirm === "published" ? "Publiko postimet" : "Vendos në draft"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete" ? `${bulk.selectedCount} postime do të fshihen përgjithmonë.` : `Statusi i ${bulk.selectedCount} postimeve do të ndryshojë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkStatus(bulkConfirm);
+                }}
+                disabled={mutating}
+                className={`flex-1 py-2.5 rounded-md text-sm font-medium hover:opacity-90 cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

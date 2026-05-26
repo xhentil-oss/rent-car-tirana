@@ -27,6 +27,8 @@ import {
   UserCircle,
   ArrowClockwise,
 } from "@phosphor-icons/react";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 // ─── Role config ────────────────────────────────────────────────────────────
 const ROLES = ["Admin", "Manager", "Staff", "Accountant"] as const;
@@ -395,6 +397,7 @@ export default function AdminUsers() {
   const [showTwoFA, setShowTwoFA] = useState<string | null>(null); // userId
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showPermissions, setShowPermissions] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "activate" | "deactivate">(null);
 
   const filtered = (users ?? []).filter((u) => {
     const matchRole = filterRole === "Të gjitha" || u.role === filterRole;
@@ -404,6 +407,29 @@ export default function AdminUsers() {
       u.role.toLowerCase().includes(search.toLowerCase());
     return matchRole && matchSearch;
   });
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((u: any) => remove(u.id)));
+      await Promise.all(items.map((u: any) => createLog({ action: "DELETE", entity: "UserAdminProfile", entityId: u.id, description: `Fshirë profili ${u.userId ?? u.id}`, timestamp: new Date() })));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkActivate = async (value: boolean) => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((u: any) => update(u.id, { isActive: value })));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -595,10 +621,29 @@ export default function AdminUsers() {
               <p className="text-xs mt-1">Shto staffin e parë me butonin &quot;Shto Përdorues&quot;</p>
             </div>
           ) : (
+            <>
+            <BulkActionBar
+              selectedCount={bulk.selectedCount}
+              onClear={bulk.clear}
+              itemLabel="përdorues"
+              actions={[
+                { label: "Aktivizo", icon: CheckCircle, variant: "success", onClick: () => setBulkConfirm("activate"), disabled: isMutating },
+                { label: "Çaktivizo", icon: XCircle, variant: "warning", onClick: () => setBulkConfirm("deactivate"), disabled: isMutating },
+                { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+              ]}
+            />
             <div className="bg-white rounded-lg border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-neutral-50">
+                    <th className="px-4 py-3 w-10">
+                      <BulkCheckbox
+                        checked={bulk.isAllSelected}
+                        indeterminate={bulk.isSomeSelected}
+                        onChange={bulk.toggleAll}
+                        ariaLabel="Zgjidh të gjithë"
+                      />
+                    </th>
                     <th className="text-left text-xs font-medium text-neutral-500 px-4 py-3">Stafi</th>
                     <th className="text-left text-xs font-medium text-neutral-500 px-4 py-3 hidden md:table-cell">Roli</th>
                     <th className="text-left text-xs font-medium text-neutral-500 px-4 py-3 hidden lg:table-cell">Hyrja e fundit</th>
@@ -609,7 +654,14 @@ export default function AdminUsers() {
                 </thead>
                 <tbody>
                   {filtered.map((u) => (
-                    <tr key={u.id} className="border-b border-border last:border-0 hover:bg-neutral-50 transition-colors">
+                    <tr key={u.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors ${bulk.isSelected(u.id) ? "bg-primary/5" : ""}`}>
+                      <td className="px-4 py-3">
+                        <BulkCheckbox
+                          checked={bulk.isSelected(u.id)}
+                          onChange={() => bulk.toggleOne(u.id)}
+                          ariaLabel={`Zgjidh ${getDisplayName(u)}`}
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
@@ -687,8 +739,36 @@ export default function AdminUsers() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </>
+      )}
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi përdoruesit" : bulkConfirm === "activate" ? "Aktivizo përdoruesit" : "Çaktivizo përdoruesit"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete" ? `${bulk.selectedCount} përdorues do të fshihen përgjithmonë.` : `Statusi i ${bulk.selectedCount} përdoruesve do të ndryshojë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkActivate(bulkConfirm === "activate");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-md text-sm font-medium hover:opacity-90 cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Drawer ─────────────────────────────────────────────────────────── */}

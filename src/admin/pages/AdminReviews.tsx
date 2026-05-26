@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Star, Check, X, Eye, Trash, MagnifyingGlass } from "@phosphor-icons/react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 
 export default function AdminReviews() {
   const { data: reviews, isPending, refetch } = useQuery("ReviewAdmin", { orderBy: { createdAt: "desc" } });
@@ -9,6 +11,7 @@ export default function AdminReviews() {
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<typeof reviews extends (infer T)[] ? T : never | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "approve" | "reject">(null);
 
   const allReviews = reviews ?? [];
   const filtered = allReviews.filter((r) => {
@@ -17,6 +20,28 @@ export default function AdminReviews() {
     if (search) return (r.authorName ?? "").toLowerCase().includes(search.toLowerCase()) || (r.text ?? "").toLowerCase().includes(search.toLowerCase());
     return true;
   });
+
+  const bulk = useBulkSelection(filtered);
+
+  const handleBulkApprove = async (approved: boolean) => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((r: any) => update(r.id, { approved })));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkDelete = async () => {
+    const items = bulk.getSelectedItems();
+    try {
+      await Promise.all(items.map((r: any) => remove(r.id)));
+      bulk.clear();
+      setBulkConfirm(null);
+      await refetch();
+    } catch (e) { console.error(e); }
+  };
 
   const total = allReviews.length;
   const pending = allReviews.filter((r) => !r.approved).length;
@@ -60,11 +85,30 @@ export default function AdminReviews() {
         </div>
       </div>
 
+      <BulkActionBar
+        selectedCount={bulk.selectedCount}
+        onClear={bulk.clear}
+        itemLabel="vlerësim"
+        actions={[
+          { label: "Aprovo", icon: Check, variant: "success", onClick: () => setBulkConfirm("approve"), disabled: isMutating },
+          { label: "Refuzo", icon: X, variant: "warning", onClick: () => setBulkConfirm("reject"), disabled: isMutating },
+          { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
+        ]}
+      />
+
       {/* Table */}
       <div className="bg-white rounded-lg border border-border overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-neutral-50">
+              <th className="px-4 py-3 w-10">
+                <BulkCheckbox
+                  checked={bulk.isAllSelected}
+                  indeterminate={bulk.isSomeSelected}
+                  onChange={bulk.toggleAll}
+                  ariaLabel="Zgjidh të gjitha vlerësimet"
+                />
+              </th>
               {["Autori", "Vlerësimi", "Komenti", "Data", "Statusi", "Veprimet"].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wide">{h}</th>
               ))}
@@ -72,11 +116,18 @@ export default function AdminReviews() {
           </thead>
           <tbody>
             {isPending ? (
-              <tr><td colSpan={6} className="text-center py-12 text-neutral-400">Duke ngarkuar...</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-neutral-400">Duke ngarkuar...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={6}><EmptyState type="search" /></td></tr>
+              <tr><td colSpan={7}><EmptyState type="search" /></td></tr>
             ) : filtered.map((r) => (
-              <tr key={r.id} className="border-b border-border last:border-0 hover:bg-neutral-50">
+              <tr key={r.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 ${bulk.isSelected(r.id) ? "bg-primary/5" : ""}`}>
+                <td className="px-4 py-3">
+                  <BulkCheckbox
+                    checked={bulk.isSelected(r.id)}
+                    onChange={() => bulk.toggleOne(r.id)}
+                    ariaLabel={`Zgjidh vlerësimin nga ${r.authorName ?? "Anonim"}`}
+                  />
+                </td>
                 <td className="px-4 py-3 text-sm font-medium text-neutral-800">{r.authorName ?? "Anonim"}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-0.5">
@@ -104,6 +155,34 @@ export default function AdminReviews() {
           </tbody>
         </table>
       </div>
+
+      {/* Bulk Confirmation */}
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/55" onClick={() => setBulkConfirm(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
+              {bulkConfirm === "delete" ? "Fshi vlerësimet" : bulkConfirm === "approve" ? "Aprovo vlerësimet" : "Refuzo vlerësimet"}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              {bulkConfirm === "delete" ? `${bulk.selectedCount} vlerësime do të fshihen. Ky veprim nuk mund të kthehet.` : `Statusi i ${bulk.selectedCount} vlerësimeve do të ndryshojë.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setBulkConfirm(null)} className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">Anulo</button>
+              <button
+                onClick={() => {
+                  if (bulkConfirm === "delete") handleBulkDelete();
+                  else handleBulkApprove(bulkConfirm === "approve");
+                }}
+                disabled={isMutating}
+                className={`flex-1 py-2.5 rounded-md text-sm font-medium hover:opacity-90 cursor-pointer disabled:opacity-50 ${bulkConfirm === "delete" ? "bg-error text-error-foreground" : "bg-primary text-primary-foreground"}`}
+              >
+                {bulkConfirm === "delete" ? "Po, fshi" : "Po, vazhdo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {selected && (
