@@ -582,7 +582,7 @@ export default function Header() {
     { label: "Blog", href: "/blog" },
     { label: t("header.reviews"), href: "/vleresime", badge: "★ 4.9" },
     { label: t("header.about"), href: "/", anchor: "rreth-nesh" },
-    { label: t("header.contact"), href: "/", anchor: "kontakti" },
+    { label: t("header.contact"), href: "/kontakt" },
   ];
 
   const scrollToAnchor = (anchor: string) => {
