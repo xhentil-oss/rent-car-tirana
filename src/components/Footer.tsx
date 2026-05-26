@@ -46,6 +46,7 @@ function Footer() {
                 { label: t("footer.nav.account"), to: "/llogaria" },
                 { label: "Blog", to: "/blog" },
                 { label: t("footer.nav.sitemap"), to: "/sitemap" },
+                { label: "Zyrat tona", to: "/zyrat" },
                 { label: "Kontakt", to: "/kontakt" },
               ].map((l) => (
                 <li key={l.to}>

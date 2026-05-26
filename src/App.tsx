@@ -38,6 +38,7 @@ const MakinaAutomatike = React.lazy(() => import("./pages/seo/MakinaAutomatike")
 const MakinaLuksoze = React.lazy(() => import("./pages/seo/MakinaLuksoze"));
 const SitemapPage = React.lazy(() => import("./pages/SitemapPage"));
 const ContactPage = React.lazy(() => import("./pages/ContactPage"));
+const OfficesPage = React.lazy(() => import("./pages/OfficesPage"));
 const TermsPage = React.lazy(() => import("./pages/TermsPage"));
 const PrivacyPage = React.lazy(() => import("./pages/PrivacyPage"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
@@ -62,6 +63,7 @@ const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
   ["/makina-luksoze-me-qira",    "/en/luxury-car-rental",     MakinaLuksoze],
   ["/sitemap",                   "/en/sitemap",               SitemapPage],
   ["/kontakt",                   "/en/contact",               ContactPage],
+  ["/zyrat",                     "/en/offices",               OfficesPage],
   ["/termat-e-sherbimit",        "/en/terms",                 TermsPage],
   ["/privatesie",                "/en/privacy",               PrivacyPage],
   ["/blog",                      "/en/blog",                  BlogPage],
