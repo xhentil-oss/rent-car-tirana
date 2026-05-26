@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sSL \"https://rentcartiranaairport.com/zyrat\")",
+      "Bash(grep -oE \"\\(maps/embed[^\\\\\"]{0,150}|OfficesPage|iframe[^>]{0,100}google\\)\")",
+      "Bash(curl -sSL \"https://rentcartiranaairport.com/assets/index-DPw9JwuV.js\")",
+      "Bash(grep -oE \"OfficesPage|Rio.{0,5}Rent.{0,5}Tirana.{0,5}Airport|maps.embed\")",
+      "Bash(grep -oE \"OfficesPage[A-Za-z0-9_-]{0,40}\\\\.js\")",
+      "Bash(curl -sSL \"https://rentcartiranaairport.com/assets/OfficesPage-D1Ob7Fj6.js\")",
+      "Bash(grep -oE \"\\(maps/embed[^\\\\\"]{0,200}|5e[01]\\)\")",
+      "Bash(curl -sSI \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e0!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sSI \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22782.17994045906!2d19.78305097910156!3d41.3303371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x13502d007f2d8da7%3A0x5b16f52716d6c712!2sRio%20Rent!5e0!3m2!1sen!2s!4v1779820245152!5m2!1sen!2s\")",
+      "Bash(curl -sSI \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/120.0 Safari/537.36\" \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sS -o /dev/null -w \"5e0: HTTP %{http_code}\\\\n\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e0!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sS -o /dev/null -w \"5e1: HTTP %{http_code}\\\\n\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sSI -H \"User-Agent: Mozilla/5.0 Chrome/120.0\" -H \"Referer: https://rentcartiranaairport.com/\" \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s\")",
+      "Bash(curl -sSI -H \"User-Agent: Mozilla/5.0 Chrome/120\" \"https://maps.google.com/maps?q=Rio+Rent+-+Rent+Car+Tirana+Airport&output=embed\")",
+      "Bash(curl -sSIL -H \"User-Agent: Mozilla/5.0 Chrome/120\" \"https://www.google.com/maps?q=Rio+Rent+Tirana&output=embed\")",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" -H \"User-Agent: Mozilla/5.0 Chrome/120\" \"https://www.google.com/maps?q=Rio+Rent+Tirana&output=embed\" -L)",
+      "Bash(curl -sSL -H \"User-Agent: Mozilla/5.0 Chrome/120\" \"https://www.google.com/maps?q=Rio+Rent+Tirana&output=embed\")",
+      "Bash(curl -sSIL -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 Chrome/120\" \"https://maps.google.com/maps?q=Rio+Rent+Tirana+Airport&output=embed\")",
+      "Bash(curl -sSI -H \"User-Agent: Mozilla/5.0 Chrome/120\" \"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2996.4607963735!2d19.8195!3d41.3275!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDE5JzM5LjAiTiAxOcKwNDknMTAuMiJF!5e0!3m2!1sen!2sal!4v1620000000000\")",
+      "Bash(curl -sSI -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) Chrome/120\" -H \"Sec-Fetch-Dest: iframe\" -H \"Sec-Fetch-Mode: navigate\" -H \"Sec-Fetch-Site: cross-site\" \"https://maps.google.com/maps?q=41.4163103,19.6752078&z=15&output=embed\")"
+    ]
+  }
+}
