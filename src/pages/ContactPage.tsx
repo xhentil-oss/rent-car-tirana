@@ -157,17 +157,18 @@ export default function ContactPage() {
                     <MapPin size={18} weight="fill" className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">Adresat</p>
-                    <p className="text-sm text-neutral-700">Bulevardi Zogu I, Nr. 1, Tiranë 1001</p>
-                    <p className="text-sm text-neutral-700 mt-1">Rruga e Aeroportit, Tiranë 1001</p>
-                    <a
-                      href="https://maps.google.com/?q=Bulevardi+Zogu+I+1+Tirana+Albania"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline mt-0.5 inline-block no-underline"
-                    >
-                      Hap në Google Maps →
-                    </a>
+                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Adresat</p>
+                    <ul className="space-y-1.5">
+                      <li className="text-sm text-neutral-700 leading-snug">
+                        <span className="font-semibold text-neutral-800">Aeroporti:</span> Rruga e Aeroportit, Tiranë 1001
+                      </li>
+                      <li className="text-sm text-neutral-700 leading-snug">
+                        <span className="font-semibold text-neutral-800">Qendër:</span> Bulevardi Zogu I, Nr. 1, Tiranë 1001
+                      </li>
+                      <li className="text-sm text-neutral-700 leading-snug">
+                        <span className="font-semibold text-neutral-800">Zyra:</span> Rruga 28 Nëntori, 1/3, Tiranë 1001
+                      </li>
+                    </ul>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
@@ -456,18 +457,56 @@ export default function ContactPage() {
               )}
             </div>
 
-            {/* Map embed placeholder */}
-            <div className="mt-6 rounded-2xl overflow-hidden border border-neutral-100 shadow-sm h-56 bg-neutral-200 relative">
-              <iframe
-                title="Vendndodhja jonë"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2996.4607963735!2d19.8195!3d41.3275!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDE5JzM5LjAiTiAxOcKwNDknMTAuMiJF!5e0!3m2!1sen!2sal!4v1620000000000"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+          </div>
+        </div>
+
+        {/* ── Map embeds: zyrat me lokacion në Google Maps ── */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-neutral-800 mb-2">Na gjeni në hartë</h2>
+          <p className="text-sm text-neutral-500 mb-6">Klikoni mbi hartën për të hapur drejtimet në Google Maps.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-neutral-100">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <MapPin size={16} weight="fill" className="text-primary" />
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Aeroport</p>
+                </div>
+                <p className="text-sm font-semibold text-neutral-800">Rruga e Aeroportit, Tiranë 1001</p>
+              </div>
+              <div className="h-72">
+                <iframe
+                  title="Rio Rent — Tirana Airport"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.089952141465!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779820116607!5m2!1sen!2s"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-neutral-100">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <MapPin size={16} weight="fill" className="text-primary" />
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Zyra në Tiranë</p>
+                </div>
+                <p className="text-sm font-semibold text-neutral-800">Rruga 28 Nëntori, 1/3, Tiranë 1001</p>
+              </div>
+              <div className="h-72">
+                <iframe
+                  title="Rio Rent — Tiranë"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22782.17994045906!2d19.78305097910156!3d41.3303371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x13502d007f2d8da7%3A0x5b16f52716d6c712!2sRio%20Rent!5e1!3m2!1sen!2s!4v1779820245152!5m2!1sen!2s"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
             </div>
           </div>
         </div>

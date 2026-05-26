@@ -36,6 +36,11 @@
       "automatic": "Makina automatike"
     },
     "address": "Bulevardi Zogu I, Nr. 1, Tiranë 1001 | Rruga e Aeroportit, Tiranë 1001",
+    "addresses": [
+      "Rruga e Aeroportit, Tiranë 1001",
+      "Bulevardi Zogu I, Nr. 1, Tiranë 1001",
+      "Rruga 28 Nëntori, 1/3, Tiranë 1001"
+    ],
     "email": "info@rentcartiranaairport.com",
     "accepts": "Pranojmë:",
     "trustRating": "bazuar në 500+ vlerësime",

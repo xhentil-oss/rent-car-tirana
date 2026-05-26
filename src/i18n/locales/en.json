@@ -36,6 +36,11 @@
       "automatic": "Automatic Cars"
     },
     "address": "Zogu I Blvd 1, Tirana 1001 | Airport Road, Tirana 1001",
+    "addresses": [
+      "Airport Road, Tirana 1001",
+      "Zogu I Blvd, Nr. 1, Tirana 1001",
+      "Rruga 28 Nëntori, 1/3, Tirana 1001"
+    ],
     "email": "info@rentcartiranaairport.com",
     "accepts": "We accept:",
     "trustRating": "based on 500+ reviews",

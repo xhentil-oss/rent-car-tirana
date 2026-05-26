@@ -5,6 +5,10 @@ import { Car, FacebookLogo, InstagramLogo, MapPin, Phone, EnvelopeSimple } from 
 
 function Footer() {
   const { t } = useTranslation();
+  const addresses = (t("footer.addresses", { returnObjects: true }) as string[] | string);
+  const addressList = Array.isArray(addresses)
+    ? addresses
+    : String(addresses).split("|").map((s) => s.trim()).filter(Boolean);
 
   return (
     <footer className="bg-neutral-900 text-white py-14 px-6">
@@ -75,7 +79,11 @@ function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin size={16} className="text-neutral-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-neutral-400">{t("footer.address")}</span>
+                <div className="text-sm text-neutral-400 space-y-1">
+                  {addressList.map((addr, i) => (
+                    <p key={i} className="leading-snug">{addr}</p>
+                  ))}
+                </div>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={16} className="text-neutral-400 shrink-0" />
