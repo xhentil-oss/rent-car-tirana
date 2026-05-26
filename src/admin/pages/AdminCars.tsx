@@ -326,13 +326,24 @@ export default function AdminCars() {
 
   const handleBulkDelete = async () => {
     const items = bulk.getSelectedItems() as any[];
-    try {
-      await Promise.all(items.map((c) => remove(c.id)));
-      await Promise.all(items.map((c) => log("DELETE", "Car", c.id, `Makinë e fshirë: ${c.brand} ${c.model}`)));
-      bulk.clear();
-      setBulkConfirm(null);
-      await refetch();
-    } catch (e) { console.error(e); }
+    const results = await Promise.allSettled(items.map((c) => remove(c.id)));
+    const failures: { label: string; reason: string }[] = [];
+    let okCount = 0;
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        okCount++;
+        log("DELETE", "Car", items[i].id, `Makinë e fshirë: ${items[i].brand} ${items[i].model}`);
+      } else {
+        failures.push({ label: `${items[i].brand} ${items[i].model}`, reason: (r.reason as Error)?.message ?? "Gabim" });
+      }
+    });
+    bulk.clear();
+    setBulkConfirm(null);
+    await refetch();
+    if (failures.length > 0) {
+      const lines = failures.map((f) => `• ${f.label}: ${f.reason}`).join("\n");
+      alert(`${okCount} u fshinë. ${failures.length} dështuan:\n\n${lines}`);
+    }
   };
 
   const handleBulkStatus = async (status: string) => {
@@ -411,7 +422,10 @@ export default function AdminCars() {
       await log("DELETE", "Car", id, `Makinë e fshirë: ${car ? `${car.brand} ${car.model}` : id}`);
       await refetch();
       setDeleteConfirm(null);
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error(e);
+      alert(`Nuk mund të fshihej makina: ${e?.message ?? "gabim"}`);
+    }
   };
 
   const handleFeature = async (car: any) => {

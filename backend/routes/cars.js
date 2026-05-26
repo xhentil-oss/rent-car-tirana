@@ -101,10 +101,24 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
+    const [[{ resCount }]] = await pool.query('SELECT COUNT(*) AS resCount FROM reservations WHERE car_id = ?', [req.params.id]);
+    if (resCount > 0) {
+      return res.status(409).json({
+        error: `Makina ka ${resCount} rezervim${resCount === 1 ? '' : 'e'} të lidhura. Fshini ato më parë.`,
+        code: 'HAS_REFERENCES',
+        resCount,
+      });
+    }
     await pool.query('DELETE FROM cars WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Car', entityId: req.params.id, description: `Makina u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Makina u fshi.' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+  } catch (err) {
+    console.error(err);
+    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Makina ka rezervime të lidhura. Fshini ato më parë.', code: 'HAS_REFERENCES' });
+    }
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
+  }
 });
 
 module.exports = router;

@@ -111,10 +111,25 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
 
 router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
+    const [[{ resCount }]] = await pool.query('SELECT COUNT(*) AS resCount FROM reservations WHERE customer_id = ?', [req.params.id]);
+    const [[{ depCount }]] = await pool.query('SELECT COUNT(*) AS depCount FROM deposits WHERE customer_id = ?', [req.params.id]);
+    if (resCount > 0 || depCount > 0) {
+      return res.status(409).json({
+        error: `Klienti ka ${resCount} rezervim${resCount === 1 ? '' : 'e'}${depCount > 0 ? ` dhe ${depCount} depozitë` : ''} të lidhura. Fshini ose anuloni ato më parë.`,
+        code: 'HAS_REFERENCES',
+        resCount, depCount,
+      });
+    }
     await pool.query('DELETE FROM customers WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Customer', entityId: req.params.id, description: `Klient u fshi: ${req.params.id}`, ipAddress: req.ip });
     res.json({ message: 'Klienti u fshi.' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+  } catch (err) {
+    console.error(err);
+    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Klienti ka të dhëna të lidhura (rezervime/depozita). Fshini ato më parë.', code: 'HAS_REFERENCES' });
+    }
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
+  }
 });
 
 module.exports = router;

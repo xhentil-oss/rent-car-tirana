@@ -74,15 +74,26 @@ export default function AdminCustomers() {
   const bulk = useBulkSelection(filtered);
 
   const handleBulkDelete = async () => {
-    const items = bulk.getSelectedItems();
-    try {
-      await Promise.all(items.map((c) => removeCustomer(c.id)));
-      await Promise.all(items.map((c) => log("DELETE", "Customer", c.id, `Klient u fshi: ${c.name}`)));
-      bulk.clear();
-      setBulkConfirm(null);
-      if (selectedCustomerId && items.some((i) => i.id === selectedCustomerId)) setSelectedCustomerId(null);
-      await refetchCustomers();
-    } catch (e) { console.error(e); }
+    const items = bulk.getSelectedItems() as any[];
+    const results = await Promise.allSettled(items.map((c) => removeCustomer(c.id)));
+    const failures: { name: string; reason: string }[] = [];
+    const deletedIds: string[] = [];
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        deletedIds.push(items[i].id);
+        log("DELETE", "Customer", items[i].id, `Klient u fshi: ${items[i].name}`);
+      } else {
+        failures.push({ name: items[i].name, reason: (r.reason as Error)?.message ?? "Gabim" });
+      }
+    });
+    if (deletedIds.length > 0 && selectedCustomerId && deletedIds.includes(selectedCustomerId)) setSelectedCustomerId(null);
+    bulk.clear();
+    setBulkConfirm(null);
+    await refetchCustomers();
+    if (failures.length > 0) {
+      const lines = failures.map((f) => `• ${f.name}: ${f.reason}`).join("\n");
+      alert(`${deletedIds.length} u fshinë. ${failures.length} dështuan:\n\n${lines}`);
+    }
   };
 
   const handleBulkBlacklist = async (value: boolean) => {
@@ -188,7 +199,10 @@ export default function AdminCustomers() {
       setDeleteConfirmId(null);
       if (selectedCustomerId === id) setSelectedCustomerId(null);
       await refetchCustomers();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error(e);
+      alert(`Nuk mund të fshihej klienti: ${e?.message ?? "gabim"}`);
+    }
   };
 
   const openCustomer = (id: string) => { setSelectedCustomerId(id); setActiveTab("overview"); };
