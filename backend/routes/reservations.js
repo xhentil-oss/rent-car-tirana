@@ -232,7 +232,9 @@ router.post('/', async (req, res) => {
       const raw = String(value || '').trim();
       const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (!match) return String(value || '');
-      const [year, month, day] = match[1].split('-').map(Number);
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
       return new Date(year, month - 1, day).toLocaleDateString('sq-AL');
     };
     let sd, ed, st, et;
