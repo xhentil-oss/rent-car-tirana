@@ -28,7 +28,7 @@ const OFFICES: Office[] = [
     address: "Rruga e Aeroportit, Tiranë 1001",
     hours: "Çdo ditë · 24/7",
     iframeSrc:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.089952141465!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779820116607!5m2!1sen!2s",
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d22752.08995214144!2d19.67520787910156!3d41.4163103!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x135031c0e3548fd7%3A0x4360c09298876888!2sRio%20Rent%20-%20Rent%20Car%20Tirana%20Airport!5e1!3m2!1sen!2s!4v1779821778382!5m2!1sen!2s",
     directionsUrl:
       "https://www.google.com/maps/dir/?api=1&destination=Rio+Rent+-+Rent+Car+Tirana+Airport",
     phone: "+355697562951",
