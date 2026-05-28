@@ -16,8 +16,10 @@ type Office = {
   name: string;
   address: string;
   hours: string;
-  iframeSrc: string;
-  directionsUrl: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+  query: string;
   phone?: string;
 };
 
@@ -27,10 +29,10 @@ const OFFICES: Office[] = [
     name: "Rio Rent — Tirana Airport",
     address: "Rruga e Aeroportit, Tiranë 1001",
     hours: "Çdo ditë · 24/7",
-    iframeSrc:
-      "https://www.google.com/maps?q=41.4163103,19.6752078(Rio+Rent+Tirana+Airport)&z=15&output=embed",
-    directionsUrl:
-      "https://www.google.com/maps/dir/?api=1&destination=Rio+Rent+-+Rent+Car+Tirana+Airport",
+    lat: 41.4163103,
+    lng: 19.6752078,
+    zoom: 15,
+    query: "Rio Rent - Rent Car Tirana Airport",
     phone: "+355697562951",
   },
   {
@@ -38,13 +40,30 @@ const OFFICES: Office[] = [
     name: "Rio Rent — Tiranë",
     address: "Rruga 28 Nëntori, 1/3, Tiranë 1001",
     hours: "E Hënë – E Diel · 08:00 – 20:00",
-    iframeSrc:
-      "https://www.google.com/maps?q=41.3303371,19.7830510(Rio+Rent+Tirana)&z=16&output=embed",
-    directionsUrl:
-      "https://www.google.com/maps/dir/?api=1&destination=Rio+Rent+Tirana",
+    lat: 41.3303371,
+    lng: 19.7830510,
+    zoom: 16,
+    query: "Rio Rent Rruga 28 Nëntori Tiranë",
     phone: "+355697562951",
   },
 ];
+
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
+
+function getEmbedSrc(office: Office): string {
+  if (GOOGLE_MAPS_KEY) {
+    const q = encodeURIComponent(office.query);
+    return `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=${q}&center=${office.lat},${office.lng}&zoom=${office.zoom}`;
+  }
+  // Fallback: OpenStreetMap (no API key, no embed restrictions).
+  const delta = 0.015;
+  const bbox = [office.lng - delta, office.lat - delta, office.lng + delta, office.lat + delta].join("%2C");
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${office.lat}%2C${office.lng}`;
+}
+
+function getDirectionsUrl(office: Office): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${office.lat},${office.lng}`;
+}
 
 export default function OfficesPage() {
   useSEO({
@@ -109,7 +128,7 @@ export default function OfficesPage() {
               <div className="h-72 bg-neutral-100">
                 <iframe
                   title={office.name}
-                  src={office.iframeSrc}
+                  src={getEmbedSrc(office)}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -141,7 +160,7 @@ export default function OfficesPage() {
               {/* Actions */}
               <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-100 flex gap-3">
                 <a
-                  href={office.directionsUrl}
+                  href={getDirectionsUrl(office)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors no-underline"
