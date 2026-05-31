@@ -466,7 +466,64 @@ export default function AdminCars() {
         ]}
       />
 
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      {/* Mobile card layout — visible only on small screens. Table below for ≥md. */}
+      <div className="md:hidden space-y-3">
+        {isPending ? (
+          [1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-lg border border-border p-4 animate-pulse">
+              <div className="h-4 bg-neutral-200 rounded w-1/2 mb-2" />
+              <div className="h-3 bg-neutral-200 rounded w-1/3" />
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-lg border border-border">
+            <EmptyState type={filterStatus || filterCategory ? "search" : "cars"} actionLabel={!filterStatus && !filterCategory ? "Shto makinë" : undefined} onAction={!filterStatus && !filterCategory ? openAdd : undefined} />
+          </div>
+        ) : (
+          filtered.map((car) => (
+            <div
+              key={car.id}
+              className={`bg-white rounded-lg border p-4 ${bulk.isSelected(car.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <BulkCheckbox
+                  checked={bulk.isSelected(car.id)}
+                  onChange={() => bulk.toggleOne(car.id)}
+                  ariaLabel={`Zgjidh ${car.brand} ${car.model}`}
+                />
+                <img src={car.image} alt={`${car.brand} ${car.model}`} loading="lazy" className="w-14 h-11 rounded object-cover shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-neutral-900 truncate">{car.brand} {car.model}</p>
+                  <p className="text-xs text-neutral-500">{car.year} · {car.category}</p>
+                </div>
+                <StatusBadge status={car.status} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-neutral-500">Sasia: <span className="font-medium text-neutral-700">{car.quantity ?? 1}</span></span>
+                  <span className="font-bold text-neutral-900">€{car.pricePerDay}/ditë</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleFeature(car)} className={`p-2 rounded cursor-pointer ${car.featured ? "text-accent bg-accent/10" : "text-neutral-400 hover:text-accent hover:bg-accent/10"}`} aria-label="Featured">
+                    <Star size={15} weight={car.featured ? "fill" : "regular"} />
+                  </button>
+                  <button onClick={() => navigate(`/admin/flota/${car.id}`)} className="p-2 rounded text-neutral-400 hover:text-primary hover:bg-secondary cursor-pointer" aria-label="Detajet">
+                    <ArrowSquareOut size={15} />
+                  </button>
+                  <button onClick={() => openEdit(car)} className="p-2 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer" aria-label="Modifiko">
+                    <PencilSimple size={15} />
+                  </button>
+                  <button onClick={() => setDeleteConfirm(car.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Fshi">
+                    <Trash size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg border border-border overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>

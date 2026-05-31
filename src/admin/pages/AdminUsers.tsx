@@ -632,7 +632,56 @@ export default function AdminUsers() {
                 { label: "Fshi", icon: Trash, variant: "danger", onClick: () => setBulkConfirm("delete"), disabled: isMutating },
               ]}
             />
-            <div className="bg-white rounded-lg border border-border overflow-hidden">
+
+            {/* Mobile card layout */}
+            <div className="md:hidden space-y-3">
+              {filtered.map((u) => (
+                <div
+                  key={u.id}
+                  className={`bg-white rounded-lg border p-4 ${bulk.isSelected(u.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                >
+                  <div className="flex items-start gap-3 mb-2">
+                    <BulkCheckbox
+                      checked={bulk.isSelected(u.id)}
+                      onChange={() => bulk.toggleOne(u.id)}
+                      ariaLabel={`Zgjidh ${getDisplayName(u)}`}
+                    />
+                    <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-white">{getInitials(getDisplayName(u))}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-neutral-900 truncate">{getDisplayName(u)}</p>
+                      <p className="text-xs text-neutral-500 truncate">{getDisplayEmail(u)}</p>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[u.role as Role] ?? "bg-neutral-100 text-neutral-600"}`}>
+                      {u.role}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-xs text-neutral-600">
+                      <span className="flex items-center gap-1">
+                        {u.isActive ? <CheckCircle size={12} weight="fill" className="text-success" /> : <XCircle size={12} weight="fill" className="text-neutral-300" />}
+                        {u.isActive ? "Aktiv" : "Joaktiv"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {u.twoFactorEnabled ? <ShieldCheck size={12} weight="fill" className="text-primary" /> : <ShieldSlash size={12} className="text-neutral-300" />}
+                        2FA
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(u)} className="p-2 rounded text-neutral-400 hover:text-primary hover:bg-secondary cursor-pointer" aria-label="Modifiko">
+                        <PencilSimple size={15} />
+                      </button>
+                      <button onClick={() => setDeleteConfirm(u.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Fshi">
+                        <Trash size={15} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-lg border border-border overflow-hidden hidden md:block">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-neutral-50">

@@ -116,6 +116,18 @@ function UserMenu() {
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register" | "forgot">("login");
+
+  // Allow other pages (e.g. MyAccountPage's "Register Free" CTA) to open this
+  // auth dropdown by dispatching `new CustomEvent("openAuth", { detail: { tab } })`.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { tab?: "login" | "register" | "forgot" } | undefined;
+      setAuthTab(detail?.tab ?? "login");
+      setShowAuth(true);
+    };
+    window.addEventListener("openAuth", handler);
+    return () => window.removeEventListener("openAuth", handler);
+  }, []);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");

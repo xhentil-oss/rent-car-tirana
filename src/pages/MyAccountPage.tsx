@@ -116,14 +116,23 @@ export default function MyAccountPage() {
           <h1 className="text-xl font-semibold text-neutral-900 mb-2">{t("account.title")}</h1>
           <p className="text-sm text-neutral-500 mb-6">{t("account.loginPrompt")}</p>
           <button
-            onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.dispatchEvent(new CustomEvent("openAuth", { detail: { tab: "login" } }));
+            }}
             className="w-full py-3 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
           >
             {t("account.loginBtn")}
           </button>
           <p className="mt-4 text-xs text-neutral-400">
             {t("account.noAccount")}{" "}
-            <button onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-primary underline cursor-pointer bg-transparent border-0">
+            <button
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                window.dispatchEvent(new CustomEvent("openAuth", { detail: { tab: "register" } }));
+              }}
+              className="text-primary underline cursor-pointer bg-transparent border-0"
+            >
               {t("account.registerFree")}
             </button>
           </p>
