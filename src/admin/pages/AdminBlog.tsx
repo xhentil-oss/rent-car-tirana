@@ -1,10 +1,26 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import { PencilSimple, Trash, Plus, Eye, EyeSlash, MagnifyingGlass, Article, Check } from "@phosphor-icons/react";
-import RichEditor from "../RichEditor";
 import ImagePicker from "../ImagePicker";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
 import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
+
+// Tiptap (used by RichEditor) is ~300KB minified. Lazy-load so the post list
+// loads instantly; tiptap only downloads when the user opens the editor.
+const RichEditor = lazy(() => import("../RichEditor"));
+
+function RichEditorSkeleton() {
+  return (
+    <div className="border border-border rounded-lg bg-neutral-50 animate-pulse">
+      <div className="h-10 border-b border-border bg-neutral-100" />
+      <div className="p-4 space-y-2">
+        <div className="h-3 bg-neutral-200 rounded w-3/4" />
+        <div className="h-3 bg-neutral-200 rounded w-1/2" />
+        <div className="h-3 bg-neutral-200 rounded w-5/6" />
+      </div>
+    </div>
+  );
+}
 
 function slugify(text: string) {
   return text
@@ -167,11 +183,13 @@ export default function AdminBlog() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">Përmbajtja (SQ) *</label>
-                  <RichEditor
-                    value={form.contentSq}
-                    onChange={val => set("contentSq", val)}
-                    placeholder="Shkruaj përmbajtjen në shqip..."
-                  />
+                  <Suspense fallback={<RichEditorSkeleton />}>
+                    <RichEditor
+                      value={form.contentSq}
+                      onChange={val => set("contentSq", val)}
+                      placeholder="Shkruaj përmbajtjen në shqip..."
+                    />
+                  </Suspense>
                 </div>
               </>
             ) : (
@@ -190,11 +208,13 @@ export default function AdminBlog() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">Content (EN)</label>
-                  <RichEditor
-                    value={form.contentEn}
-                    onChange={val => set("contentEn", val)}
-                    placeholder="Write content in English..."
-                  />
+                  <Suspense fallback={<RichEditorSkeleton />}>
+                    <RichEditor
+                      value={form.contentEn}
+                      onChange={val => set("contentEn", val)}
+                      placeholder="Write content in English..."
+                    />
+                  </Suspense>
                 </div>
               </>
             )}

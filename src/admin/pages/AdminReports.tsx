@@ -1,13 +1,20 @@
-import React, { useMemo } from "react";
-import { DownloadSimple, FileCsv, FilePdf } from "@phosphor-icons/react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line,
-} from "recharts";
+import React, { lazy, Suspense, useMemo } from "react";
+import { FileCsv, FilePdf } from "@phosphor-icons/react";
 import { revenueData, bookingsBySource, topCars } from "../../data/mockData";
 import { useQuery } from "../../hooks/useApi";
+import { formatLocalDate } from "../../lib/dateHelpers";
 
-const PIE_COLORS = ["hsl(215, 90%, 32%)","hsl(45, 100%, 55%)","hsl(142, 60%, 42%)"];
+// recharts is ~117KB gzipped. Code-split so reports header + CSV buttons render
+// instantly while charts stream in.
+const RevenueChart = lazy(() => import("../components/ReportsCharts").then((m) => ({ default: m.RevenueChart })));
+const BookingsChart = lazy(() => import("../components/ReportsCharts").then((m) => ({ default: m.BookingsChart })));
+const SourcePieChart = lazy(() => import("../components/ReportsCharts").then((m) => ({ default: m.SourcePieChart })));
+
+function ChartSkeleton({ height = 240 }: { height?: number }) {
+  return (
+    <div className="bg-neutral-50 rounded-lg animate-pulse" style={{ height }} />
+  );
+}
 
 function downloadCSV(data: object[], filename: string) {
   if (!data.length) return;
@@ -34,8 +41,12 @@ export default function AdminReports() {
   const liveRevenueData = useMemo(() => {
     if (!reservations?.length) return revenueData;
     const map: Record<string, { revenue: number; bookings: number }> = {};
-    (reservations ?? []).forEach((r) => {
-      const d = new Date(r.startDate);
+    (reservations ?? []).forEach((r: any) => {
+      // Parse YYYY-MM-DD as local date to avoid timezone shift.
+      const match = String(r.startDate || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const d = match
+        ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+        : new Date(r.startDate);
       const key = d.toLocaleDateString("sq-AL", { month: "short", year: "2-digit" });
       if (!map[key]) map[key] = { revenue: 0, bookings: 0 };
       map[key].revenue += Number(r.totalPrice ?? 0);
@@ -49,37 +60,47 @@ export default function AdminReports() {
   const liveSourceData = useMemo(() => {
     if (!reservations?.length) return bookingsBySource;
     const map: Record<string, number> = {};
-    (reservations ?? []).forEach((r) => { map[r.source ?? "Web"] = (map[r.source ?? "Web"] ?? 0) + 1; });
+    (reservations ?? []).forEach((r: any) => { map[r.source ?? "Web"] = (map[r.source ?? "Web"] ?? 0) + 1; });
     const total = Object.values(map).reduce((a, b) => a + b, 0);
     return Object.entries(map).map(([source, count]) => ({ source, count: Math.round((count / total) * 100) }));
   }, [reservations]);
+
+  // O(n) lookup map instead of O(n²) cars.find() per reservation row.
+  const carMap = useMemo(
+    () => new Map<string, any>((cars ?? []).map((c: any) => [c.id, c])),
+    [cars],
+  );
+  const customerMap = useMemo(
+    () => new Map<string, any>((customers ?? []).map((c: any) => [c.id, c])),
+    [customers],
+  );
 
   // Live top cars
   const liveTopCars = useMemo(() => {
     if (!reservations?.length) return topCars;
     const map: Record<string, { name: string; bookings: number; revenue: number }> = {};
-    (reservations ?? []).forEach((r) => {
-      const car = (cars ?? []).find((c) => c.id === r.carId);
+    (reservations ?? []).forEach((r: any) => {
+      const car = carMap.get(r.carId);
       const name = car ? `${car.brand} ${car.model}` : r.carId;
       if (!map[r.carId]) map[r.carId] = { name, bookings: 0, revenue: 0 };
       map[r.carId].bookings += 1;
       map[r.carId].revenue += Number(r.totalPrice ?? 0);
     });
     return Object.values(map).sort((a, b) => b.bookings - a.bookings).slice(0, 5);
-  }, [reservations, cars]);
+  }, [reservations, carMap]);
 
   const maxBookings = Math.max(...liveTopCars.map((c) => c.bookings), 1);
 
   const exportReservationsCSV = () => {
-    const rows = (reservations ?? []).map((r) => {
-      const customer = (customers ?? []).find((c) => c.id === r.customerId);
-      const car = (cars ?? []).find((c) => c.id === r.carId);
+    const rows = (reservations ?? []).map((r: any) => {
+      const customer = customerMap.get(r.customerId);
+      const car = carMap.get(r.carId);
       return {
         ID: r.id,
         Klienti: customer?.name ?? r.customerId,
         Makina: car ? `${car.brand} ${car.model}` : r.carId,
-        "Data e nisjes": new Date(r.startDate).toLocaleDateString("sq-AL"),
-        "Data e kthimit": new Date(r.endDate).toLocaleDateString("sq-AL"),
+        "Data e nisjes": formatLocalDate(r.startDate),
+        "Data e kthimit": formatLocalDate(r.endDate),
         Statusi: r.status,
         "Çmimi total": `€${r.totalPrice}`,
         Burimi: r.source,
@@ -89,12 +110,12 @@ export default function AdminReports() {
   };
 
   const exportInvoicesCSV = () => {
-    const rows = (invoices ?? []).map((inv) => ({
+    const rows = (invoices ?? []).map((inv: any) => ({
       "Nr. Faturës": inv.invoiceNo,
       "Rezervimi ID": inv.reservationId,
       "Shuma": `€${inv.amount}`,
       "Statusi": inv.status,
-      "Afati": new Date(inv.dueDate).toLocaleDateString("sq-AL"),
+      "Afati": formatLocalDate(inv.dueDate),
     }));
     downloadCSV(rows, `faturat_${new Date().toISOString().split("T")[0]}.csv`);
   };
@@ -122,51 +143,23 @@ export default function AdminReports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg border border-border p-6">
           <h2 className="text-base font-medium text-neutral-900 mb-4">Të ardhurat mujore (€)</h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={liveRevenueData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 10%, 90%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(215, 10%, 50%)" }} />
-              <YAxis tick={{ fontSize: 12, fill: "hsl(215, 10%, 50%)" }} />
-              <Tooltip contentStyle={{ background: "white", border: "1px solid hsl(215, 10%, 80%)", borderRadius: "8px", fontSize: "12px" }} formatter={(value: number) => [`€${value}`, "Të ardhura"]} />
-              <Bar dataKey="revenue" fill="hsl(215, 90%, 32%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<ChartSkeleton />}>
+            <RevenueChart data={liveRevenueData} />
+          </Suspense>
         </div>
 
         <div className="bg-white rounded-lg border border-border p-6">
           <h2 className="text-base font-medium text-neutral-900 mb-4">Rezervimet mujore</h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={liveRevenueData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 10%, 90%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(215, 10%, 50%)" }} />
-              <YAxis tick={{ fontSize: 12, fill: "hsl(215, 10%, 50%)" }} />
-              <Tooltip contentStyle={{ background: "white", border: "1px solid hsl(215, 10%, 80%)", borderRadius: "8px", fontSize: "12px" }} formatter={(value: number) => [value, "Rezervime"]} />
-              <Line type="monotone" dataKey="bookings" stroke="hsl(45, 100%, 55%)" strokeWidth={2} dot={{ fill: "hsl(45, 100%, 55%)", r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<ChartSkeleton />}>
+            <BookingsChart data={liveRevenueData} />
+          </Suspense>
         </div>
 
         <div className="bg-white rounded-lg border border-border p-6">
           <h2 className="text-base font-medium text-neutral-900 mb-4">Rezervimet sipas burimit</h2>
-          <div className="flex items-center gap-6">
-            <ResponsiveContainer width="50%" height={200}>
-              <PieChart>
-                <Pie data={liveSourceData} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={80} innerRadius={40}>
-                  {liveSourceData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: "white", border: "1px solid hsl(215, 10%, 80%)", borderRadius: "8px", fontSize: "12px" }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-3">
-              {liveSourceData.map((item, i) => (
-                <div key={item.source} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  <span className="text-sm text-neutral-700">{item.source}</span>
-                  <span className="text-sm font-medium text-neutral-900 ml-auto">{item.count}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Suspense fallback={<ChartSkeleton height={200} />}>
+            <SourcePieChart data={liveSourceData} />
+          </Suspense>
         </div>
 
         <div className="bg-white rounded-lg border border-border p-6">

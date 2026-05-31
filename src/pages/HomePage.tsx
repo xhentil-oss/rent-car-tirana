@@ -34,6 +34,7 @@ import { getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
 import { formatLocationOption } from "../lib/locations";
+import DOMPurify from "dompurify";
 
 const whyUsIcons = [CurrencyDollar, Clock, ShieldCheck, MapPin];
 const howItWorksIcons = [Car, CalendarBlank, Key];
@@ -189,7 +190,14 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-accent/90 to-primary text-white py-2.5 px-4 text-center relative">
           <p className="text-sm font-medium">
             <Tag size={14} weight="fill" className="inline mr-1.5 -mt-0.5" />
-            <span dangerouslySetInnerHTML={{ __html: t("home.promoBanner") }} />{" "}
+            <span
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(t("home.promoBanner"), {
+                  ALLOWED_TAGS: ["strong", "b", "em", "i", "br"],
+                  ALLOWED_ATTR: [],
+                }),
+              }}
+            />{" "}
             <span className="font-bold bg-white/20 px-1.5 py-0.5 rounded text-xs tracking-wide">TIRANA10</span>
           </p>
           <button

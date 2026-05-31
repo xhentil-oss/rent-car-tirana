@@ -77,7 +77,7 @@ router.post('/', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
-router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
+router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const { name, firstName, lastName, email, phone, type } = req.body;
 
