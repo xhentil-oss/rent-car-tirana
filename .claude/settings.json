@@ -39,7 +39,9 @@
       "Bash(node -c backend/routes/email.js)",
       "Bash(node -c backend/routes/monthlyRates.js)",
       "Bash(node -c backend/routes/customers.js)",
-      "Bash(node -c backend/routes/cars.js)"
+      "Bash(node -c backend/routes/cars.js)",
+      "Bash(curl -sSI \"https://rentcartiranaairport.com/\")",
+      "Bash(curl -sSI \"https://rentcartiranaairport.com/assets/index-CNhTGKI8.js\")"
     ]
   }
 }
