@@ -28,8 +28,9 @@ echo "✅ Push u bë! Tani ekzekuto në SERVER:"
 echo ""
 echo "  cd ~/rent-car-tirana"
 echo "  git pull origin main"
-echo "  rm -rf backend/public/*"
+echo "  rm -rf backend/public/* backend/public/.htaccess"
 echo "  cp -r dist/* backend/public/"
+echo "  cp dist/.htaccess backend/public/.htaccess 2>/dev/null || true"
 
 if [ "$BACKEND_PKG_CHANGED" -gt "0" ]; then
   echo ""
