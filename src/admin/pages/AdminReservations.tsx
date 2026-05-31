@@ -8,12 +8,12 @@ import StatusBadge from "../../components/StatusBadge";
 import { sendPickupReminder, getTomorrowReservations } from "../../lib/emailService";
 import { Bell, EnvelopeSimple } from "@phosphor-icons/react";
 import { useLocations } from "../../hooks/useLocations";
-
-function useActivityLog() {
-  const { create } = useMutation("ActivityLog");
-  return (action: string, entity: string, entityId: string, description: string) =>
-    create({ action, entity, entityId, description, timestamp: new Date() }).catch(() => {});
-}
+import { useActivityLog } from "../../hooks/useActivityLog";
+import {
+  parseLocalDate,
+  buildLocalDateTime,
+  formatDateInputValue,
+} from "../../lib/dateHelpers";
 
 interface NewReservationForm {
   customerId: string;
@@ -49,42 +49,6 @@ const timeOptions = Array.from({ length: 24 }, (_, i) => {
   const hour = i.toString().padStart(2, "0");
   return [`${hour}:00`, `${hour}:30`];
 }).flat();
-
-function parseLocalDate(value: string): Date | null {
-  const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-  return date;
-}
-
-function buildLocalDateTime(dateValue: string, timeValue = "09:00"): Date | null {
-  const date = parseLocalDate(dateValue);
-  const match = String(timeValue || "09:00").match(/^(\d{2}):(\d{2})$/);
-  if (!date || !match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-}
-
-function formatDateInputValue(value: string | Date = new Date()): string {
-  if (typeof value === "string") {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function isMaintenanceStatus(status?: string): boolean {
   return String(status || "") === "Në mirëmbajtje";

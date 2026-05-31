@@ -49,6 +49,7 @@ import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../l
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
 import { formatLocationOption } from "../lib/locations";
+import { parseLocalDate, buildLocalDateTime, formatDateInputValue } from "../lib/dateHelpers";
 
 // Inline monthly rate resolution (avoids shared-module TDZ in Rollup bundle)
 interface MonthlyRate { id: string; year: number | null; month: number; appliesTo: string; appliesToValue: string | null; pricePerDay: number; }
@@ -114,38 +115,6 @@ function getCarImages(baseImage: string): string[] {
     ];
   }
   return [baseImage, baseImage, baseImage];
-}
-
-function parseLocalDate(value: string): Date | null {
-  const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return null;
-  }
-  return date;
-}
-
-function buildLocalDateTime(dateValue: string, timeValue = "10:00"): Date | null {
-  const date = parseLocalDate(dateValue);
-  const match = String(timeValue || "10:00").match(/^(\d{2}):(\d{2})$/);
-  if (!date || !match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-}
-
-function formatDateInputValue(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 export default function CarDetailPage() {

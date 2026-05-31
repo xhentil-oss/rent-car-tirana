@@ -20,7 +20,7 @@ router.get('/', authenticate, requireRole('admin', 'manager'), async (req, res) 
   try {
     const [rows] = await pool.query('SELECT * FROM monthly_rates ORDER BY year, month, applies_to, applies_to_value');
     res.json(rows.map(fmt));
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Public: rates for price calculation (no auth needed)
@@ -68,7 +68,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
       ipAddress: req.ip,
     });
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 // Delete a rate by ID

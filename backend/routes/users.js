@@ -62,8 +62,14 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
     if (req.params.id === req.user.id) return res.status(400).json({ error: 'Nuk mund të fshini llogarinë tuaj.' });
     await pool.query('DELETE FROM users WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'User', entityId: req.params.id, description: `Përdorues u fshi: ${req.params.id}`, ipAddress: req.ip });
-    res.json({ message: 'Përdoruesi u fshi.' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+    res.json({ error: null, message: 'Përdoruesi u fshi.' });
+  } catch (err) {
+    console.error(err);
+    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Përdoruesi ka të dhëna të lidhura (rezervime/aktivitete). Hiqini ose ricaktoni ato më parë.', code: 'HAS_REFERENCES' });
+    }
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
+  }
 });
 
 module.exports = router;

@@ -62,7 +62,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE id = ?', [id]);
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'PricingRule', entityId: id, description: `Rregull çmimi u krijua: ${name}`, ipAddress: req.ip });
     res.status(201).json(fmt(rows[0]));
-  } catch (err) { console.error('POST /pricing-rules error:', err.message, err.code); res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message }); }
+  } catch (err) { console.error('POST /pricing-rules error:', err.message, err.code); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
@@ -100,8 +100,14 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     await pool.query('DELETE FROM pricing_rules WHERE id = ?', [req.params.id]);
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'PricingRule', entityId: req.params.id, description: `Rregull çmimi u fshi: ${req.params.id}`, ipAddress: req.ip });
-    res.json({ message: 'Rregulli u fshi.' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+    res.json({ error: null, message: 'Rregulli u fshi.' });
+  } catch (err) {
+    console.error(err);
+    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Rregulli ka rezervime që e përdorin. Ç\'aktivizojeni në vend që ta fshini.', code: 'HAS_REFERENCES' });
+    }
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
+  }
 });
 
 module.exports = router;

@@ -4,6 +4,19 @@ const { authenticate, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../lib/mailer');
 const { pickupReminder } = require('../lib/emailTemplates');
 
+// Format a date-only string (YYYY-MM-DD) or Date as sq-AL without timezone shift.
+function formatDateOnlyLocale(value) {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      .toLocaleDateString('sq-AL');
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('sq-AL');
+}
+
 // POST /api/email/pickup-reminder/:id — admin sends 24h reminder for one reservation
 router.post('/pickup-reminder/:id', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {
@@ -27,7 +40,7 @@ router.post('/pickup-reminder/:id', authenticate, requireRole('admin', 'manager'
         customerName: r.customer_name,
         carName: `${r.brand} ${r.model}`,
         pickupLocation: r.pickup_location,
-        startDate: new Date(r.start_date).toLocaleDateString('sq-AL'),
+        startDate: formatDateOnlyLocale(r.start_date),
         startTime: r.start_time,
         reservationId: r.id,
       })

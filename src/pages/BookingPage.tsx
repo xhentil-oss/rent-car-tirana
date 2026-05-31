@@ -35,6 +35,12 @@ import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRat
 import type { MonthlyRate } from "../lib/monthlyRates";
 import { useLocations } from "../hooks/useLocations";
 import { formatLocationOption } from "../lib/locations";
+import {
+  parseLocalDate,
+  buildLocalDateTime,
+  formatDateInputValue,
+  formatLocalDate,
+} from "../lib/dateHelpers";
 
 interface BookingForm {
   pickup: string;
@@ -91,43 +97,6 @@ function priceTypeLabel(pt: ExtraPriceType, lang: "sq" | "en"): string {
 function calcExtraLineTotal(e: ApiExtra, quantity: number, days: number): number {
   const multiplier = e.priceType === "per_day" ? Math.max(1, days) : 1;
   return +(Number(e.price) * quantity * multiplier).toFixed(2);
-}
-
-function parseLocalDate(value: string): Date | null {
-  const raw = String(value || "").trim();
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return null;
-  }
-  return date;
-}
-
-function buildLocalDateTime(dateValue: string, timeValue = "10:00"): Date | null {
-  const date = parseLocalDate(dateValue);
-  const match = String(timeValue || "10:00").match(/^(\d{2}):(\d{2})$/);
-  if (!date || !match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-}
-
-function formatDateInputValue(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatLocalDate(value?: string): string {
-  const date = value ? parseLocalDate(value) : null;
-  return date ? date.toLocaleDateString("sq-AL") : "";
 }
 
 // ── Seasonal Price Table Component ──────────────────────────────────────────

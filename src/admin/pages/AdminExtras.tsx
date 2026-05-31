@@ -7,6 +7,7 @@ import { useQuery, useMutation } from "../../hooks/useApi";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
 import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
+import { useActivityLog } from "../../hooks/useActivityLog";
 
 type Category = "insurance" | "equipment" | "service" | "addon";
 type PriceType = "per_day" | "per_rental" | "one_time";
@@ -60,12 +61,6 @@ const PRICE_TYPES: { value: PriceType; label: string; desc: string }[] = [
   { value: "per_rental", label: "Për rezervim",    desc: "Tarifë e fiksuar e gjithë rezervimit" },
   { value: "one_time",   label: "Një herë",        desc: "Pagesë një herë (p.sh. dorëzim, karburant)" },
 ];
-
-function useActivityLog() {
-  const { create } = useMutation("ActivityLog");
-  return (action: string, entity: string, entityId: string, description: string) =>
-    create({ action, entity, entityId, description, timestamp: new Date() }).catch(() => {});
-}
 
 function priceLabel(price: number, priceType: PriceType): string {
   if (price === 0) return "Falas";

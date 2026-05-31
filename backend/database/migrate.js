@@ -551,6 +551,14 @@ const ALTERS = [
   `ALTER TABLE users MODIFY COLUMN password VARCHAR(255) NULL`,
   // ── Index for slug lookups on cars (slug already UNIQUE → auto-indexed, but explicit) ──
   'CREATE INDEX idx_car_slug ON cars (slug)',
+  // ── Additional FK indices: speed up DELETE-by-parent + JOINs in lists/reports ──
+  'CREATE INDEX idx_prt_user ON password_reset_tokens (user_id)',
+  'CREATE INDEX idx_dep_reservation ON deposits (reservation_id)',
+  'CREATE INDEX idx_dep_customer ON deposits (customer_id)',
+  'CREATE INDEX idx_inv_reservation ON invoices (reservation_id)',
+  'CREATE INDEX idx_cl_customer ON communication_logs (customer_id)',
+  'CREATE INDEX idx_al_user ON activity_logs (user_id)',
+  'CREATE INDEX idx_al_entity ON activity_logs (entity, entity_id)',
 ];
 
 async function migrate() {

@@ -9,12 +9,7 @@ import { RULE_TYPE_LABELS, ruleConditionSummary } from "../../lib/pricingRules";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
 import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
-
-function useActivityLog() {
-  const { create } = useMutation("ActivityLog");
-  return (action: string, entity: string, entityId: string, description: string) =>
-    create({ action, entity, entityId, description, timestamp: new Date() }).catch(() => {});
-}
+import { useActivityLog } from "../../hooks/useActivityLog";
 
 interface RuleForm {
   name: string;

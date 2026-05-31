@@ -29,7 +29,15 @@
       "Bash(curl -sSL \"https://rentcartiranaairport.com/assets/BookingPage-8KxPjV8u.js\")",
       "Bash(grep -oE \"\\(startDate:[^,]{0,50}|insurance:[^,]{0,50}|extras:[^,]{0,40}|selectedExtras:[^,]{0,60}\\)\")",
       "Bash(grep -oE \".{40}startDate:new Date.{0,80}\")",
-      "Bash(grep -oE \".{30}startDate:[^,]{0,60}.{30}\" \"c:/Users/User/Documents/GitHub/rent-car-tirana/dist/assets/BookingPage-roiW0dDr.js\")"
+      "Bash(grep -oE \".{30}startDate:[^,]{0,60}.{30}\" \"c:/Users/User/Documents/GitHub/rent-car-tirana/dist/assets/BookingPage-roiW0dDr.js\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\Documents\\\\GitHub\\\\rent-car-tirana\" -Recurse -Directory -Depth 2)",
+      "Bash(xargs wc -l)",
+      "Bash(xargs -I {} wc -l \"c:\\\\Users\\\\User\\\\Documents\\\\GitHub\\\\rent-car-tirana\\\\src\\\\admin\\\\pages\\\\{}\")",
+      "Bash(node -c backend/routes/users.js)",
+      "Bash(node -c backend/routes/pricingRules.js)",
+      "Bash(node -c backend/routes/reservations.js)",
+      "Bash(node -c backend/routes/email.js)",
+      "Bash(node -c backend/routes/monthlyRates.js)"
     ]
   }
 }

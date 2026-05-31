@@ -3,12 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, FloppyDisk, Trash, Star, X, Check, SpinnerGap, CarSimple, Warning, Images, UploadSimple } from "@phosphor-icons/react";
 import { useQuery, useMutation } from "../../hooks/useApi";
 import StatusBadge from "../../components/StatusBadge";
-
-function useActivityLog() {
-  const { create } = useMutation("ActivityLog");
-  return (action: string, entity: string, entityId: string, description: string) =>
-    create({ action, entity, entityId, description, timestamp: new Date() }).catch(() => {});
-}
+import { useActivityLog } from "../../hooks/useActivityLog";
 
 type CarDraftForm = {
   brand: string;

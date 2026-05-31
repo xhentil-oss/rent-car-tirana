@@ -7,13 +7,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import StatusBadge from "../../components/StatusBadge";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
 import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
-
-// ActivityLog helper
-function useActivityLog() {
-  const { create } = useMutation("ActivityLog");
-  return (action: string, entity: string, entityId: string, description: string) =>
-    create({ action, entity, entityId, description, timestamp: new Date() }).catch(() => {});
-}
+import { useActivityLog } from "../../hooks/useActivityLog";
 
 type CarDraftForm = {
   brand: string;

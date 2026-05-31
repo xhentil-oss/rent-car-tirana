@@ -657,11 +657,36 @@ router.put('/:id', authenticate, requireRole('admin', 'manager', 'staff'), async
 });
 
 router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+  const conn = await pool.getConnection();
   try {
-    await pool.query('DELETE FROM reservations WHERE id = ?', [req.params.id]);
+    await conn.beginTransaction();
+    // Remove dependent rows first (extras, deposits, invoices) so FK constraints don't 500.
+    await conn.query('DELETE FROM reservation_extras WHERE reservation_id = ?', [req.params.id]);
+    const [[{ invCount }]] = await conn.query('SELECT COUNT(*) AS invCount FROM invoices WHERE reservation_id = ?', [req.params.id]);
+    const [[{ depCount }]] = await conn.query('SELECT COUNT(*) AS depCount FROM deposits WHERE reservation_id = ?', [req.params.id]);
+    if (invCount > 0 || depCount > 0) {
+      await conn.rollback();
+      conn.release();
+      return res.status(409).json({
+        error: `Rezervimi ka ${invCount} faturë${invCount === 1 ? '' : 'a'}${depCount > 0 ? ` dhe ${depCount} depozitë` : ''} të lidhura. Fshini ato më parë.`,
+        code: 'HAS_REFERENCES',
+        invCount, depCount,
+      });
+    }
+    await conn.query('DELETE FROM reservations WHERE id = ?', [req.params.id]);
+    await conn.commit();
+    conn.release();
     await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u fshi: ${req.params.id}`, ipAddress: req.ip });
-    res.json({ message: 'Rezervimi u fshi.' });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+    res.json({ error: null, message: 'Rezervimi u fshi.' });
+  } catch (err) {
+    try { await conn.rollback(); } catch {}
+    conn.release();
+    console.error(err);
+    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({ error: 'Rezervimi ka të dhëna të lidhura (fatura/depozita). Fshini ato më parë.', code: 'HAS_REFERENCES' });
+    }
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
+  }
 });
 
 // Expose loader hooks for other modules (e.g. settings public endpoint).

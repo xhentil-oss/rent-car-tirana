@@ -94,7 +94,26 @@ function buildQuery(filters?: Record<string, unknown>): string {
 }
 
 // ─── useQuery ──────────────────────────────────────────────────
-export function useQuery(entity: string, filtersOrId?: Record<string, unknown> | string) {
+// T = entity row type. When you pass a string `filtersOrId`, the result `data`
+// is `T | null` (single fetch). When you pass filters or nothing, it's `T[]`.
+// Default T = any so existing callers compile without changes; opt in to typed
+// data via `useQuery<Customer>("Customer")`.
+export function useQuery<T = any>(
+  entity: string,
+  filtersOrId?: Record<string, unknown> | string,
+): {
+  /**
+   * Shape depends on call: single-id fetch → `T | null`, list fetch → `T[]`.
+   * Defaults to `any` so existing callers compile unchanged. Pass an explicit
+   * type to opt in:
+   *   useQuery<Customer[]>("Customer")          // list
+   *   useQuery<Customer>("Customer", customerId) // single
+   */
+  data: T;
+  isPending: boolean;
+  error: string | null;
+  refetch: () => void;
+} {
   const isIdFetch = typeof filtersOrId === "string";
   const filters = isIdFetch ? undefined : filtersOrId;
   const entityId = isIdFetch ? filtersOrId : undefined;
@@ -176,7 +195,7 @@ export function useMutation(entity: string) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || err.error || `${res.status}`);
+        throw new Error(err.error || `${res.status}`);
       }
       return res.json();
     } finally {

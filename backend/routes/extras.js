@@ -74,7 +74,7 @@ router.post('/', authenticate, requireRole('admin', 'manager'), async (req, res)
     res.status(201).json(fmt(rows[0]));
   } catch (err) {
     console.error('POST /extras:', err.message);
-    res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message });
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
   }
 });
 
@@ -99,7 +99,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
     res.json(fmt(rows[0]));
   } catch (err) {
     console.error('PUT /extras:', err.message);
-    res.status(500).json({ error: 'Gabim i brendshëm.', detail: err.message });
+    res.status(500).json({ error: 'Gabim i brendshëm.' });
   }
 });
 
