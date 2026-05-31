@@ -10,6 +10,8 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
 import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 import { useActivityLog } from "../../hooks/useActivityLog";
+import CopyButton from "../../components/ui/CopyButton";
+import { calculateTier, nextTierProgress } from "../../lib/loyaltyTier";
 
 const SCORING_TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
 
@@ -357,13 +359,46 @@ export default function AdminCustomers() {
               </div>
 
               {/* Scoring Tier Selector */}
-              <div className="mt-4 flex items-center gap-2">
-                <span className="text-xs font-medium text-neutral-500">Loyalty Tier:</span>
-                <div className="flex gap-1">
-                  {SCORING_TIERS.map((tier) => (
-                    <button key={tier} onClick={() => handleTierChange(selectedCustomer, tier)} disabled={isMutating} className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${selectedCustomer.scoringTier === tier ? tierColor[tier] : "bg-white text-neutral-500 border-border hover:border-neutral-400"}`}>{tier}</button>
-                  ))}
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-neutral-500">Loyalty Tier:</span>
+                  <div className="flex gap-1">
+                    {SCORING_TIERS.map((tier) => (
+                      <button key={tier} onClick={() => handleTierChange(selectedCustomer, tier)} disabled={isMutating} className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${selectedCustomer.scoringTier === tier ? tierColor[tier] : "bg-white text-neutral-500 border-border hover:border-neutral-400"}`}>{tier}</button>
+                    ))}
+                  </div>
                 </div>
+                {(() => {
+                  const suggestedTier = calculateTier(totalSpent, customerReservations.length);
+                  const progress = nextTierProgress(totalSpent, customerReservations.length);
+                  const isOutdated = selectedCustomer.scoringTier !== suggestedTier;
+                  return (
+                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                      <span className="text-neutral-400">
+                        Bazuar te €{totalSpent} dhe {customerReservations.length} rezervime:
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${tierColor[suggestedTier] ?? "bg-neutral-100"}`}>
+                        sugjeruar: {suggestedTier}
+                      </span>
+                      {isOutdated && (
+                        <button
+                          onClick={() => handleTierChange(selectedCustomer, suggestedTier)}
+                          disabled={isMutating}
+                          className="text-primary font-medium hover:underline cursor-pointer disabled:opacity-50"
+                        >
+                          → zbato
+                        </button>
+                      )}
+                      {progress && (
+                        <span className="text-neutral-400 ml-auto">
+                          {progress.spentToGo > 0
+                            ? `€${progress.spentToGo} për ${progress.nextTier}`
+                            : `${progress.bookingsToGo} rezervime për ${progress.nextTier}`}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -401,13 +436,20 @@ export default function AdminCustomers() {
                   {/* Contact Info */}
                   <div className="space-y-2">
                     {[
-                      { label: "Telefoni", value: selectedCustomer.phone, icon: Phone },
-                      { label: "Email", value: selectedCustomer.email, icon: Envelope },
-                      ...(selectedCustomer.corporateContractId ? [{ label: "Kontrata korporatë", value: selectedCustomer.corporateContractId, icon: Buildings }] : []),
-                    ].map(({ label, value, icon: Icon }) => (
+                      { label: "Telefoni", value: selectedCustomer.phone, icon: Phone, copyable: true, href: `tel:${selectedCustomer.phone}` },
+                      { label: "Email", value: selectedCustomer.email, icon: Envelope, copyable: true, href: `mailto:${selectedCustomer.email}` },
+                      ...(selectedCustomer.corporateContractId ? [{ label: "Kontrata korporatë", value: selectedCustomer.corporateContractId, icon: Buildings, copyable: true, href: null }] : []),
+                    ].map(({ label, value, icon: Icon, copyable, href }) => (
                       <div key={label} className="flex items-center justify-between py-2.5 border-b border-border">
                         <div className="flex items-center gap-2 text-sm text-neutral-500"><Icon size={15} />{label}</div>
-                        <span className="text-sm font-medium text-neutral-800">{value}</span>
+                        <div className="flex items-center gap-1">
+                          {href ? (
+                            <a href={href} className="text-sm font-medium text-neutral-800 hover:text-primary no-underline">{value}</a>
+                          ) : (
+                            <span className="text-sm font-medium text-neutral-800">{value}</span>
+                          )}
+                          {copyable && value && <CopyButton value={String(value)} label={label} />}
+                        </div>
                       </div>
                     ))}
                   </div>

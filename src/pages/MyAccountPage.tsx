@@ -19,6 +19,8 @@ import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
+const CANCELLABLE_STATUSES = new Set(["Pending", "Confirmed"]);
+
 function fmt(d: Date | string) {
   return new Date(d).toLocaleDateString("sq-AL", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -40,6 +42,9 @@ export default function MyAccountPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [resendError, setResendError] = useState("");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const handleResendVerification = async () => {
     setResendLoading(true);
@@ -66,11 +71,32 @@ export default function MyAccountPage() {
   };
   const isAdmin = !isAnonymous && user?.role && ['admin', 'manager', 'staff'].includes(user.role);
 
-  const { data: reservations, isPending: resLoading } = useQuery("Reservation", {
+  const { data: reservations, isPending: resLoading, refetch: refetchReservations } = useQuery("Reservation", {
     orderBy: { createdAt: "desc" },
     skip: isAnonymous,
   });
   const { data: cars } = useQuery("Car");
+
+  const handleCancel = async (id: string) => {
+    setCancellingId(id);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/reservations/${id}/cancel`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Anulimi dështoi.");
+      }
+      await refetchReservations();
+      setConfirmCancelId(null);
+    } catch (err: any) {
+      setCancelError(err?.message ?? "Anulimi dështoi.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (authPending) {
     return (
@@ -276,12 +302,61 @@ export default function MyAccountPage() {
                       <p className="text-sm font-semibold text-neutral-800">
                         €{res.totalPrice ? Number(res.totalPrice).toFixed(2) : "—"}
                       </p>
-                      <p className="text-xs text-neutral-400">{res.insurance}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-neutral-400">{res.insurance}</p>
+                        {CANCELLABLE_STATUSES.has(res.status) && (
+                          <button
+                            onClick={() => { setConfirmCancelId(res.id); setCancelError(null); }}
+                            className="text-xs font-medium text-error hover:underline cursor-pointer"
+                          >
+                            {t("account.cancel", "Anulo")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Cancel confirmation modal */}
+      {confirmCancelId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => { setConfirmCancelId(null); setCancelError(null); }} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+                <XCircle size={20} weight="fill" className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900">{t("account.cancelTitle", "Anulo rezervimin")}</h3>
+                <p className="text-xs text-neutral-500">{t("account.cancelIrreversible", "Ky veprim nuk mund të kthehet.")}</p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600 mb-5">
+              {t("account.cancelConfirm", "Jeni i sigurt që dëshironi të anuloni këtë rezervim?")}
+            </p>
+            {cancelError && (
+              <div className="mb-4 p-3 rounded-lg bg-error/5 border border-error/20 flex items-start gap-2">
+                <Warning size={16} weight="fill" className="text-error shrink-0 mt-0.5" />
+                <p className="text-xs text-error">{cancelError}</p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => { setConfirmCancelId(null); setCancelError(null); }} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary cursor-pointer">
+                {t("account.keep", "Mbaje")}
+              </button>
+              <button
+                onClick={() => handleCancel(confirmCancelId)}
+                disabled={cancellingId === confirmCancelId}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-error text-error-foreground hover:opacity-90 cursor-pointer disabled:opacity-50"
+              >
+                {cancellingId === confirmCancelId ? t("account.cancelling", "Duke anuluar...") : t("account.cancelYes", "Po, anulo")}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -284,6 +284,7 @@ router.post('/', async (req, res) => {
       else if (mrAll) pricePerDay = Number(mrAll.price_per_day);
 
       const msPerDay = 86400000;
+      // Daily rental: any partial day = full day (industry standard). 5h = 1 day, 25h = 2 days.
       const days = Math.max(1, Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / msPerDay));
       const locationFee = await getLocationFee(pickupLocation, dropoffLocation);
 
@@ -469,6 +470,40 @@ function notifyStatusChange(reservationId, status) {
     }
   }).catch((e) => console.error('[Email] status-change query failed:', e?.message));
 }
+
+// Customer self-cancel: own reservation only, only if not yet Active/Completed.
+// Admin/manager/staff use PATCH /:id/status with full freedom.
+router.post('/:id/cancel', authenticate, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT r.id, r.status, r.customer_id, c.user_id
+       FROM reservations r
+       LEFT JOIN customers c ON c.id = r.customer_id
+       WHERE r.id = ?`,
+      [req.params.id],
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Rezervimi nuk u gjet.' });
+    const r = rows[0];
+    const isAdmin = ['admin', 'manager', 'staff'].includes(req.user.role);
+    const isOwner = r.user_id && r.user_id === req.user.id;
+    if (!isAdmin && !isOwner) return res.status(403).json({ error: 'Nuk keni leje për këtë rezervim.' });
+    if (r.status !== 'Pending' && r.status !== 'Confirmed') {
+      return res.status(409).json({ error: 'Vetëm rezervimet "Pending" ose "Confirmed" mund të anulohen vetë. Kontaktoni stafin për ndihmë.', code: 'NOT_CANCELLABLE' });
+    }
+    await pool.query('UPDATE reservations SET status = ? WHERE id = ?', ['Cancelled', req.params.id]);
+    await logActivity({
+      userId: req.user.id,
+      action: 'UPDATE',
+      entity: 'Reservation',
+      entityId: req.params.id,
+      description: isAdmin ? `Anuluar nga admin` : `Anuluar nga klienti vetë`,
+      ipAddress: req.ip,
+    });
+    const [updated] = await pool.query('SELECT * FROM reservations WHERE id = ?', [req.params.id]);
+    res.json(fmt(updated[0]));
+    notifyStatusChange(req.params.id, 'Cancelled');
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
+});
 
 router.patch('/:id/status', authenticate, requireRole('admin', 'manager', 'staff'), async (req, res) => {
   try {

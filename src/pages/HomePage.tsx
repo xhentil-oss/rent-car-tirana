@@ -221,8 +221,12 @@ export default function HomePage() {
               key={slide.src}
               src={slide.src}
               alt={slide.alt}
+              width={1400}
+              height={600}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === heroSlide ? "opacity-100" : "opacity-0"}`}
               loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : "low"}
+              decoding={i === 0 ? "sync" : "async"}
             />
           ))}
           <div className="absolute inset-0 bg-neutral-900/70" />
@@ -574,6 +578,9 @@ export default function HomePage() {
                 src={bannerAbout}
                 alt="Happy customer standing by rented car"
                 loading="lazy"
+                width={800}
+                height={400}
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>

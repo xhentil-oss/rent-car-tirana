@@ -38,7 +38,8 @@
       "Bash(node -c backend/routes/reservations.js)",
       "Bash(node -c backend/routes/email.js)",
       "Bash(node -c backend/routes/monthlyRates.js)",
-      "Bash(node -c backend/routes/customers.js)"
+      "Bash(node -c backend/routes/customers.js)",
+      "Bash(node -c backend/routes/cars.js)"
     ]
   }
 }

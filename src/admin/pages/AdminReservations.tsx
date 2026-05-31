@@ -65,6 +65,7 @@ export default function AdminReservations() {
   const log = useActivityLog();
 
   const [filterStatus, setFilterStatus] = useState("");
+  const [presetFilter, setPresetFilter] = useState<"" | "todayPickups" | "todayReturns" | "overdue">("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResId, setSelectedResId] = useState<string | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -85,8 +86,24 @@ export default function AdminReservations() {
 
   const selectedRes = (reservations ?? []).find(r => r.id === selectedResId) ?? null;
 
+  const today = todayInputValue; // "YYYY-MM-DD"
   const filtered = (reservations ?? []).filter((r) => {
     if (filterStatus && r.status !== filterStatus) return false;
+    if (presetFilter === "todayPickups") {
+      // Pickup is today, reservation not completed/cancelled.
+      const startDay = String(r.startDate || "").slice(0, 10);
+      if (startDay !== today) return false;
+      if (r.status === "Completed" || r.status === "Cancelled") return false;
+    } else if (presetFilter === "todayReturns") {
+      const endDay = String(r.endDate || "").slice(0, 10);
+      if (endDay !== today) return false;
+      if (r.status === "Completed" || r.status === "Cancelled") return false;
+    } else if (presetFilter === "overdue") {
+      // Past end date but still Active/Confirmed (not closed out).
+      const endDay = String(r.endDate || "").slice(0, 10);
+      if (endDay >= today) return false;
+      if (r.status !== "Active" && r.status !== "Confirmed") return false;
+    }
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const customer = (customers ?? []).find(c => c.id === r.customerId);
@@ -355,6 +372,36 @@ export default function AdminReservations() {
         <p className="text-neutral-500 text-sm mt-1">{(reservations ?? []).length} rezervime totale</p>
       </div>
 
+      {/* Preset quick filters — focus admin on urgent work */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { key: "todayPickups" as const, label: "Pickup-et e sotme", count: (reservations ?? []).filter((r: any) => String(r.startDate || "").slice(0, 10) === todayInputValue && r.status !== "Completed" && r.status !== "Cancelled").length },
+          { key: "todayReturns" as const, label: "Kthimet e sotme", count: (reservations ?? []).filter((r: any) => String(r.endDate || "").slice(0, 10) === todayInputValue && r.status !== "Completed" && r.status !== "Cancelled").length },
+          { key: "overdue" as const, label: "Të vonuara", count: (reservations ?? []).filter((r: any) => String(r.endDate || "").slice(0, 10) < todayInputValue && (r.status === "Active" || r.status === "Confirmed")).length },
+        ].map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPresetFilter(presetFilter === p.key ? "" : p.key)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+              presetFilter === p.key
+                ? p.key === "overdue"
+                  ? "bg-error text-error-foreground border-error"
+                  : "bg-primary text-primary-foreground border-primary"
+                : p.count > 0
+                  ? p.key === "overdue"
+                    ? "bg-error/5 text-error border-error/20 hover:bg-error/10"
+                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                  : "bg-white text-neutral-500 border-border hover:border-neutral-400"
+            }`}
+          >
+            {p.label}
+            <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-semibold ${
+              presetFilter === p.key ? "bg-white/25" : p.count > 0 ? (p.key === "overdue" ? "bg-error/15 text-error" : "bg-amber-200/60 text-amber-800") : "bg-neutral-100 text-neutral-500"
+            }`}>{p.count}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex flex-wrap gap-3">
           {["","Pending","Confirmed","Active","Completed","Cancelled"].map((s) => (
@@ -436,7 +483,60 @@ export default function AdminReservations() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      {/* Mobile card layout — visible only on small screens. Table below for ≥md. */}
+      <div className="md:hidden space-y-3">
+        {resLoading ? (
+          [1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-lg border border-border p-4 animate-pulse">
+              <div className="h-4 bg-neutral-200 rounded w-1/2 mb-2" />
+              <div className="h-3 bg-neutral-200 rounded w-1/3" />
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-lg border border-border">
+            <EmptyState type={searchQuery || filterStatus ? "search" : "reservations"} actionLabel={!searchQuery && !filterStatus ? "Shto rezervim" : undefined} onAction={!searchQuery && !filterStatus ? () => setShowNewForm(true) : undefined} />
+          </div>
+        ) : (
+          filtered.map((res) => (
+            <div
+              key={res.id}
+              className={`bg-white rounded-lg border p-4 ${selectedIds.has(res.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <button onClick={() => toggleSelect(res.id)} className="mt-0.5 p-0.5 cursor-pointer text-neutral-400 hover:text-primary" aria-label="Zgjidh">
+                    {selectedIds.has(res.id) ? <CheckSquare size={18} weight="fill" className="text-primary" /> : <Square size={18} />}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-neutral-900 truncate">{getCustomerName(res.customerId)}</p>
+                    <p className="text-xs text-neutral-500 truncate">{getCarName(res.carId)}</p>
+                  </div>
+                </div>
+                <StatusBadge status={res.status} />
+              </div>
+              <div className="text-xs text-neutral-600 mb-2">
+                {new Date(res.startDate).toLocaleDateString("sq-AL")} → {new Date(res.endDate).toLocaleDateString("sq-AL")}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-neutral-900">€{res.totalPrice}</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setSelectedResId(res.id)} className="p-2 rounded text-neutral-400 hover:text-primary hover:bg-secondary cursor-pointer" aria-label="Shiko">
+                    <Eye size={16} />
+                  </button>
+                  <button onClick={() => openEdit(res.id)} className="p-2 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer" aria-label="Modifiko">
+                    <PencilSimple size={16} />
+                  </button>
+                  <button onClick={() => setDeleteConfirmId(res.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Fshi">
+                    <Trash size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg border border-border overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>

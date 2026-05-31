@@ -461,7 +461,7 @@ export default function BookingPage() {
       } else {
         if (start < new Date()) newErrors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren.";
         if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
-        if (minDaysRequired > 0 && days < minDaysRequired) newErrors.endDate = `Minimumi i ditëve të rezervimit është ${minDaysRequired} ditë.`;
+        if (minDaysRequired > 0 && days < minDaysRequired) newErrors.endDate = t("booking.validation.minDays", { count: minDaysRequired });
       }
     }
     if (!form.firstName) newErrors.firstName = t("booking.validation.firstName");
@@ -832,7 +832,7 @@ export default function BookingPage() {
                   {minDaysViolation && !errors.endDate && (
                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
                       <WarningCircle size={13} weight="regular" />
-                      Minimumi i ditëve të rezervimit është <strong className="ml-1">{minDaysRequired} ditë</strong>.
+                      {t("booking.validation.minDays", { count: minDaysRequired })}
                     </p>
                   )}
                   {errors.endDate && (

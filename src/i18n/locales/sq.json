@@ -456,7 +456,8 @@
       "firstName": "Emri është i detyrueshëm",
       "lastName": "Mbiemri është i detyrueshëm",
       "phone": "Telefoni është i detyrueshëm",
-      "email": "Email i pavlefshëm"
+      "email": "Email i pavlefshëm",
+      "minDays": "Minimumi i rezervimit është {{count}} ditë."
     }
   },
   "reviews": {

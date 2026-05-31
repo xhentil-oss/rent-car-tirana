@@ -30,9 +30,10 @@ router.get('/', async (req, res) => {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(...safePagination(limit, offset, 100));
     const [rows] = await pool.query(sql, params);
-    // Only cache for unauthenticated (public) requests — admin refetch must get fresh data
+    // Only cache for unauthenticated (public) requests — admin refetch must get fresh data.
+    // 5min browser cache + 10min CDN cache; admin DELETE/PUT triggers refetch on UI side.
     if (!req.headers.authorization) {
-      res.set('Cache-Control', 'public, max-age=30');
+      res.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=60');
     } else {
       res.set('Cache-Control', 'no-cache, no-store');
     }

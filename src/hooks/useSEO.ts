@@ -181,45 +181,56 @@ export const buildCarProductSchema = (car: {
   fuel: string;
   transmission: string;
   seats: number;
-}) => ({
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": `${car.brand} ${car.model} (${car.year})`,
-  "description": `Makinë me qira ${car.brand} ${car.model} ${car.year} kategoria ${car.category}. ${car.transmission}, ${car.fuel}, ${car.seats} vende. Disponueshme në Tiranë.`,
-  "image": [
-    {
-      "@type": "ImageObject",
-      "url": car.image,
-      "name": `${car.brand} ${car.model} ${car.year} - Makina me qira Tiranë`,
-      "description": `Foto ${car.brand} ${car.model} ${car.year} kategoria ${car.category} me qira Tiranë`,
-      "width": "1200",
-      "height": "800",
-      "representativeOfPage": true
-    }
-  ],
-  "brand": {
-    "@type": "Brand",
-    "name": car.brand
-  },
-  "offers": {
-    "@type": "Offer",
-    "price": car.pricePerDay,
-    "priceCurrency": "EUR",
-    "priceSpecification": {
-      "@type": "UnitPriceSpecification",
+  /** Optional aggregate rating — when provided, surfaces star rating in Google search snippets. */
+  rating?: { value: number; count: number };
+}) => {
+  const schema: Record<string, any> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `${car.brand} ${car.model} (${car.year})`,
+    "description": `Makinë me qira ${car.brand} ${car.model} ${car.year} kategoria ${car.category}. ${car.transmission}, ${car.fuel}, ${car.seats} vende. Disponueshme në Tiranë.`,
+    "image": [
+      {
+        "@type": "ImageObject",
+        "url": car.image,
+        "name": `${car.brand} ${car.model} ${car.year} - Makina me qira Tiranë`,
+        "description": `Foto ${car.brand} ${car.model} ${car.year} kategoria ${car.category} me qira Tiranë`,
+        "width": "1200",
+        "height": "800",
+        "representativeOfPage": true,
+      },
+    ],
+    "brand": { "@type": "Brand", "name": car.brand },
+    "offers": {
+      "@type": "Offer",
       "price": car.pricePerDay,
       "priceCurrency": "EUR",
-      "unitText": "DAY"
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": car.pricePerDay,
+        "priceCurrency": "EUR",
+        "unitText": "DAY",
+      },
+      "availability": "https://schema.org/InStock",
+      "url": `${SITE_URL}/makina/${car.slug}`,
     },
-    "availability": "https://schema.org/InStock",
-    "url": `${SITE_URL}/makina/${car.slug}`
-  },
-  "additionalProperty": [
-    { "@type": "PropertyValue", "name": "Transmisioni", "value": car.transmission },
-    { "@type": "PropertyValue", "name": "Karburanti", "value": car.fuel },
-    { "@type": "PropertyValue", "name": "Vendesh", "value": String(car.seats) }
-  ]
-});
+    "additionalProperty": [
+      { "@type": "PropertyValue", "name": "Transmisioni", "value": car.transmission },
+      { "@type": "PropertyValue", "name": "Karburanti", "value": car.fuel },
+      { "@type": "PropertyValue", "name": "Vendesh", "value": String(car.seats) },
+    ],
+  };
+  if (car.rating && car.rating.count > 0 && car.rating.value > 0) {
+    schema.aggregateRating = {
+      "@type": "AggregateRating",
+      "ratingValue": car.rating.value.toFixed(1),
+      "reviewCount": car.rating.count,
+      "bestRating": "5",
+      "worstRating": "1",
+    };
+  }
+  return schema;
+};
 
 /**
  * Builds an ImageObject schema for a standalone image (gallery, media, etc.)

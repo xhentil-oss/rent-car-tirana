@@ -404,36 +404,133 @@ export default function AdminFinance() {
         </div>
       )}
 
-      {activeTab === "vat" && (
-        <div className="space-y-4">
-          <div className="bg-gradient-primary text-white rounded-2xl p-6">
-            <p className="text-xs opacity-70 uppercase tracking-widest mb-4">Pasqyra TVSH</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { label: "Qira bruto (me TVSH)", value: totalRevenue },
-                { label: "Baza tatimore (pa TVSH)", value: totalRevenue - totalVat },
-                { label: "TVSH 20% e detyrueshme", value: totalVat },
-                { label: "Neto pas TVSH", value: totalRevenue - totalVat },
-              ].map(item => (
-                <div key={item.label}>
-                  <p className="text-xs opacity-60 mb-0.5">{item.label}</p>
-                  <p className="text-xl font-bold">€{fmt(item.value)}</p>
+      {activeTab === "vat" && (() => {
+        // Group paid invoices by YYYY-MM for monthly VAT breakdown.
+        const paidInvoices = allInvoices.filter((i) => i.status === "Paguar");
+        const monthly = new Map<string, { gross: number; base: number; vat: number; count: number }>();
+        for (const inv of paidInvoices) {
+          const month = String(inv.issueDate || "").slice(0, 7); // YYYY-MM
+          if (!month) continue;
+          const cur = monthly.get(month) ?? { gross: 0, base: 0, vat: 0, count: 0 };
+          cur.gross += Number(inv.total || 0);
+          cur.vat += Number(inv.vatAmount || 0);
+          cur.base += Number(inv.subtotal || 0);
+          cur.count += 1;
+          monthly.set(month, cur);
+        }
+        const monthlyRows = Array.from(monthly.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+
+        const exportVatCSV = () => {
+          const csv = [
+            ["Muaji", "Numri i faturave", "Qira bruto (€)", "Baza tatimore (€)", "TVSH 20% (€)"].join(","),
+            ...monthlyRows.map(([month, v]) => [month, v.count, v.gross.toFixed(2), v.base.toFixed(2), v.vat.toFixed(2)].join(",")),
+            ["TOTAL", paidInvoices.length, totalRevenue.toFixed(2), (totalRevenue - totalVat).toFixed(2), totalVat.toFixed(2)].join(","),
+          ].join("\n");
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `tvsh_${new Date().toISOString().slice(0, 7)}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-primary text-white rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div>
+                  <p className="text-xs opacity-70 uppercase tracking-widest">Pasqyra TVSH</p>
+                  <p className="text-xs opacity-60 mt-0.5">Bazuar te {paidInvoices.length} fatura "Paguar"</p>
                 </div>
-              ))}
+                <button
+                  onClick={exportVatCSV}
+                  disabled={!monthlyRows.length}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <DownloadSimple size={14} weight="bold" />Export CSV
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { label: "Qira bruto (me TVSH)", value: totalRevenue },
+                  { label: "Baza tatimore (pa TVSH)", value: totalRevenue - totalVat },
+                  { label: "TVSH 20% e detyrueshme", value: totalVat },
+                  { label: "Neto pas TVSH", value: totalRevenue - totalVat },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <p className="text-xs opacity-60 mb-0.5">{item.label}</p>
+                    <p className="text-xl font-bold">€{fmt(item.value)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Monthly breakdown */}
+            <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="font-semibold text-neutral-800 text-sm">Ndarja mujore</h3>
+                <p className="text-xs text-neutral-500 mt-0.5">Vetëm fatura të paguara. Renditja: më e re sipër.</p>
+              </div>
+              {monthlyRows.length === 0 ? (
+                <div className="px-4 py-10 text-center text-sm text-neutral-400">Nuk ka fatura të paguara për të raportuar TVSH-në.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-50 text-neutral-500 text-xs uppercase tracking-wide">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-medium">Muaji</th>
+                        <th className="text-right px-4 py-3 font-medium">Fatura</th>
+                        <th className="text-right px-4 py-3 font-medium">Bruto</th>
+                        <th className="text-right px-4 py-3 font-medium">Baza (pa TVSH)</th>
+                        <th className="text-right px-4 py-3 font-medium text-primary">TVSH 20%</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {monthlyRows.map(([month, v]) => (
+                        <tr key={month} className="hover:bg-neutral-50">
+                          <td className="px-4 py-3 font-mono text-neutral-800">{month}</td>
+                          <td className="px-4 py-3 text-right text-neutral-600">{v.count}</td>
+                          <td className="px-4 py-3 text-right font-medium">€{fmt(v.gross)}</td>
+                          <td className="px-4 py-3 text-right text-neutral-600">€{fmt(v.base)}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-primary">€{fmt(v.vat)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-neutral-50 font-semibold">
+                      <tr>
+                        <td className="px-4 py-3 text-neutral-800">TOTAL</td>
+                        <td className="px-4 py-3 text-right text-neutral-700">{paidInvoices.length}</td>
+                        <td className="px-4 py-3 text-right text-neutral-900">€{fmt(totalRevenue)}</td>
+                        <td className="px-4 py-3 text-right text-neutral-700">€{fmt(totalRevenue - totalVat)}</td>
+                        <td className="px-4 py-3 text-right text-primary">€{fmt(totalVat)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4" onClick={() => setSelectedInvoice(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-primary p-6 text-white flex items-start justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 print:bg-white print:p-0 print:relative print:inset-auto" onClick={() => setSelectedInvoice(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden invoice-printable print:shadow-none print:max-w-full print:rounded-none print:overflow-visible" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-primary p-6 text-white flex items-start justify-between print:bg-white print:text-neutral-900 print:border-b-2 print:border-neutral-900">
               <div>
-                <p className="text-xs opacity-70 uppercase tracking-widest mb-1">Faturë Zyrtare</p>
+                <p className="text-xs opacity-70 uppercase tracking-widest mb-1 print:opacity-100">Faturë Zyrtare</p>
                 <p className="text-2xl font-bold">{selectedInvoice.invoiceNo}</p>
               </div>
-              <button onClick={() => setSelectedInvoice(null)} className="p-2 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"><X size={18} weight="bold" /></button>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <Printer size={14} weight="bold" />Printo
+                </button>
+                <button onClick={() => setSelectedInvoice(null)} className="p-2 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"><X size={18} weight="bold" /></button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -445,15 +542,36 @@ export default function AdminFinance() {
                   <p className="text-neutral-400 text-xs mb-1">Makina</p>
                   <p className="font-semibold text-neutral-800">{selectedInvoice.carName}</p>
                 </div>
+                <div>
+                  <p className="text-neutral-400 text-xs mb-1">Data e lëshimit</p>
+                  <p className="font-semibold text-neutral-800">{selectedInvoice.issueDate}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-400 text-xs mb-1">Afati</p>
+                  <p className="font-semibold text-neutral-800">{selectedInvoice.dueDate}</p>
+                </div>
               </div>
               <div className="border-t border-dashed border-border pt-4 space-y-2 text-sm">
+                <div className="flex justify-between text-neutral-600"><span>Ditë qiraje</span><span>{selectedInvoice.days}</span></div>
                 <div className="flex justify-between text-neutral-600"><span>Nëntotali</span><span>€{fmt(selectedInvoice.subtotal)}</span></div>
                 <div className="flex justify-between text-neutral-600"><span>TVSH 20%</span><span>€{fmt(selectedInvoice.vatAmount)}</span></div>
                 <div className="flex justify-between font-bold text-neutral-900 text-base border-t border-border pt-2 mt-2"><span>TOTALI FINAL</span><span>€{fmt(selectedInvoice.total)}</span></div>
               </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor(selectedInvoice.status)}`}>{selectedInvoice.status}</span>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor(selectedInvoice.status)}`}>{selectedInvoice.status}</span>
+                <span className="text-xs text-neutral-400 hidden print:block">Rent Car Tirana · rentcartiranaairport.com · +355 69 756 2951</span>
+              </div>
             </div>
           </div>
+          {/* Print-only CSS: hide everything except the invoice modal */}
+          <style>{`
+            @media print {
+              body * { visibility: hidden; }
+              .invoice-printable, .invoice-printable * { visibility: visible; }
+              .invoice-printable { position: absolute; left: 0; top: 0; width: 100%; }
+              @page { size: A4; margin: 1.5cm; }
+            }
+          `}</style>
         </div>
       )}
     </div>

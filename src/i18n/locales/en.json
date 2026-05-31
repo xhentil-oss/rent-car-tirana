@@ -466,7 +466,8 @@
       "firstName": "First name is required",
       "lastName": "Last name is required",
       "phone": "Phone is required",
-      "email": "Invalid email"
+      "email": "Invalid email",
+      "minDays": "Minimum booking is {{count}} day(s)."
     }
   },
   "reviews": {
