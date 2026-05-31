@@ -41,7 +41,8 @@
       "Bash(node -c backend/routes/customers.js)",
       "Bash(node -c backend/routes/cars.js)",
       "Bash(curl -sSI \"https://rentcartiranaairport.com/\")",
-      "Bash(curl -sSI \"https://rentcartiranaairport.com/assets/index-CNhTGKI8.js\")"
+      "Bash(curl -sSI \"https://rentcartiranaairport.com/assets/index-CNhTGKI8.js\")",
+      "Bash(curl -sSL \"https://rentcartiranaairport.com/api/settings/public\")"
     ]
   }
 }
