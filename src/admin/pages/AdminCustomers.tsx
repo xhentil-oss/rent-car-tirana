@@ -12,6 +12,8 @@ import BulkActionBar, { BulkCheckbox } from "../components/BulkActionBar";
 import { useActivityLog } from "../../hooks/useActivityLog";
 import CopyButton from "../../components/ui/CopyButton";
 import { calculateTier, nextTierProgress } from "../../lib/loyaltyTier";
+import { usePagination } from "../../hooks/usePagination";
+import Pagination from "../../components/ui/Pagination";
 
 const SCORING_TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
 
@@ -68,7 +70,13 @@ export default function AdminCustomers() {
     return true;
   });
 
-  const bulk = useBulkSelection(filtered);
+  const pagination = usePagination(filtered, {
+    pageSize: 20,
+    resetKey: `${search}|${filterType}`,
+  });
+  const paged = pagination.pageItems;
+
+  const bulk = useBulkSelection(paged);
 
   const handleBulkDelete = async () => {
     const items = bulk.getSelectedItems() as any[];
@@ -248,7 +256,65 @@ export default function AdminCustomers() {
         ]}
       />
 
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      {/* Mobile card layout — visible only on small screens. Table below for ≥md. */}
+      <div className="md:hidden space-y-3">
+        {isPending ? (
+          [1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-lg border border-border p-4 animate-pulse">
+              <div className="h-4 bg-neutral-200 rounded w-1/2 mb-2" />
+              <div className="h-3 bg-neutral-200 rounded w-2/3" />
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-lg border border-border">
+            <EmptyState type={search || filterType ? "search" : "customers"} title={search || filterType ? "Nuk u gjetën klientë" : undefined} description={search || filterType ? "Provoni kritere të tjera kërkimi" : undefined} />
+          </div>
+        ) : (
+          paged.map((customer) => (
+            <div
+              key={customer.id}
+              className={`bg-white rounded-lg border p-4 ${bulk.isSelected(customer.id) ? "border-primary/40 bg-primary/5" : customer.isBlacklisted ? "border-error/30 bg-red-50/30" : "border-border"}`}
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <BulkCheckbox
+                    checked={bulk.isSelected(customer.id)}
+                    onChange={() => bulk.toggleOne(customer.id)}
+                    ariaLabel={`Zgjidh ${customer.name}`}
+                  />
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <span className="text-sm font-medium text-primary">{customer.name.charAt(0)}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-neutral-900 truncate">{customer.name}</p>
+                    <p className="text-xs text-neutral-500 truncate">{customer.email}</p>
+                  </div>
+                </div>
+                {customer.isBlacklisted && (
+                  <span className="text-[10px] font-medium text-error bg-error/10 px-1.5 py-0.5 rounded shrink-0">Blacklist</span>
+                )}
+              </div>
+              <div className="flex items-center flex-wrap gap-2 mb-3">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${typeColor[customer.type] ?? "bg-neutral-200 text-neutral-700"}`}>{customer.type}</span>
+                {customer.scoringTier && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${tierColor[customer.scoringTier] ?? tierColor["Bronze"]}`}>
+                    <Crown size={10} />{customer.scoringTier}
+                  </span>
+                )}
+                <span className="text-xs text-neutral-500">{customer.phone}</span>
+              </div>
+              <div className="flex items-center justify-end gap-1">
+                <button onClick={() => openCustomer(customer.id)} className="px-3 py-1.5 rounded text-xs font-medium text-primary hover:bg-primary/10 cursor-pointer">Shiko</button>
+                <button onClick={() => setDeleteConfirmId(customer.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Fshi">
+                  <Trash size={15} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg border border-border overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
@@ -271,7 +337,7 @@ export default function AdminCustomers() {
                 <TableSkeleton rows={5} columns={8} />
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={8}><EmptyState type={search || filterType ? "search" : "customers"} title={search || filterType ? "Nuk u gjetën klientë" : undefined} description={search || filterType ? "Provoni kritere të tjera kërkimi" : undefined} /></td></tr>
-              ) : filtered.map((customer) => (
+              ) : paged.map((customer) => (
                 <tr key={customer.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${customer.isBlacklisted ? "bg-red-50/40" : ""} ${bulk.isSelected(customer.id) ? "bg-primary/5" : ""}`}>
                   <td className="px-4 py-3">
                     <BulkCheckbox
@@ -321,6 +387,32 @@ export default function AdminCustomers() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          hasPrev={pagination.hasPrev}
+          hasNext={pagination.hasNext}
+          onPrev={pagination.prev}
+          onNext={pagination.next}
+          itemLabel="klientë"
+        />
+      </div>
+
+      {/* Pagination for mobile card view */}
+      <div className="md:hidden bg-white rounded-lg border border-border">
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          hasPrev={pagination.hasPrev}
+          hasNext={pagination.hasNext}
+          onPrev={pagination.prev}
+          onNext={pagination.next}
+          itemLabel="klientë"
+        />
       </div>
 
       {/* Customer Detail Drawer */}

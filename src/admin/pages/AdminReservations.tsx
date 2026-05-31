@@ -14,6 +14,8 @@ import {
   buildLocalDateTime,
   formatDateInputValue,
 } from "../../lib/dateHelpers";
+import { usePagination } from "../../hooks/usePagination";
+import Pagination from "../../components/ui/Pagination";
 
 interface NewReservationForm {
   customerId: string;
@@ -281,7 +283,13 @@ export default function AdminReservations() {
     return c ? `${c.brand} ${c.model}` : carId;
   };
 
-  const allFilteredIds = filtered.map((r) => r.id);
+  const pagination = usePagination(filtered, {
+    pageSize: 25,
+    resetKey: `${searchQuery}|${filterStatus}|${presetFilter}`,
+  });
+  const paged = pagination.pageItems;
+
+  const allFilteredIds = paged.map((r) => r.id);
   const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
   const someSelected = selectedIds.size > 0;
 
@@ -497,7 +505,7 @@ export default function AdminReservations() {
             <EmptyState type={searchQuery || filterStatus ? "search" : "reservations"} actionLabel={!searchQuery && !filterStatus ? "Shto rezervim" : undefined} onAction={!searchQuery && !filterStatus ? () => setShowNewForm(true) : undefined} />
           </div>
         ) : (
-          filtered.map((res) => (
+          paged.map((res) => (
             <div
               key={res.id}
               className={`bg-white rounded-lg border p-4 ${selectedIds.has(res.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
@@ -556,7 +564,7 @@ export default function AdminReservations() {
                 <TableSkeleton rows={5} columns={6} />
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={8}><EmptyState type={searchQuery || filterStatus ? "search" : "reservations"} actionLabel={!searchQuery && !filterStatus ? "Shto rezervim" : undefined} onAction={!searchQuery && !filterStatus ? () => setShowNewForm(true) : undefined} /></td></tr>
-              ) : filtered.map((res) => (
+              ) : paged.map((res) => (
                 <tr key={res.id} className={`border-b border-border last:border-0 hover:bg-neutral-50 transition-colors duration-150 ${selectedIds.has(res.id) ? "bg-primary/5" : ""}`}>
                   <td className="w-10 px-3 py-3">
                     <button onClick={() => toggleSelect(res.id)} className="p-0.5 cursor-pointer text-neutral-400 hover:text-primary transition-colors" aria-label="Zgjidh">
@@ -643,6 +651,32 @@ export default function AdminReservations() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          hasPrev={pagination.hasPrev}
+          hasNext={pagination.hasNext}
+          onPrev={pagination.prev}
+          onNext={pagination.next}
+          itemLabel="rezervime"
+        />
+      </div>
+
+      {/* Pagination for mobile card view */}
+      <div className="md:hidden bg-white rounded-lg border border-border">
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          hasPrev={pagination.hasPrev}
+          hasNext={pagination.hasNext}
+          onPrev={pagination.prev}
+          onNext={pagination.next}
+          itemLabel="rezervime"
+        />
       </div>
 
       {/* New Reservation Drawer */}
