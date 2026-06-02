@@ -3,6 +3,16 @@
 # can be cached forever; index.html MUST NOT be cached or users get stuck on
 # an old version that references deleted bundle hashes.
 
+# ─── Disable LiteSpeed page cache (LSCache) for the SPA ───
+# Without this, LiteSpeed will serve a cached copy of index.html for up to
+# its configured TTL (often hours), ignoring file mtime and Cache-Control
+# headers entirely. We bypass it so every request hits disk.
+<IfModule LiteSpeed>
+    CacheDisable public /
+    RewriteEngine On
+    RewriteRule .* - [E=Cache-Control:no-cache]
+</IfModule>
+
 <IfModule mod_headers.c>
     # Long-lived immutable cache for hashed JS/CSS/font/img assets in /assets/
     <FilesMatch "\.(js|css|woff2?|ttf|otf|eot|svg|png|jpg|jpeg|gif|webp|avif|ico)$">
