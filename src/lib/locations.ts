@@ -78,9 +78,9 @@ export function formatLocationOption(opt: LocationOption): string {
   return `${opt.icon} ${opt.label}${opt.fee > 0 ? ` (+€${opt.fee})` : ""}`;
 }
 
-// Compute the fee charged for a given (pickup, dropoff) pair, matching the
-// backend `getLocationFee` semantics: same location charges once, otherwise
-// both fees are added.
+// Compute the fee charged for a given (pickup, dropoff) pair. Matches backend
+// `getLocationFee` semantics: BOTH fees are always charged, even when pickup
+// and dropoff are the same paid city (Sarandë → Sarandë = 2×€20).
 export function computeLocationFee(
   pickup: string,
   dropoff: string,
@@ -88,8 +88,5 @@ export function computeLocationFee(
 ): { pickupFee: number; dropoffFee: number; total: number } {
   const pFee = fees[pickup] || 0;
   const dFee = fees[dropoff] || 0;
-  if (pickup === dropoff) {
-    return { pickupFee: pFee, dropoffFee: 0, total: pFee };
-  }
   return { pickupFee: pFee, dropoffFee: dFee, total: pFee + dFee };
 }

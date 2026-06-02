@@ -78,7 +78,11 @@ async function getLocationFee(pickup, dropoff) {
   const map = new Map(Object.entries(fees).map(([k, v]) => [norm(k), v]));
   const pFee = map.get(norm(pickup)) || 0;
   const dFee = map.get(norm(dropoff)) || 0;
-  return norm(pickup) === norm(dropoff) ? pFee : pFee + dFee;
+  // Always charge BOTH the pickup and the dropoff fee — even when the customer
+  // picks up and returns in the same paid city (e.g. Sarandë → Sarandë =
+  // pickup-fee + dropoff-fee = 2×€20). Free locations (fee = 0) naturally
+  // contribute nothing.
+  return pFee + dFee;
 }
 
 async function getAllowedLocations() {
