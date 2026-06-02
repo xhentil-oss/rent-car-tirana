@@ -8,19 +8,17 @@ import {
 } from "../lib/locations";
 
 // ─── Persistent + module-level cache ──────────────────────────────────────
-// Strategy: defaults are the FLOOR — the dropdown never falls below them.
-// The API response is merged on top: it can add new locations or update
-// prices, but it cannot remove a default location. This guarantees the
-// pickup/dropoff dropdown ALWAYS shows the full set even when:
-//   - API is slow / down
-//   - API returns a partial response
-//   - Browser cached an old bundle
-//   - Admin accidentally cleared a setting
+// Admin settings are AUTHORITATIVE — when an admin removes a location, the
+// dropdown must hide it. Defaults are used only as a safety net:
+//   - First render before API responds
+//   - API failure (network/JSON error)
+//   - Pathological response (empty or unparseable)
 //
-// Last-good response is mirrored to localStorage so subsequent page loads
-// hydrate with the full data BEFORE the network round-trip resolves.
+// Last-good API response is mirrored to localStorage so subsequent page loads
+// hydrate with the user's CONFIGURED locations BEFORE the network resolves,
+// avoiding the brief flash of defaults.
 
-const STORAGE_KEY = "rct_locations_v1";
+const STORAGE_KEY = "rct_locations_v2";
 
 interface CachedShape {
   fees: Record<string, number>;
@@ -57,34 +55,32 @@ function writeLocalStorageCache(fees: Record<string, number>, free: string[]) {
   }
 }
 
-// Merge API response over defaults — defaults are the floor, API additions
-// or price overrides win.
-function mergeFees(apiFees: Record<string, number> | null | undefined): Record<string, number> {
-  const merged: Record<string, number> = { ...DEFAULT_LOCATION_FEES };
-  if (apiFees && typeof apiFees === "object") {
-    for (const [k, v] of Object.entries(apiFees)) {
-      const num = Number(v);
-      if (Number.isFinite(num) && num >= 0 && k) merged[k.trim()] = num;
-    }
+// Sanitize fees object: drop entries with invalid values, trim names.
+function cleanFees(raw: unknown): Record<string, number> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const name = String(k || "").trim();
+    const num = Number(v);
+    if (name && Number.isFinite(num) && num >= 0) out[name] = num;
   }
-  return merged;
+  return out;
 }
 
-function mergeFree(apiFree: string[] | null | undefined): string[] {
-  const merged = new Set<string>(DEFAULT_FREE_LOCATIONS);
-  if (Array.isArray(apiFree)) {
-    for (const v of apiFree) {
-      if (typeof v === "string" && v.trim()) merged.add(v.trim());
-    }
+function cleanFree(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v === "string" && v.trim()) out.push(v.trim());
   }
-  return Array.from(merged);
+  return out;
 }
 
-// Seed module-level cache from localStorage immediately so the very first
-// render after a fresh tab open already has the last-known values.
+// Seed module-level cache: prefer localStorage (last admin-configured set),
+// fall back to defaults. Never empty.
 const seed = readLocalStorageCache();
-let cachedFees: Record<string, number> = mergeFees(seed?.fees);
-let cachedFree: string[] = mergeFree(seed?.free);
+let cachedFees: Record<string, number> = seed?.fees ?? { ...DEFAULT_LOCATION_FEES };
+let cachedFree: string[] = seed?.free ?? [...DEFAULT_FREE_LOCATIONS];
 let inFlight: Promise<void> | null = null;
 const subscribers = new Set<() => void>();
 
@@ -101,16 +97,30 @@ async function fetchPublicSettings(): Promise<void> {
       const res = await fetch("/api/settings/public", { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      if (json && typeof json === "object") {
-        // Always merge with defaults — never lose a built-in location.
-        cachedFees = mergeFees(json.location_fees);
-        cachedFree = mergeFree(json.free_locations);
-        writeLocalStorageCache(cachedFees, cachedFree);
-        notifySubscribers();
-      }
+      if (!json || typeof json !== "object") throw new Error("Bad payload");
+
+      const apiFees = cleanFees(json.location_fees);
+      const apiFree = cleanFree(json.free_locations);
+
+      // Treat both fees and free as authoritative ONLY when at least one of
+      // them is non-empty — admin must have at least one location set. If
+      // API returns nothing usable (server bug, empty settings table), keep
+      // whatever we had (last cache or defaults) so the form never breaks.
+      const hasAnyFee = apiFees && Object.keys(apiFees).length > 0;
+      const hasAnyFree = apiFree && apiFree.length > 0;
+      if (!hasAnyFee && !hasAnyFree) return;
+
+      // REPLACE the cache with API response. Defaults are no longer mixed in
+      // once we have a successful response — the admin's configured list is
+      // the source of truth.
+      cachedFees = apiFees ?? {};
+      cachedFree = apiFree ?? [];
+
+      writeLocalStorageCache(cachedFees, cachedFree);
+      notifySubscribers();
     } catch {
-      // Network/JSON failure — defaults remain in cachedFees/cachedFree;
-      // dropdown still shows the full default set.
+      // Network/JSON failure — keep whatever cache we have (last good or
+      // defaults). Dropdown still works.
     } finally {
       inFlight = null;
     }
@@ -122,9 +132,10 @@ async function fetchPublicSettings(): Promise<void> {
  * Returns the unified list of pickup / drop-off locations, fees, and helpers.
  *
  * Guarantees:
- *   - First render is ALWAYS populated (defaults or last localStorage cache)
- *   - API additions/overrides appear once the fetch resolves
- *   - Default locations are NEVER removed by the API response
+ *   - First render is always populated (defaults or last admin-configured set)
+ *   - Admin settings changes propagate after fetch resolves
+ *   - When admin removes a location, it disappears from the dropdown
+ *   - When API fails, last known good list (or defaults) remains
  *   - Subscribers re-render automatically when cache updates
  */
 export function useLocations(lang: "sq" | "en" = "sq") {
@@ -159,4 +170,20 @@ export function useLocations(lang: "sq" | "en" = "sq") {
     computeFee: (pickup: string, dropoff: string) =>
       computeLocationFee(pickup, dropoff, fees),
   };
+}
+
+/**
+ * Force the next `useLocations()` mount to refetch from the API.
+ * Call this after admin saves location settings so other tabs/pages pick
+ * up the change immediately on next render.
+ */
+export function invalidateLocationsCache() {
+  cachedFees = { ...DEFAULT_LOCATION_FEES };
+  cachedFree = [...DEFAULT_FREE_LOCATIONS];
+  inFlight = null;
+  if (typeof localStorage !== "undefined") {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  }
+  // Kick off a fresh fetch so subscribers update.
+  fetchPublicSettings().then(notifySubscribers);
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash } from "@phosphor-icons/react";
+import { invalidateLocationsCache } from "../../hooks/useLocations";
 
 const API_BASE = "/api";
 
@@ -250,6 +251,12 @@ export default function AdminSettings() {
       }
       setSaved(true);
       setLocationsDirty(false);
+      // If locations were changed, invalidate the client-side cache so the
+      // public site, booking page, and contact page pick up the new list on
+      // their next mount (and refetch immediately for any open instances).
+      if (payload.location_fees || payload.free_locations) {
+        invalidateLocationsCache();
+      }
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errors.generic"));
