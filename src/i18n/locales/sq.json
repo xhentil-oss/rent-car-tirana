@@ -161,6 +161,15 @@
         { "question": "A mund të anuloj rezervimin?", "answer": "Po, mund të anuloni falas deri 24 orë para datës së tërhieves. Pas kësaj, aplikohet tarifa e anulimit." }
       ]
     },
+    "registerCta": {
+      "title": "Krijo llogarinë falas",
+      "subtitle": "Regjistrohu për të menaxhuar rezervimet, kontratat dhe historinë e qirave të tua — gjithçka në një vend.",
+      "btn": "Regjistrohu tani",
+      "fleet": "Shiko flotën",
+      "f1": "Pa pagesë",
+      "f2": "Menaxho rezervimet",
+      "f3": "Histori e plotë"
+    },
     "cta": {
       "title": "Keni pyetje? Na kontaktoni!",
       "subtitle": "Jemi të disponueshëm 24/7 për t'ju ndihmuar",
@@ -453,11 +462,88 @@
       "startDate": "Zgjidhni datën e nisjes",
       "endDate": "Zgjidhni datën e kthimit",
       "endDateAfter": "Data e kthimit duhet të jetë pas nisjes",
+      "startDatePast": "Data dhe ora e nisjes nuk mund të jenë në të kaluarën.",
       "firstName": "Emri është i detyrueshëm",
       "lastName": "Mbiemri është i detyrueshëm",
       "phone": "Telefoni është i detyrueshëm",
       "email": "Email i pavlefshëm",
       "minDays": "Minimumi i rezervimit është {{count}} ditë."
+    },
+    "extras": {
+      "perDay": "/ditë",
+      "perRental": "/rezervim",
+      "oneTime": "Një herë",
+      "seasonalPrices": "Çmimet sezonale",
+      "seasonalInfo": "Çmimet ndryshojnë sipas sezonit. Çmimi bazë i kësaj makine është €{{price}}/ditë.",
+      "currentSeason": "Aktual",
+      "pickupFee": "Tarifë dërgese",
+      "dropoffFee": "Tarifë kthimi",
+      "locationFee": "Tarifë lokacioni",
+      "pickupAndDropoff": "tërhiqje + kthim",
+      "monthsShort": ["Jan", "Shk", "Mar", "Pri", "Maj", "Qer", "Kor", "Gus", "Sht", "Tet", "Nën", "Dhj"]
+    }
+  },
+  "contactPage": {
+    "badge": "NA KONTAKTONI",
+    "heroTitle": "Si mund t'ju ndihmojmë?",
+    "heroSubtitle": "Jemi këtu për çdo pyetje rreth rezervimeve, çmimeve apo flotës sonë. Përgjigjemi brenda 2 orësh.",
+    "infoTitle": "Informacioni ynë",
+    "addresses": "Adresat",
+    "addressAirport": "Aeroporti",
+    "addressCenter": "Qendër",
+    "addressOffice": "Zyra",
+    "hoursTitle": "Orari i punës",
+    "openNow": "Jemi hapur tani",
+    "followUs": "Na ndiqni",
+    "ctaTitle": "Rezervo tani",
+    "ctaSubtitle": "Gati të nisësh? Shiko flotën tonë dhe rezervo menjëherë.",
+    "ctaBtn": "Shiko flotën",
+    "viewMap": "Na gjeni në hartë",
+    "viewMapSubtitle": "Shiko zyrat tona në Google Maps",
+    "formTitle": "Dërgoni mesazh",
+    "formSubtitle": "Plotësoni formularin dhe do t'ju kontaktojmë sa më shpejt.",
+    "name": "Emri dhe Mbiemri",
+    "namePlaceholder": "p.sh. Artan Kelmendi",
+    "email": "Email",
+    "emailPlaceholder": "email@juaj.com",
+    "phoneOptional": "(opsional)",
+    "phonePlaceholder": "+355 6X XXX XXXX",
+    "subject": "Tema",
+    "subjectPlaceholder": "Zgjidh temën…",
+    "message": "Mesazhi",
+    "messagePlaceholder": "Shkruani mesazhin tuaj këtu…",
+    "characters": "karaktere",
+    "privacyNote": "Duke dërguar këtë formular, pranoni",
+    "privacyLink": "politikën e privatësisë",
+    "privacyAfter": "tonë. Nuk ndajmë të dhënat tuaja me palë të treta.",
+    "submit": "Dërgo mesazhin",
+    "sending": "Duke dërguar…",
+    "sentTitle": "Mesazhi u dërgua!",
+    "sentBody": "Faleminderit <strong>{{name}}</strong>! Do t'ju kontaktojmë në <strong>{{email}}</strong> brenda 2 orësh.",
+    "sendAgain": "Dërgo sërisht",
+    "goHome": "Shko në kryefaqe",
+    "subjects": {
+      "booking": "Rezervim / Pyetje mbi çmimin",
+      "cancel": "Anulim rezervimi",
+      "fleet": "Informacion mbi flotën",
+      "complaint": "Ankesë / Problem",
+      "business": "Bashkëpunim biznesi",
+      "other": "Tjetër"
+    },
+    "validation": {
+      "nameRequired": "Emri është i detyrueshëm",
+      "emailInvalid": "Email-i nuk është i vlefshëm",
+      "subjectRequired": "Zgjidh temën",
+      "messageTooShort": "Mesazhi duhet të ketë të paktën 10 karaktere"
+    },
+    "errors": {
+      "submitFailed": "Dërgimi dështoi.",
+      "submitGeneric": "Dërgimi dështoi. Ju lutem provoni sërish ose na kontaktoni direkt."
+    },
+    "hoursRows": {
+      "weekdays": "E Hënë – E Premte",
+      "saturday": "E Shtunë",
+      "sunday": "E Diel"
     }
   },
   "reviews": {

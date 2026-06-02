@@ -101,9 +101,14 @@ function calcExtraLineTotal(e: ApiExtra, quantity: number, days: number): number
 
 // ── Seasonal Price Table Component ──────────────────────────────────────────
 function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const allPrices = getAllSeasonPrices(basePrice);
   const currentSeason = getSeasonForDate(new Date());
+  // Albanian/English short month names from i18n — `returnObjects: true` lets
+  // us index by month number.
+  const monthsShort = (t("booking.extras.monthsShort", { returnObjects: true }) as unknown) as string[];
+  const monthsFallback = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   return (
     <div className="bg-white rounded-lg border border-border overflow-hidden">
@@ -114,9 +119,9 @@ function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
       >
         <div className="flex items-center gap-2">
           <Tag size={16} weight="regular" className="text-primary" />
-          <span className="text-sm font-medium text-neutral-900">Çmimet sezonale</span>
+          <span className="text-sm font-medium text-neutral-900">{t("booking.extras.seasonalPrices")}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${currentSeason.badgeColor}`}>
-            {currentSeason.emoji} Aktualisht: {currentSeason.label}
+            {currentSeason.emoji} {t("booking.currentlyLabel")} {currentSeason.label}
           </span>
         </div>
         {open ? (
@@ -129,7 +134,7 @@ function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
         <div className="px-6 pb-5 border-t border-border">
           <p className="text-xs text-neutral-500 mb-4 mt-3 flex items-start gap-1.5">
             <Info size={13} className="flex-shrink-0 mt-0.5" />
-            Çmimet ndryshojnë sipas sezonit. Çmimi bazë i kësaj makine është €{basePrice}/ditë.
+            {t("booking.extras.seasonalInfo", { price: basePrice })}
           </p>
           <div className="space-y-2">
             {allPrices.map(({ season, pricePerDay }) => (
@@ -142,15 +147,15 @@ function SeasonalPriceTable({ basePrice }: { basePrice: number }) {
                   <div>
                     <p className="text-sm font-medium text-neutral-800">{season.label}</p>
                     <p className="text-xs text-neutral-500">
-                      {season.months.map((m) => ["Jan","Shk","Mar","Pri","Maj","Qer","Kor","Gus","Sht","Tet","Nën","Dhj"][m - 1]).join(", ")}
+                      {season.months.map((m) => (Array.isArray(monthsShort) ? monthsShort[m - 1] : monthsFallback[m - 1])).join(", ")}
                     </p>
                   </div>
                   {season.id === currentSeason.id && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/70 border border-current/20">Aktual</span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/70 border border-current/20">{t("booking.extras.currentSeason")}</span>
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-base font-semibold text-neutral-900">€{pricePerDay}<span className="text-xs font-normal text-neutral-500">/ditë</span></p>
+                  <p className="text-base font-semibold text-neutral-900">€{pricePerDay}<span className="text-xs font-normal text-neutral-500">{t("booking.extras.perDay")}</span></p>
                   {season.multiplier !== 1 && (
                     <p className="text-xs text-neutral-500">
                       {season.multiplier > 1
@@ -459,7 +464,7 @@ export default function BookingPage() {
       if (!start || !end) {
         newErrors.endDate = t("booking.validation.endDateAfter");
       } else {
-        if (start < new Date()) newErrors.startDate = "Data/ora e nisjes nuk mund te jete ne te kaluaren.";
+        if (start < new Date()) newErrors.startDate = t("booking.validation.startDatePast");
         if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
         if (minDaysRequired > 0 && days < minDaysRequired) newErrors.endDate = t("booking.validation.minDays", { count: minDaysRequired });
       }
@@ -681,7 +686,7 @@ export default function BookingPage() {
                   {pickupFee > 0 && (
                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
                       <MapPin size={11} weight="fill" />
-                      Tarifë dërgese: +€{pickupFee}
+                      {t("booking.extras.pickupFee")}: +€{pickupFee}
                     </p>
                   )}
                   {errors.pickup && (
@@ -721,7 +726,7 @@ export default function BookingPage() {
                   {dropoffFee > 0 && (
                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
                       <MapPin size={11} weight="fill" />
-                      Tarifë kthimi: +€{dropoffFee}
+                      {t("booking.extras.dropoffFee")}: +€{dropoffFee}
                     </p>
                   )}
                   {errors.dropoff && (
@@ -1430,8 +1435,8 @@ export default function BookingPage() {
                     <div className="flex justify-between text-sm text-amber-700">
                       <span className="flex items-center gap-1">
                         <MapPin size={13} weight="fill" />
-                        Tarifë lokacioni
-                        {pickupFee > 0 && dropoffFee > 0 ? ` (tërhiqje + kthim)` : ""}
+                        {t("booking.extras.locationFee")}
+                        {pickupFee > 0 && dropoffFee > 0 ? ` (${t("booking.extras.pickupAndDropoff")})` : ""}
                       </span>
                       <span>+€{locationFeeTotal}</span>
                     </div>

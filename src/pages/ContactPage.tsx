@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import LLink from "../components/LLink";
 import {
   MapPin,
@@ -23,16 +24,11 @@ type FormState = {
   message: string;
 };
 
-const SUBJECTS = [
-  "Rezervim / Pyetje mbi çmimin",
-  "Anulim rezervimi",
-  "Informacion mbi flotën",
-  "Ankesë / Problem",
-  "Bashkëpunim biznesi",
-  "Tjetër",
-];
+const SUBJECT_KEYS = ["booking", "cancel", "fleet", "complaint", "business", "other"] as const;
+type SubjectKey = typeof SUBJECT_KEYS[number];
 
 export default function ContactPage() {
+  const { t } = useTranslation();
   useSEO({
     title: "Na Kontaktoni — Rent Car Tirana",
     description: "Kontaktoni Rent Car Tirana për rezervime, pyetje, ose ndihmë. Telefon +355 69 756 2951, email, ose formulari online. Disponueshëm 24/7.",
@@ -61,12 +57,12 @@ export default function ContactPage() {
 
   const validate = () => {
     const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) errs.name = "Emri është i detyrueshëm";
+    if (!form.name.trim()) errs.name = t("contactPage.validation.nameRequired");
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errs.email = "Email-i nuk është i vlefshëm";
-    if (!form.subject) errs.subject = "Zgjidh temën";
+      errs.email = t("contactPage.validation.emailInvalid");
+    if (!form.subject) errs.subject = t("contactPage.validation.subjectRequired");
     if (!form.message.trim() || form.message.trim().length < 10)
-      errs.message = "Mesazhi duhet të ketë të paktën 10 karaktere";
+      errs.message = t("contactPage.validation.messageTooShort");
     return errs;
   };
 
@@ -92,9 +88,10 @@ export default function ContactPage() {
     setError(null);
 
     try {
+      const locale = /^\/en(\/|$)/.test(window.location.pathname) ? "en" : "sq";
       const res = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Locale": locale },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
@@ -105,11 +102,11 @@ export default function ContactPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Dërgimi dështoi.");
+        throw new Error(data.error || t("contactPage.errors.submitFailed"));
       }
       setSent(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Dërgimi dështoi. Ju lutem provoni sërish ose na kontaktoni direkt.");
+      setError(err instanceof Error ? err.message : t("contactPage.errors.submitGeneric"));
     } finally {
       setSending(false);
     }
@@ -133,13 +130,13 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-5">
             <EnvelopeSimple size={14} weight="fill" />
-            NA KONTAKTONI
+            {t("contactPage.badge")}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            Si mund t&#39;ju ndihmojmë?
+            {t("contactPage.heroTitle")}
           </h1>
           <p className="text-neutral-300 text-lg max-w-xl mx-auto">
-            Jemi këtu për çdo pyetje rreth rezervimeve, çmimeve apo floiës sonë. Përgjigjemi brenda 2 orësh.
+            {t("contactPage.heroSubtitle")}
           </p>
         </div>
       </div>
@@ -150,23 +147,23 @@ export default function ContactPage() {
           {/* ── LEFT: Info cards ── */}
           <div className="lg:col-span-2 space-y-5">
             <div className="bg-white rounded-2xl p-6 border border-neutral-100 shadow-sm">
-              <h2 className="text-base font-bold text-neutral-800 mb-5">Informacioni ynë</h2>
+              <h2 className="text-base font-bold text-neutral-800 mb-5">{t("contactPage.infoTitle")}</h2>
               <ul className="space-y-5">
                 <li className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <MapPin size={18} weight="fill" className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">Adresat</p>
+                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1.5">{t("contactPage.addresses")}</p>
                     <ul className="space-y-1.5">
                       <li className="text-sm text-neutral-700 leading-snug">
-                        <span className="font-semibold text-neutral-800">Aeroporti:</span> Rruga e Aeroportit, Tiranë 1001
+                        <span className="font-semibold text-neutral-800">{t("contactPage.addressAirport")}:</span> Rruga e Aeroportit, Tiranë 1001
                       </li>
                       <li className="text-sm text-neutral-700 leading-snug">
-                        <span className="font-semibold text-neutral-800">Qendër:</span> Bulevardi Zogu I, Nr. 1, Tiranë 1001
+                        <span className="font-semibold text-neutral-800">{t("contactPage.addressCenter")}:</span> Bulevardi Zogu I, Nr. 1, Tiranë 1001
                       </li>
                       <li className="text-sm text-neutral-700 leading-snug">
-                        <span className="font-semibold text-neutral-800">Zyra:</span> Rruga 28 Nëntori, 1/3, Tiranë 1001
+                        <span className="font-semibold text-neutral-800">{t("contactPage.addressOffice")}:</span> Rruga 28 Nëntori, 1/3, Tiranë 1001
                       </li>
                     </ul>
                   </div>
@@ -216,13 +213,13 @@ export default function ContactPage() {
             <div className="bg-white rounded-2xl p-6 border border-neutral-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={18} weight="fill" className="text-primary" />
-                <h2 className="text-base font-bold text-neutral-800">Orari i punës</h2>
+                <h2 className="text-base font-bold text-neutral-800">{t("contactPage.hoursTitle")}</h2>
               </div>
               <ul className="space-y-2.5">
                 {[
-                  { day: "E Hënë – E Premte", time: "08:00 – 20:00" },
-                  { day: "E Shtunë", time: "09:00 – 18:00" },
-                  { day: "E Diel", time: "10:00 – 16:00" },
+                  { day: t("contactPage.hoursRows.weekdays"), time: "08:00 – 20:00" },
+                  { day: t("contactPage.hoursRows.saturday"), time: "09:00 – 18:00" },
+                  { day: t("contactPage.hoursRows.sunday"), time: "10:00 – 16:00" },
                 ].map((row) => (
                   <li key={row.day} className="flex justify-between items-center text-sm">
                     <span className="text-neutral-500">{row.day}</span>
@@ -232,13 +229,13 @@ export default function ContactPage() {
               </ul>
               <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-100">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs text-green-700 font-medium">Jemi hapur tani</span>
+                <span className="text-xs text-green-700 font-medium">{t("contactPage.openNow")}</span>
               </div>
             </div>
 
             {/* Social */}
             <div className="bg-white rounded-2xl p-6 border border-neutral-100 shadow-sm">
-              <h2 className="text-base font-bold text-neutral-800 mb-4">Na ndiqni</h2>
+              <h2 className="text-base font-bold text-neutral-800 mb-4">{t("contactPage.followUs")}</h2>
               <div className="flex gap-3">
                 <a
                   href="#"
@@ -260,15 +257,15 @@ export default function ContactPage() {
             {/* Quick CTA */}
             <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-6 text-white">
               <Car size={28} weight="fill" className="mb-3 opacity-80" />
-              <h3 className="font-bold text-lg mb-1">Rezervo tani</h3>
+              <h3 className="font-bold text-lg mb-1">{t("contactPage.ctaTitle")}</h3>
               <p className="text-sm opacity-85 mb-4">
-                Gati të nisësh? Shiko flotën tonë dhe rezervo menjëherë.
+                {t("contactPage.ctaSubtitle")}
               </p>
               <LLink
                 to="/flota"
                 className="inline-flex items-center gap-2 bg-white text-primary text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-neutral-100 transition-colors no-underline"
               >
-                Shiko flotën →
+                {t("contactPage.ctaBtn")} →
               </LLink>
             </div>
           </div>
@@ -278,8 +275,8 @@ export default function ContactPage() {
             <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
               {/* Form header */}
               <div className="px-8 py-6 border-b border-neutral-100">
-                <h2 className="text-xl font-bold text-neutral-800">Dërgoni mesazh</h2>
-                <p className="text-sm text-neutral-500 mt-1">Plotësoni formularin dhe do t&#39;ju kontaktojmë sa më shpejt.</p>
+                <h2 className="text-xl font-bold text-neutral-800">{t("contactPage.formTitle")}</h2>
+                <p className="text-sm text-neutral-500 mt-1">{t("contactPage.formSubtitle")}</p>
               </div>
 
               {sent ? (
@@ -287,22 +284,25 @@ export default function ContactPage() {
                   <div className="w-20 h-20 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mb-6">
                     <CheckCircle size={40} weight="fill" className="text-green-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-neutral-800 mb-2">Mesazhi u dërgua!</h3>
-                  <p className="text-neutral-500 text-sm max-w-sm mb-8">
-                    Faleminderit <strong>{form.name}</strong>! Do t&#39;ju kontaktojmë në <strong>{form.email}</strong> brenda 2 orësh.
-                  </p>
+                  <h3 className="text-xl font-bold text-neutral-800 mb-2">{t("contactPage.sentTitle")}</h3>
+                  <p
+                    className="text-neutral-500 text-sm max-w-sm mb-8"
+                    dangerouslySetInnerHTML={{
+                      __html: t("contactPage.sentBody", { name: form.name, email: form.email }),
+                    }}
+                  />
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setSent(false); setForm({ name: "", email: "", phone: "", subject: "", message: "" }); setTouched({}); }}
                       className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >
-                      Dërgo sërisht
+                      {t("contactPage.sendAgain")}
                     </button>
                     <LLink
                       to="/"
                       className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors no-underline"
                     >
-                      Shko në kryefaqe
+                      {t("contactPage.goHome")}
                     </LLink>
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                        Emri dhe Mbiemri <span className="text-red-500">*</span>
+                        {t("contactPage.name")} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -320,7 +320,7 @@ export default function ContactPage() {
                         value={form.name}
                         onChange={handleChange}
                         onBlur={() => handleBlur("name")}
-                        placeholder="p.sh. Artan Kelmendi"
+                        placeholder={t("contactPage.namePlaceholder")}
                         className={fieldClass("name")}
                       />
                       {touched.name && errors.name && (
@@ -331,7 +331,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                        Email <span className="text-red-500">*</span>
+                        {t("contactPage.email")} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -339,7 +339,7 @@ export default function ContactPage() {
                         value={form.email}
                         onChange={handleChange}
                         onBlur={() => handleBlur("email")}
-                        placeholder="email@juaj.com"
+                        placeholder={t("contactPage.emailPlaceholder")}
                         className={fieldClass("email")}
                       />
                       {touched.email && errors.email && (
@@ -354,20 +354,20 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                        Telefon <span className="text-neutral-400 font-normal">(opsional)</span>
+                        {t("booking.phone").replace(" *", "")} <span className="text-neutral-400 font-normal">{t("contactPage.phoneOptional")}</span>
                       </label>
                       <input
                         type="tel"
                         name="phone"
                         value={form.phone}
                         onChange={handleChange}
-                        placeholder="+355 6X XXX XXXX"
+                        placeholder={t("contactPage.phonePlaceholder")}
                         className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                        Tema <span className="text-red-500">*</span>
+                        {t("contactPage.subject")} <span className="text-red-500">*</span>
                       </label>
                       <select
                         name="subject"
@@ -376,10 +376,13 @@ export default function ContactPage() {
                         onBlur={() => handleBlur("subject")}
                         className={fieldClass("subject")}
                       >
-                        <option value="">Zgjidh temën…</option>
-                        {SUBJECTS.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
+                        <option value="">{t("contactPage.subjectPlaceholder")}</option>
+                        {SUBJECT_KEYS.map((k) => {
+                          const label = t(`contactPage.subjects.${k}`);
+                          return (
+                            <option key={k} value={label}>{label}</option>
+                          );
+                        })}
                       </select>
                       {touched.subject && errors.subject && (
                         <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
@@ -392,7 +395,7 @@ export default function ContactPage() {
                   {/* Message */}
                   <div>
                     <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
-                      Mesazhi <span className="text-red-500">*</span>
+                      {t("contactPage.message")} <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="message"
@@ -400,7 +403,7 @@ export default function ContactPage() {
                       value={form.message}
                       onChange={handleChange}
                       onBlur={() => handleBlur("message")}
-                      placeholder="Shkruani mesazhin tuaj këtu…"
+                      placeholder={t("contactPage.messagePlaceholder")}
                       className={fieldClass("message") + " resize-none"}
                     />
                     <div className="flex items-center justify-between mt-1">
@@ -412,7 +415,7 @@ export default function ContactPage() {
                         <span />
                       )}
                       <span className={`text-xs ${form.message.length > 0 && form.message.length < 10 ? "text-red-400" : "text-neutral-400"}`}>
-                        {form.message.length} karaktere
+                        {form.message.length} {t("contactPage.characters")}
                       </span>
                     </div>
                   </div>
@@ -427,9 +430,9 @@ export default function ContactPage() {
 
                   {/* Privacy note */}
                   <p className="text-xs text-neutral-400">
-                    Duke dërguar këtë formular, pranoni{" "}
-                    <a href="#" className="underline hover:text-neutral-600">politikën e privatësisë</a>{" "}
-                    tonë. Nuk ndajmë të dhënat tuaja me palë të treta.
+                    {t("contactPage.privacyNote")}{" "}
+                    <a href="#" className="underline hover:text-neutral-600">{t("contactPage.privacyLink")}</a>
+                    {t("contactPage.privacyAfter")}
                   </p>
 
                   {/* Submit */}
@@ -444,12 +447,12 @@ export default function ContactPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
-                        Duke dërguar…
+                        {t("contactPage.sending")}
                       </>
                     ) : (
                       <>
                         <PaperPlaneTilt size={18} weight="fill" />
-                        Dërgo mesazhin
+                        {t("contactPage.submit")}
                       </>
                     )}
                   </button>
@@ -467,8 +470,8 @@ export default function ContactPage() {
                   <MapPin size={18} weight="fill" className="text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-neutral-800">Na gjeni në hartë</p>
-                  <p className="text-xs text-neutral-500">Shiko zyrat tona në Google Maps</p>
+                  <p className="text-sm font-semibold text-neutral-800">{t("contactPage.viewMap")}</p>
+                  <p className="text-xs text-neutral-500">{t("contactPage.viewMapSubtitle")}</p>
                 </div>
               </div>
               <span className="text-primary text-sm font-medium group-hover:translate-x-0.5 transition-transform">→</span>

@@ -38,9 +38,16 @@ const ENTITY_MAP: Record<string, string> = {
   GoogleReview: "/google-reviews",
 };
 
-// Cookies are sent automatically — only Content-Type needed
+// Cookies are sent automatically — only Content-Type + locale needed.
+// X-Locale tells the backend which language to return error messages in.
 function getHeaders(): Record<string, string> {
-  return { "Content-Type": "application/json" };
+  const locale = /^\/en(\/|$)/.test(typeof window !== "undefined" ? window.location.pathname : "")
+    ? "en"
+    : "sq";
+  return {
+    "Content-Type": "application/json",
+    "X-Locale": locale,
+  };
 }
 
 // Token refresh mutex — prevents concurrent refresh requests
