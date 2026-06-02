@@ -47,28 +47,28 @@ const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 const BlogPage = React.lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = React.lazy(() => import("./pages/BlogPostPage"));
 
-/* Route definition: [Albanian path, English path, Component] */
-const PUBLIC_ROUTES: [string, string, React.ComponentType][] = [
-  ["/",                          "/en",                       HomePage],
-  ["/flota",                     "/en/fleet",                 FleetPage],
-  ["/makina/:slug",              "/en/car/:slug",             CarDetailPage],
-  ["/rezervo",                   "/en/book",                  BookingPage],
-  ["/faleminderit",              "/en/thank-you",             ThankYouPage],
-  ["/llogaria",                  "/en/my-account",            MyAccountPage],
-  ["/vleresime",                 "/en/reviews",               ReviewsPage],
-  ["/makina-me-qira-tirane",     "/en/car-rental-tirana",     MakinaQeraTirana],
-  ["/makine-me-qira-aeroport",   "/en/airport-car-rental",    MakineAeroport],
-  ["/makina-suv-me-qira",        "/en/suv-car-rental",        MakinaSUV],
-  ["/makina-automatike-me-qira", "/en/automatic-car-rental",  MakinaAutomatike],
-  ["/makina-luksoze-me-qira",    "/en/luxury-car-rental",     MakinaLuksoze],
-  ["/sitemap",                   "/en/sitemap",               SitemapPage],
-  ["/kontakt",                   "/en/contact",               ContactPage],
-  ["/zyrat",                     "/en/offices",               OfficesPage],
-  ["/termat-e-sherbimit",        "/en/terms",                 TermsPage],
-  ["/privatesie",                "/en/privacy",               PrivacyPage],
-  ["/blog",                      "/en/blog",                  BlogPage],
-  ["/blog/:slug",                "/en/blog/:slug",            BlogPostPage],
-  ["/reset-password",            "/en/reset-password",        ResetPasswordPage],
+/* Route definition: [SQ, EN, FR, ES, IT, Component]. SQ is the canonical default. */
+const PUBLIC_ROUTES: [string, string, string, string, string, React.ComponentType][] = [
+  ["/",                          "/en",                       "/fr",                            "/es",                            "/it",                            HomePage],
+  ["/flota",                     "/en/fleet",                 "/fr/flotte",                     "/es/flota",                      "/it/flotta",                     FleetPage],
+  ["/makina/:slug",              "/en/car/:slug",             "/fr/voiture/:slug",              "/es/coche/:slug",                "/it/auto/:slug",                 CarDetailPage],
+  ["/rezervo",                   "/en/book",                  "/fr/reserver",                   "/es/reservar",                   "/it/prenota",                    BookingPage],
+  ["/faleminderit",              "/en/thank-you",             "/fr/merci",                      "/es/gracias",                    "/it/grazie",                     ThankYouPage],
+  ["/llogaria",                  "/en/my-account",            "/fr/mon-compte",                 "/es/mi-cuenta",                  "/it/account",                    MyAccountPage],
+  ["/vleresime",                 "/en/reviews",               "/fr/avis",                       "/es/opiniones",                  "/it/recensioni",                 ReviewsPage],
+  ["/makina-me-qira-tirane",     "/en/car-rental-tirana",     "/fr/location-voiture-tirana",    "/es/alquiler-coches-tirana",     "/it/noleggio-auto-tirana",       MakinaQeraTirana],
+  ["/makine-me-qira-aeroport",   "/en/airport-car-rental",    "/fr/location-aeroport",          "/es/alquiler-aeropuerto",        "/it/noleggio-aeroporto",         MakineAeroport],
+  ["/makina-suv-me-qira",        "/en/suv-car-rental",        "/fr/location-suv",               "/es/alquiler-suv",               "/it/noleggio-suv",               MakinaSUV],
+  ["/makina-automatike-me-qira", "/en/automatic-car-rental",  "/fr/location-automatique",       "/es/alquiler-automatico",        "/it/noleggio-automatico",        MakinaAutomatike],
+  ["/makina-luksoze-me-qira",    "/en/luxury-car-rental",     "/fr/location-luxe",              "/es/alquiler-lujo",              "/it/noleggio-lusso",             MakinaLuksoze],
+  ["/sitemap",                   "/en/sitemap",               "/fr/sitemap",                    "/es/sitemap",                    "/it/sitemap",                    SitemapPage],
+  ["/kontakt",                   "/en/contact",               "/fr/contact",                    "/es/contacto",                   "/it/contatti",                   ContactPage],
+  ["/zyrat",                     "/en/offices",               "/fr/bureaux",                    "/es/oficinas",                   "/it/uffici",                     OfficesPage],
+  ["/termat-e-sherbimit",        "/en/terms",                 "/fr/conditions",                 "/es/terminos",                   "/it/termini",                    TermsPage],
+  ["/privatesie",                "/en/privacy",               "/fr/confidentialite",            "/es/privacidad",                 "/it/privacy",                    PrivacyPage],
+  ["/blog",                      "/en/blog",                  "/fr/blog",                       "/es/blog",                       "/it/blog",                       BlogPage],
+  ["/blog/:slug",                "/en/blog/:slug",            "/fr/blog/:slug",                 "/es/blog/:slug",                 "/it/blog/:slug",                 BlogPostPage],
+  ["/reset-password",            "/en/reset-password",        "/fr/reset-password",             "/es/reset-password",             "/it/reset-password",             ResetPasswordPage],
 ];
 
 function LazyFallback() {
@@ -101,11 +101,14 @@ export default function App() {
     <BrowserRouter>
       <LocaleProvider>
         <Routes>
-          {/* Public Routes — Albanian (default) + English */}
-          {PUBLIC_ROUTES.map(([sq, en, Component]) => (
+          {/* Public Routes — Albanian (default) + EN + FR + ES + IT */}
+          {PUBLIC_ROUTES.map(([sq, en, fr, es, it, Component]) => (
             <React.Fragment key={sq}>
               <Route path={sq} element={<PublicLayout><Component /></PublicLayout>} />
               <Route path={en} element={<PublicLayout><Component /></PublicLayout>} />
+              <Route path={fr} element={<PublicLayout><Component /></PublicLayout>} />
+              <Route path={es} element={<PublicLayout><Component /></PublicLayout>} />
+              <Route path={it} element={<PublicLayout><Component /></PublicLayout>} />
             </React.Fragment>
           ))}
 

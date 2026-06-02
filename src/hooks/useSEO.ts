@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getAlternatePath, detectLang } from "../lib/routes";
+import { getAllAlternates, detectLang, LANGS } from "../lib/routes";
 
 interface SEOProps {
   title: string;
@@ -92,12 +92,13 @@ export function useSEO({
     const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : `${SITE_URL}${pathname}`;
     setLink("canonical", canonicalUrl);
 
-    // Hreflang alternate links
+    // Hreflang alternate links — one per supported language + x-default = SQ
     const lang = detectLang(pathname);
-    const alt = getAlternatePath(pathname, lang);
-    setHreflang("sq", `${SITE_URL}${alt.sq}`);
-    setHreflang("en", `${SITE_URL}${alt.en}`);
-    setHreflang("x-default", `${SITE_URL}${alt.sq}`);
+    const alternates = getAllAlternates(pathname, lang);
+    for (const l of LANGS) {
+      setHreflang(l, `${SITE_URL}${alternates[l]}`);
+    }
+    setHreflang("x-default", `${SITE_URL}${alternates.sq}`);
 
     // Open Graph
     setMeta("og:title", `${title} | ${SITE_NAME}`, true);
@@ -109,8 +110,12 @@ export function useSEO({
     if (ogImageAlt) setMeta("og:image:alt", ogImageAlt, true);
     setMeta("og:url", canonicalUrl, true);
     setMeta("og:site_name", SITE_NAME, true);
-    setMeta("og:locale", lang === "en" ? "en_US" : "sq_AL", true);
-    setMeta("og:locale:alternate", lang === "en" ? "sq_AL" : "en_US", true);
+    const OG_LOCALE: Record<string, string> = { sq: "sq_AL", en: "en_US", fr: "fr_FR", es: "es_ES", it: "it_IT" };
+    setMeta("og:locale", OG_LOCALE[lang] ?? "sq_AL", true);
+    // og:locale:alternate can be set once per other language; we set the first alternate as a hint
+    for (const l of LANGS) {
+      if (l !== lang) setMeta("og:locale:alternate", OG_LOCALE[l], true);
+    }
 
     // Twitter Card
     setMeta("twitter:card", "summary_large_image");

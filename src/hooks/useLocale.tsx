@@ -24,15 +24,14 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   // Sync i18n language with URL
   useEffect(() => {
-    const current = i18n.language?.startsWith("en") ? "en" : "sq";
-    if (current !== lang) {
+    if (i18n.language !== lang) {
       i18n.changeLanguage(lang);
     }
   }, [lang, i18n]);
 
   // Update <html lang="...">
   useEffect(() => {
-    document.documentElement.lang = lang === "en" ? "en" : "sq";
+    document.documentElement.lang = lang;
   }, [lang]);
 
   const localePathFn = (sqPath: string): string => lp(sqPath, lang);

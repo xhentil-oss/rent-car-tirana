@@ -40,13 +40,19 @@ const ENTITY_MAP: Record<string, string> = {
 
 // Cookies are sent automatically — only Content-Type + locale needed.
 // X-Locale tells the backend which language to return error messages in.
+function detectLocale(): "sq" | "en" | "fr" | "es" | "it" {
+  if (typeof window === "undefined") return "sq";
+  const path = window.location.pathname;
+  for (const lang of ["en", "fr", "es", "it"] as const) {
+    if (path === `/${lang}` || path.startsWith(`/${lang}/`)) return lang;
+  }
+  return "sq";
+}
+
 function getHeaders(): Record<string, string> {
-  const locale = /^\/en(\/|$)/.test(typeof window !== "undefined" ? window.location.pathname : "")
-    ? "en"
-    : "sq";
   return {
     "Content-Type": "application/json",
-    "X-Locale": locale,
+    "X-Locale": detectLocale(),
   };
 }
 

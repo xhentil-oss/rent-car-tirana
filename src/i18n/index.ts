@@ -4,6 +4,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import sq from './locales/sq.json';
 import en from './locales/en.json';
+import fr from './locales/fr.json';
+import es from './locales/es.json';
+import it from './locales/it.json';
 
 i18n
   .use(LanguageDetector)
@@ -12,9 +15,12 @@ i18n
     resources: {
       sq: { translation: sq },
       en: { translation: en },
+      fr: { translation: fr },
+      es: { translation: es },
+      it: { translation: it },
     },
     fallbackLng: 'sq',
-    supportedLngs: ['sq', 'en'],
+    supportedLngs: ['sq', 'en', 'fr', 'es', 'it'],
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],

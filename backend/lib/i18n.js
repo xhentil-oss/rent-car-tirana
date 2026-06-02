@@ -5,7 +5,7 @@
 //   - Query string `?lang=en`
 // Defaults to `sq` (the primary site language) when nothing matches.
 
-const SUPPORTED = ['sq', 'en'];
+const SUPPORTED = ['sq', 'en', 'fr', 'es', 'it'];
 
 function detectLocale(req) {
   // 1. Explicit override
@@ -32,22 +32,37 @@ const messages = {
     rateLimited: {
       sq: 'Shumë kërkesa. Provoni pas 1 ore.',
       en: 'Too many requests. Try again in an hour.',
+      fr: 'Trop de requêtes. Réessayez dans une heure.',
+      es: 'Demasiadas solicitudes. Inténtalo de nuevo en una hora.',
+      it: 'Troppe richieste. Riprova tra un\'ora.',
     },
     missingFields: {
       sq: 'Fusha të detyrueshme mungojnë.',
       en: 'Required fields missing.',
+      fr: 'Champs obligatoires manquants.',
+      es: 'Faltan campos obligatorios.',
+      it: 'Campi obbligatori mancanti.',
     },
     invalidEmail: {
       sq: 'Email i pavlefshëm.',
       en: 'Invalid email address.',
+      fr: 'Adresse e-mail invalide.',
+      es: 'Dirección de email no válida.',
+      it: 'Indirizzo email non valido.',
     },
     messageLength: {
       sq: 'Mesazhi duhet të jetë 10–2000 karaktere.',
       en: 'Message must be 10–2000 characters.',
+      fr: 'Le message doit comporter 10 à 2000 caractères.',
+      es: 'El mensaje debe tener 10–2000 caracteres.',
+      it: 'Il messaggio deve avere 10–2000 caratteri.',
     },
     sendFailed: {
       sq: 'Dërgimi dështoi. Provoni sërish.',
       en: 'Send failed. Please try again.',
+      fr: 'Échec de l\'envoi. Veuillez réessayer.',
+      es: 'Error al enviar. Inténtalo de nuevo.',
+      it: 'Invio fallito. Riprova.',
     },
   },
 };

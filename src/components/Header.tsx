@@ -81,31 +81,64 @@ function GoogleSignInButton({ onCredential, onError }: { onCredential: (c: strin
 
 function LanguageSwitcher() {
   const { lang, switchLang } = useLocale();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const LANG_INFO: Record<string, { flag: string; code: string; label: string }> = {
+    sq: { flag: "🇦🇱", code: "AL", label: "Shqip" },
+    en: { flag: "🇬🇧", code: "EN", label: "English" },
+    fr: { flag: "🇫🇷", code: "FR", label: "Français" },
+    es: { flag: "🇪🇸", code: "ES", label: "Español" },
+    it: { flag: "🇮🇹", code: "IT", label: "Italiano" },
+  };
+  const ORDER = ["sq", "en", "fr", "es", "it"] as const;
+  const current = LANG_INFO[lang] ?? LANG_INFO.sq;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", handler);
+    return () => window.removeEventListener("mousedown", handler);
+  }, [open]);
 
   return (
-    <div className="flex items-center gap-0.5 bg-secondary rounded-md border border-border overflow-hidden">
+    <div className="relative" ref={ref}>
       <button
-        onClick={() => switchLang("sq")}
-        className={`px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-          lang === "sq"
-            ? "bg-primary text-white"
-            : "text-neutral-500 hover:text-neutral-800"
-        }`}
-        aria-label="Shqip"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-md border border-border bg-secondary hover:bg-neutral-100 transition-colors cursor-pointer"
+        aria-label={current.label}
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
-        🇦🇱 AL
+        <span className="text-base leading-none">{current.flag}</span>
+        <span>{current.code}</span>
+        <CaretDown size={10} weight="bold" className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      <button
-        onClick={() => switchLang("en")}
-        className={`px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-          lang === "en"
-            ? "bg-primary text-white"
-            : "text-neutral-500 hover:text-neutral-800"
-        }`}
-        aria-label="English"
-      >
-        🇬🇧 EN
-      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg border border-border shadow-lg overflow-hidden z-50">
+          {ORDER.map((l) => {
+            const info = LANG_INFO[l];
+            const active = lang === l;
+            return (
+              <button
+                key={l}
+                onClick={() => { switchLang(l); setOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors cursor-pointer ${
+                  active ? "bg-primary/10 text-primary font-semibold" : "text-neutral-700 hover:bg-neutral-50"
+                }`}
+                role="menuitem"
+              >
+                <span className="text-base leading-none">{info.flag}</span>
+                <span className="flex-1 text-left">{info.label}</span>
+                {active && <span className="text-primary">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
