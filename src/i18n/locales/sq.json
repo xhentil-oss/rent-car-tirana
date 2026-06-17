@@ -1,4 +1,10 @@
 {
+  "cookieConsent": {
+    "message": "Përdorim cookies për të analizuar trafikun dhe për të përmirësuar përvojën tuaj.",
+    "accept": "Prano",
+    "decline": "Refuzo",
+    "learnMore": "Mëso më shumë"
+  },
   "header": {
     "fleet": "Flota",
     "reviews": "Vlerësimet",

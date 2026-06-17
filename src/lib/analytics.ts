@@ -21,11 +21,37 @@ declare global {
 
 export const gaEnabled = !!GA_ID;
 
+// ── Cookie consent (GDPR) ───────────────────────────────────────────────────
+// GA is NOT loaded until the visitor explicitly grants consent. The choice is
+// remembered in localStorage so the banner only shows once.
+const CONSENT_KEY = "rct_analytics_consent";
+export type Consent = "granted" | "denied";
+
+export function getConsent(): Consent | null {
+  if (typeof window === "undefined") return null;
+  const v = window.localStorage.getItem(CONSENT_KEY);
+  return v === "granted" || v === "denied" ? v : null;
+}
+
+/** Persist the visitor's choice. Granting also boots GA immediately. */
+export function setConsent(value: Consent): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CONSENT_KEY, value);
+  if (value === "granted") {
+    initGA();
+    trackPageView(window.location.pathname + window.location.search);
+  }
+}
+
 let initialized = false;
 
-/** Inject the gtag.js script and configure GA4. Safe to call multiple times. */
+/**
+ * Inject gtag.js and configure GA4. No-op unless an ID is set AND the visitor
+ * has granted consent. Safe to call multiple times.
+ */
 export function initGA(): void {
   if (!GA_ID || initialized || typeof window === "undefined") return;
+  if (getConsent() !== "granted") return;
   initialized = true;
 
   const script = document.createElement("script");
@@ -76,5 +102,23 @@ export function trackReservation(opts: {
     items: opts.carName
       ? [{ item_id: opts.carName, item_name: opts.carName, item_category: opts.pickup }]
       : [],
+  });
+}
+
+/** Funnel step 1: visitor opened a car's detail page. */
+export function trackViewItem(opts: { carName: string; pricePerDay?: number; category?: string }): void {
+  trackEvent("view_item", {
+    currency: "EUR",
+    value: Number.isFinite(opts.pricePerDay) ? opts.pricePerDay : undefined,
+    items: [{ item_id: opts.carName, item_name: opts.carName, item_category: opts.category, price: opts.pricePerDay }],
+  });
+}
+
+/** Funnel step 2: visitor reached the booking page for a car. */
+export function trackBeginCheckout(opts: { carName: string; pricePerDay?: number; category?: string }): void {
+  trackEvent("begin_checkout", {
+    currency: "EUR",
+    value: Number.isFinite(opts.pricePerDay) ? opts.pricePerDay : undefined,
+    items: [{ item_id: opts.carName, item_name: opts.carName, item_category: opts.category, price: opts.pricePerDay }],
   });
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useLocale } from "../hooks/useLocale";
 import { useTranslation } from "react-i18next";
@@ -21,6 +21,7 @@ import {
 import { downloadContractPdf } from "../lib/generateContractPdf";
 import SignaturePad from "../components/SignaturePad";
 import { useQuery, useMutation } from "../hooks/useApi";
+import { trackBeginCheckout } from "../lib/analytics";
 import Footer from "../components/Footer";
 import { useSEO } from "../hooks/useSEO";
 import {
@@ -189,6 +190,14 @@ export default function BookingPage() {
   const { data: allReservations } = useQuery("ReservationAvailability");
   const carId = searchParams.get("car");
   const car = carId ? (allCars ?? []).find((c) => c.id === carId) : undefined;
+
+  // GA4 funnel step 2 — fire once when the booking page has a resolved car.
+  const beginCheckoutTracked = useRef(false);
+  useEffect(() => {
+    if (!car || beginCheckoutTracked.current) return;
+    beginCheckoutTracked.current = true;
+    trackBeginCheckout({ carName: `${car.brand} ${car.model}`, pricePerDay: car.pricePerDay, category: car.category });
+  }, [car?.id]);
 
   const [form, setForm] = useState<BookingForm>({
     pickup: searchParams.get("pickup") || "",

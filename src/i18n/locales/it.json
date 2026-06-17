@@ -1,4 +1,10 @@
 {
+  "cookieConsent": {
+    "message": "Usiamo i cookie per analizzare il traffico e migliorare la tua esperienza.",
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "learnMore": "Scopri di più"
+  },
   "header": {
     "fleet": "Flotta",
     "reviews": "Recensioni",

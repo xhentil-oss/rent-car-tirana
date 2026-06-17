@@ -40,6 +40,7 @@ import {
   Eye,
 } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
+import { trackViewItem } from "../lib/analytics";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
@@ -191,6 +192,14 @@ export default function CarDetailPage() {
 
   const car = (allCars ?? []).find((c) => c.slug === slug);
   const carImages = useMemo(() => car ? getCarImages(car.image) : [], [car?.image]);
+
+  // GA4 funnel step 1 — fire once when the car resolves.
+  const viewItemTracked = useRef(false);
+  useEffect(() => {
+    if (!car || viewItemTracked.current) return;
+    viewItemTracked.current = true;
+    trackViewItem({ carName: `${car.brand} ${car.model}`, pricePerDay: car.pricePerDay, category: car.category });
+  }, [car?.id]);
 
   // Gallery keyboard navigation + focus trap
   useEffect(() => {

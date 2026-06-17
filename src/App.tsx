@@ -6,6 +6,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import CookieConsent from "./components/CookieConsent";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
 
@@ -138,6 +139,7 @@ export default function App() {
           {/* Fallback — Custom 404 */}
           <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
         </Routes>
+        <CookieConsent />
       </LocaleProvider>
     </BrowserRouter>
   );
