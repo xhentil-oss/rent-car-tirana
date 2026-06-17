@@ -50,9 +50,9 @@ function getGoogleConfigDiagnostics() {
 
 function getGoogleClientId() {
   return (
-    cleanEnvValue(process.env.GOOGLE_CLIENT_ID)
+    readGoogleClientIdFromEnvFiles()
+    || cleanEnvValue(process.env.GOOGLE_CLIENT_ID)
     || cleanEnvValue(process.env.VITE_GOOGLE_CLIENT_ID)
-    || readGoogleClientIdFromEnvFiles()
   );
 }
 
