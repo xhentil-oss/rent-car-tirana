@@ -2,6 +2,8 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const path = require('path');
+const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const otplib = require('otplib');
@@ -9,9 +11,20 @@ const authenticator = otplib.authenticator || (otplib.default && otplib.default.
 const QRCode = require('qrcode');
 const { OAuth2Client } = require('google-auth-library');
 
-// Google OAuth client — lazy-init so the app boots even if env is missing.
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+// Make this route resilient when Passenger/cPanel starts the process from a
+// different working directory than /backend.
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+
+function getGoogleClientId() {
+  return (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+}
+
+function getGoogleClient() {
+  const clientId = getGoogleClientId();
+  return clientId ? new OAuth2Client(clientId) : null;
+}
+
 if (authenticator) authenticator.options = { window: 1 }; // Allow ±30s clock drift
 
 // Simple HTML escape for email templates (prevent XSS via user-supplied name)
@@ -86,9 +99,12 @@ router.post(
       const [existingUser] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
       if (existingUser.length) return res.status(409).json({ error: 'Ky email është tashmë i regjistruar.' });
 
-      // Phone uniqueness — only enforced when a phone is provided.
+      // Phone uniqueness — only enforced against already-linked customer accounts.
       if (phone) {
-        const [existingPhone] = await pool.query('SELECT id FROM users WHERE phone = ?', [phone]);
+        const [existingPhone] = await pool.query(
+          'SELECT id FROM customers WHERE phone = ? AND user_id IS NOT NULL AND email <> ? LIMIT 1',
+          [phone, email]
+        );
         if (existingPhone.length) return res.status(409).json({ error: 'Ky numër telefoni është tashmë i regjistruar.' });
       }
 
@@ -404,6 +420,9 @@ router.post('/logout', authenticate, async (req, res) => {
 // The frontend obtains this token client-side via the GSI button or one-tap.
 // On success we issue our own access + refresh JWT cookies just like /login.
 router.post('/google', async (req, res) => {
+  const GOOGLE_CLIENT_ID = getGoogleClientId();
+  const googleClient = getGoogleClient();
+
   if (!googleClient) {
     return res.status(500).json({ error: 'Google Sign-In nuk është i konfiguruar.' });
   }

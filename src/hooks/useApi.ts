@@ -5,6 +5,29 @@
 import { useState, useEffect, useCallback } from "react";
 
 const API_BASE = "/api";
+const AUTH_CHANGED_EVENT = "rct_auth_changed";
+
+function readStoredUser() {
+  const stored = localStorage.getItem("rct_user");
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.removeItem("rct_user");
+    return null;
+  }
+}
+
+function publishAuthUser(user: any) {
+  if (user) {
+    localStorage.setItem("rct_user", JSON.stringify(user));
+  } else {
+    localStorage.removeItem("rct_user");
+  }
+
+  window.dispatchEvent(new CustomEvent(AUTH_CHANGED_EVENT, { detail: { user } }));
+}
 
 // Map Anima entity names to our API endpoints
 const ENTITY_MAP: Record<string, string> = {
@@ -262,33 +285,43 @@ export function useAuth() {
 
   // Restore user from localStorage immediately (fast), then verify with server in background
   useEffect(() => {
-    const stored = localStorage.getItem("rct_user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-        setIsAnonymous(false);
-      } catch {
-        localStorage.removeItem("rct_user");
-      }
-    }
+    const applyUser = (nextUser: any) => {
+      setUser(nextUser);
+      setIsAnonymous(!nextUser);
+    };
+
+    const storedUser = readStoredUser();
+    if (storedUser) applyUser(storedUser);
+    const verifyingUserId = storedUser?.id;
     setIsPending(false);
+
+    const handleAuthChanged = (event: Event) => {
+      const nextUser = (event as CustomEvent).detail?.user ?? readStoredUser();
+      applyUser(nextUser);
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    window.addEventListener("storage", handleAuthChanged);
 
     // Background session verify — syncs with server cookie state
     fetchWithRefresh(`${API_BASE}/auth/me`, {})
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.user) {
-          localStorage.setItem("rct_user", JSON.stringify(data.user));
-          setUser(data.user);
-          setIsAnonymous(false);
+          publishAuthUser(data.user);
         } else {
           // Cookie expired or revoked — clear stale local state
-          localStorage.removeItem("rct_user");
-          setUser(null);
-          setIsAnonymous(true);
+          const currentUserId = readStoredUser()?.id;
+          if (!currentUserId || currentUserId === verifyingUserId) {
+            publishAuthUser(null);
+          }
         }
       })
       .catch(() => { /* network error — keep current local state */ });
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+      window.removeEventListener("storage", handleAuthChanged);
+    };
   }, []);
 
   const login = useCallback(async (email?: string, password?: string) => {
@@ -310,9 +343,7 @@ export function useAuth() {
     // 2FA required — return as-is so the caller can show OTP input
     if (data.requires2fa) return data;
 
-    localStorage.setItem("rct_user", JSON.stringify(data.user));
-    setUser(data.user);
-    setIsAnonymous(false);
+    publishAuthUser(data.user);
     return data.user;
   }, []);
 
@@ -328,9 +359,7 @@ export function useAuth() {
       throw new Error(err.error || "2FA dështoi");
     }
     const data = await res.json();
-    localStorage.setItem("rct_user", JSON.stringify(data.user));
-    setUser(data.user);
-    setIsAnonymous(false);
+    publishAuthUser(data.user);
     return data.user;
   }, []);
 
@@ -350,9 +379,7 @@ export function useAuth() {
       throw new Error(err.error || "Regjistrimi dështoi");
     }
     const data = await res.json();
-    localStorage.setItem("rct_user", JSON.stringify(data.user));
-    setUser(data.user);
-    setIsAnonymous(false);
+    publishAuthUser(data.user);
     return data.user;
   }, []);
 
@@ -372,9 +399,7 @@ export function useAuth() {
       throw new Error(err.error || "Hyrja me Google dështoi");
     }
     const data = await res.json();
-    localStorage.setItem("rct_user", JSON.stringify(data.user));
-    setUser(data.user);
-    setIsAnonymous(false);
+    publishAuthUser(data.user);
     return data.user;
   }, []);
 
@@ -385,9 +410,7 @@ export function useAuth() {
         credentials: "include",
       });
     } catch { /* ignore network errors during logout */ }
-    localStorage.removeItem("rct_user");
-    setUser(null);
-    setIsAnonymous(true);
+    publishAuthUser(null);
     window.location.href = "/";
   }, []);
 

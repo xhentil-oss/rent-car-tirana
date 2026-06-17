@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -6,7 +7,11 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const path = require('path');
+
+// Load backend-specific env first, then root env as a fallback. This keeps the
+// server stable whether it is started from the repository root or /backend.
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const app = express();
 
