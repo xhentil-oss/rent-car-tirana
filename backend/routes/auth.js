@@ -40,6 +40,14 @@ function readGoogleClientIdFromEnvFiles() {
   return '';
 }
 
+function getGoogleConfigDiagnostics() {
+  return {
+    processGoogleClientId: Boolean(cleanEnvValue(process.env.GOOGLE_CLIENT_ID)),
+    processViteGoogleClientId: Boolean(cleanEnvValue(process.env.VITE_GOOGLE_CLIENT_ID)),
+    envFileGoogleClientId: Boolean(readGoogleClientIdFromEnvFiles()),
+  };
+}
+
 function getGoogleClientId() {
   return (
     cleanEnvValue(process.env.GOOGLE_CLIENT_ID)
@@ -452,7 +460,11 @@ router.post('/google', async (req, res) => {
   const googleClient = getGoogleClient();
 
   if (!googleClient) {
-    return res.status(500).json({ error: 'Google Sign-In nuk është i konfiguruar.' });
+    return res.status(500).json({
+      error: 'Google Sign-In nuk është i konfiguruar.',
+      code: 'GOOGLE_CLIENT_ID_MISSING',
+      diagnostics: getGoogleConfigDiagnostics(),
+    });
   }
   const { credential } = req.body || {};
   if (!credential || typeof credential !== 'string') {
