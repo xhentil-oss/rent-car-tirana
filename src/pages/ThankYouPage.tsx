@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLocale } from "../hooks/useLocale";
+import { trackReservation } from "../lib/analytics";
 import { CheckCircle, Car, CalendarBlank, MapPin, ArrowRight } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import Footer from "../components/Footer";
@@ -20,6 +21,19 @@ export default function ThankYouPage() {
   const startDate = state.start || "";
   const endDate = state.end || "";
   const total = state.total || "";
+
+  // Fire the GA4 conversion (purchase) exactly once per reservation.
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    if (!reservationId || trackedRef.current) return;
+    trackedRef.current = true;
+    trackReservation({
+      reservationId,
+      total: parseFloat(total) || 0,
+      carName,
+      pickup,
+    });
+  }, [reservationId, total, carName, pickup]);
 
   useEffect(() => {
     const timer = setInterval(() => {

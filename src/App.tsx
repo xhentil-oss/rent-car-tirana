@@ -5,6 +5,7 @@ import { LocaleProvider } from "./hooks/useLocale";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
 
@@ -100,6 +101,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <LocaleProvider>
+        <AnalyticsTracker />
         <Routes>
           {/* Public Routes — Albanian (default) + EN + FR + ES + IT */}
           {PUBLIC_ROUTES.map(([sq, en, fr, es, it, Component]) => (
