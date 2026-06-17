@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
@@ -16,8 +17,35 @@ const { OAuth2Client } = require('google-auth-library');
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
+const GOOGLE_ENV_PATHS = [
+  path.resolve(__dirname, '..', '.env'),
+  path.resolve(__dirname, '..', '..', '.env'),
+];
+
+function cleanEnvValue(value) {
+  return String(value || '').trim().replace(/^['"]|['"]$/g, '');
+}
+
+function readGoogleClientIdFromEnvFiles() {
+  for (const envPath of GOOGLE_ENV_PATHS) {
+    try {
+      if (!fs.existsSync(envPath)) continue;
+      const parsed = dotenv.parse(fs.readFileSync(envPath));
+      const clientId = cleanEnvValue(parsed.GOOGLE_CLIENT_ID || parsed.VITE_GOOGLE_CLIENT_ID);
+      if (clientId) return clientId;
+    } catch {
+      // Ignore unreadable env files; the route will return the normal config error.
+    }
+  }
+  return '';
+}
+
 function getGoogleClientId() {
-  return (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  return (
+    cleanEnvValue(process.env.GOOGLE_CLIENT_ID)
+    || cleanEnvValue(process.env.VITE_GOOGLE_CLIENT_ID)
+    || readGoogleClientIdFromEnvFiles()
+  );
 }
 
 function getGoogleClient() {
