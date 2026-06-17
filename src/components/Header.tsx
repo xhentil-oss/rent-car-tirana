@@ -25,6 +25,8 @@ import LLink from "./LLink";
 // Google Identity Services — loaded lazily when the auth dropdown opens.
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || "";
+let activeGoogleCallback: ((resp: { credential?: string }) => void) | null = null;
+let initializedGoogleClientId = "";
 
 function loadGsiScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
@@ -46,22 +48,35 @@ function loadGsiScript(): Promise<void> {
 
 function GoogleSignInButton({ onCredential, onError }: { onCredential: (c: string) => void; onError: (msg: string) => void }) {
   const divRef = useRef<HTMLDivElement>(null);
+  const callbacksRef = useRef({ onCredential, onError });
+
+  useEffect(() => {
+    callbacksRef.current = { onCredential, onError };
+  }, [onCredential, onError]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !divRef.current) return;
     let cancelled = false;
+    const localCallback = (resp: { credential?: string }) => {
+      const callbacks = callbacksRef.current;
+      if (resp?.credential) callbacks.onCredential(resp.credential);
+      else callbacks.onError("Hyrja me Google dështoi");
+    };
+    activeGoogleCallback = localCallback;
+
     loadGsiScript()
       .then(() => {
         if (cancelled || !divRef.current) return;
         const g = (window as any).google;
         if (!g?.accounts?.id) return;
-        g.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (resp: { credential?: string }) => {
-            if (resp?.credential) onCredential(resp.credential);
-            else onError("Hyrja me Google dështoi");
-          },
-        });
+        if (initializedGoogleClientId !== GOOGLE_CLIENT_ID) {
+          g.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (resp: { credential?: string }) => activeGoogleCallback?.(resp),
+          });
+          initializedGoogleClientId = GOOGLE_CLIENT_ID;
+        }
+        divRef.current.innerHTML = "";
         g.accounts.id.renderButton(divRef.current, {
           theme: "outline",
           size: "large",
@@ -72,8 +87,11 @@ function GoogleSignInButton({ onCredential, onError }: { onCredential: (c: strin
         });
       })
       .catch(() => onError("Nuk u ngarkua Google Sign-In"));
-    return () => { cancelled = true; };
-  }, [onCredential, onError]);
+    return () => {
+      cancelled = true;
+      if (activeGoogleCallback === localCallback) activeGoogleCallback = null;
+    };
+  }, []);
 
   if (!GOOGLE_CLIENT_ID) return null;
   return <div ref={divRef} className="flex justify-center" />;

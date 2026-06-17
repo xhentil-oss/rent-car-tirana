@@ -611,6 +611,12 @@ router.post('/google', async (req, res) => {
     });
   } catch (err) {
     console.error('Google sign-in error:', err.message);
+    if (err?.sql || err?.sqlMessage) {
+      return res.status(500).json({
+        error: 'Gabim gjatë hyrjes me Google.',
+        code: 'GOOGLE_SIGNIN_ACCOUNT_ERROR',
+      });
+    }
     return res.status(401).json({ error: 'Token Google i pavlefshëm ose ka skaduar.' });
   }
 });
