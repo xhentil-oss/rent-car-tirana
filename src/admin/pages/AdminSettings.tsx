@@ -81,7 +81,7 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
     fields: [
       { key: "analytics_ga_id", label: "Google Analytics 4 — Measurement ID", placeholder: "G-XXXXXXXXXX" },
       { key: "analytics_ads_id", label: "Google Ads — Tag ID", placeholder: "AW-XXXXXXXXX" },
-      { key: "analytics_ads_conversion_label", label: "Google Ads — Conversion Label", placeholder: "p.sh. cJ0XCIyo2MQcEP--jYdE" },
+      { key: "analytics_ads_conversion_label", label: "Google Ads — Conversion Label", placeholder: "p.sh. AbCdEfGh1jKlMnOpQrSt" },
     ],
   },
   {
