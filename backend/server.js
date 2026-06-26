@@ -49,6 +49,7 @@ app.use(helmet({
         "'self'", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com",
         "https://www.googletagmanager.com",
         "https://tagmanager.google.com",
+        "https://tagassistant.google.com",
         "https://www.google-analytics.com",
         "https://*.google-analytics.com",
         "https://*.analytics.google.com",
@@ -58,7 +59,7 @@ app.use(helmet({
         "https://pagead2.googlesyndication.com",
         "https://accounts.google.com",
       ],
-      frameSrc: ["'self'", "https://accounts.google.com", "https://td.doubleclick.net", "https://www.googletagmanager.com"],
+      frameSrc: ["'self'", "https://accounts.google.com", "https://td.doubleclick.net", "https://www.googletagmanager.com", "https://tagassistant.google.com"],
     },
   },
 }));
