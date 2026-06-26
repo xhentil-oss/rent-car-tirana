@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLocale } from "../hooks/useLocale";
-import { getConsent, setConsent, gaEnabled } from "../lib/analytics";
+import { getConsent, setConsent, isAnalyticsEnabled, loadAnalyticsConfig } from "../lib/analytics";
 
 /**
  * GDPR cookie consent banner. Shows once until the visitor accepts or declines.
@@ -15,7 +15,11 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (gaEnabled && getConsent() === null) setVisible(true);
+    // Wait for runtime config so the banner shows whenever analytics is enabled
+    // via env OR the admin Settings panel.
+    loadAnalyticsConfig().then(() => {
+      if (isAnalyticsEnabled() && getConsent() === null) setVisible(true);
+    });
   }, []);
 
   if (!visible) return null;

@@ -16,15 +16,51 @@
  * cookie banner flips consent to `granted` via setConsent().
  */
 
-const GA_ID = (import.meta as any).env?.VITE_GA_MEASUREMENT_ID || "";
+// IDs are configurable at RUNTIME from admin Settings (DB → /api/settings/public
+// via loadAnalyticsConfig). The VITE_* env vars are only a build-time fallback
+// default, so the site still works before anything is set in the panel.
+let GA_ID = (import.meta as any).env?.VITE_GA_MEASUREMENT_ID || "";
 // Optional Google Ads tag (AW-XXXXXXXXX) — shares the same gtag.js instance as
 // GA4. Adding a second <script> in index.html would double-load gtag and bypass
 // consent, so it is configured here instead.
-const ADS_ID = (import.meta as any).env?.VITE_GOOGLE_ADS_ID || "";
+let ADS_ID = (import.meta as any).env?.VITE_GOOGLE_ADS_ID || "";
 // Google Ads conversion label (Ads → Goals → Conversions → your action → tag
 // setup). Combined with ADS_ID as `AW-XXXX/LABEL`. When set, a completed
 // reservation is reported to Google Ads as a conversion. Optional.
-const ADS_CONVERSION_LABEL = (import.meta as any).env?.VITE_GOOGLE_ADS_CONVERSION_LABEL || "";
+let ADS_CONVERSION_LABEL = (import.meta as any).env?.VITE_GOOGLE_ADS_CONVERSION_LABEL || "";
+
+/** Override the IDs at runtime (from admin Settings). Empty values are ignored
+ * so a blank DB setting never wipes a valid env fallback. */
+export function configureAnalytics(cfg: { gaId?: string | null; adsId?: string | null; conversionLabel?: string | null }): void {
+  if (cfg.gaId) GA_ID = String(cfg.gaId).trim();
+  if (cfg.adsId) ADS_ID = String(cfg.adsId).trim();
+  if (cfg.conversionLabel) ADS_CONVERSION_LABEL = String(cfg.conversionLabel).trim();
+}
+
+/** True once a GA4 or Ads ID is known (env or DB). Drives the cookie banner. */
+export function isAnalyticsEnabled(): boolean {
+  return !!(GA_ID || ADS_ID);
+}
+
+// Fetch admin-configured IDs from the public settings endpoint exactly once,
+// then apply them. Cached so multiple callers (AnalyticsTracker, CookieConsent)
+// share a single request. Never throws.
+let configPromise: Promise<void> | null = null;
+export function loadAnalyticsConfig(): Promise<void> {
+  if (configPromise) return configPromise;
+  configPromise = fetch("/api/settings/public")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j) return;
+      configureAnalytics({
+        gaId: j.analytics_ga_id,
+        adsId: j.analytics_ads_id,
+        conversionLabel: j.analytics_ads_conversion_label,
+      });
+    })
+    .catch(() => {});
+  return configPromise;
+}
 
 declare global {
   interface Window {
