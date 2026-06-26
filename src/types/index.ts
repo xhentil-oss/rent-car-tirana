@@ -54,6 +54,7 @@ export interface Car {
   seats: number;
   luggage: number;
   pricePerDay: number;
+  displayPrice?: number | null;
   status: CarStatus;
   image: string;
   slug: string;
@@ -75,6 +76,7 @@ export interface Reservation {
   startTime: string; // HH:MM
   endDate: DateOnly;
   endTime: string;
+  flightNumber?: string | null;
   notes: string;
   source: string;
   status: ReservationStatus;

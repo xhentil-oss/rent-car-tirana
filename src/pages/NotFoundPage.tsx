@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LLink from "../components/LLink";
+import { categoryLabel } from "../i18n/dataLabels";
 import { useLocale } from "../hooks/useLocale";
 import { useQuery } from "../hooks/useApi";
 import {
@@ -129,7 +130,7 @@ export default function NotFoundPage() {
                     </div>
                   </div>
                   <div className="p-3 flex items-center justify-between">
-                    <span className="text-xs text-neutral-500">{car.category} · {car.year}</span>
+                    <span className="text-xs text-neutral-500">{categoryLabel(t, car.category)} · {car.year}</span>
                     <span className="text-sm font-bold text-primary">€{car.pricePerDay}{t("notFoundPage.perDay")}</span>
                   </div>
                 </LLink>

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getAllAlternates, detectLang, LANGS } from "../lib/routes";
+import { getAllAlternates, detectLang, LANGS, localePath } from "../lib/routes";
 
 interface SEOProps {
   title: string;
@@ -87,13 +87,16 @@ export function useSEO({
     // Robots
     setMeta("robots", "index, follow");
 
-    // Canonical
+    // Canonical — the `canonical` prop is the Albanian (canonical) path; localize
+    // it to the language currently being viewed so each language has its own
+    // self-referencing permalink (not a duplicate pointing back to Albanian).
     const pathname = window.location.pathname;
-    const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : `${SITE_URL}${pathname}`;
+    const lang = detectLang(pathname);
+    const canonicalPath = canonical ? localePath(canonical, lang) : pathname;
+    const canonicalUrl = `${SITE_URL}${canonicalPath}`;
     setLink("canonical", canonicalUrl);
 
     // Hreflang alternate links — one per supported language + x-default = SQ
-    const lang = detectLang(pathname);
     const alternates = getAllAlternates(pathname, lang);
     for (const l of LANGS) {
       setHreflang(l, `${SITE_URL}${alternates[l]}`);

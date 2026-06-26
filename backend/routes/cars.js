@@ -14,6 +14,7 @@ const toCamel = (r) => ({
   id: r.id, brand: r.brand, model: r.model, year: r.year,
   category: r.category, transmission: r.transmission, fuel: r.fuel,
   seats: r.seats, luggage: r.luggage, pricePerDay: r.price_per_day,
+  displayPrice: r.display_price != null ? Number(r.display_price) : null,
   status: r.status, image: r.image, slug: r.slug, featured: !!r.featured,
   quantity: r.quantity ?? 1, description: r.description ?? '',
   createdAt: r.created_at, updatedAt: r.updated_at,
@@ -64,11 +65,12 @@ router.post('/', authenticate, requireRole('admin', 'manager'), [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status, image, slug, featured, quantity, description } = req.body;
+    const { brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, displayPrice, status, image, slug, featured, quantity, description } = req.body;
     const id = uuidv4();
+    const dispP = (displayPrice !== undefined && displayPrice !== null && displayPrice !== '') ? Number(displayPrice) : null;
     await pool.query(
-      'INSERT INTO cars (id, brand, model, year, category, transmission, fuel, seats, luggage, price_per_day, status, image, slug, featured, quantity, description, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, status || 'Available', image, slug, featured ? 1 : 0, quantity ?? 1, description ?? null, req.user.id]
+      'INSERT INTO cars (id, brand, model, year, category, transmission, fuel, seats, luggage, price_per_day, display_price, status, image, slug, featured, quantity, description, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [id, brand, model, year, category, transmission, fuel, seats, luggage, pricePerDay, dispP, status || 'Available', image, slug, featured ? 1 : 0, quantity ?? 1, description ?? null, req.user.id]
     );
     await logActivity({ userId: req.user.id, action: 'CREATE', entity: 'Car', entityId: id, description: `Makina e re: ${brand} ${model}`, ipAddress: req.ip });
     const [rows] = await pool.query('SELECT * FROM cars WHERE id = ?', [id]);
@@ -84,6 +86,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
       brand: fields.brand, model: fields.model, year: fields.year,
       category: fields.category, transmission: fields.transmission, fuel: fields.fuel,
       seats: fields.seats, luggage: fields.luggage, price_per_day: fields.pricePerDay,
+      display_price: fields.displayPrice !== undefined ? (fields.displayPrice === '' || fields.displayPrice === null ? null : Number(fields.displayPrice)) : undefined,
       status: fields.status, image: fields.image, slug: fields.slug,
       featured: fields.featured !== undefined ? (fields.featured ? 1 : 0) : undefined,
       quantity: fields.quantity, description: fields.description,

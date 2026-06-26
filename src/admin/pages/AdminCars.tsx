@@ -14,6 +14,7 @@ type CarDraftForm = {
   model: string;
   year: string;
   pricePerDay: string;
+  displayPrice: string;
   category: string;
   status: string;
   transmission: string;
@@ -35,7 +36,7 @@ type FormErrors = {
 };
 
 const emptyForm: CarDraftForm = {
-  brand: "", model: "", year: "", pricePerDay: "", category: "Ekonomike",
+  brand: "", model: "", year: "", pricePerDay: "", displayPrice: "", category: "Ekonomike",
   status: "Në dispozicion", transmission: "Automatike", fuel: "Benzinë",
   seats: "5", luggage: "2", image: "", slug: "", featured: false, quantity: "1", description: "",
 };
@@ -356,7 +357,7 @@ export default function AdminCars() {
     setEditingCarId(car.id);
     setForm({
       brand: car.brand, model: car.model, year: String(car.year),
-      pricePerDay: String(car.pricePerDay), category: car.category,
+      pricePerDay: String(car.pricePerDay), displayPrice: car.displayPrice != null ? String(car.displayPrice) : "", category: car.category,
       status: car.status, transmission: car.transmission, fuel: car.fuel,
       seats: String(car.seats), luggage: String(car.luggage),
       image: car.image, slug: car.slug, featured: car.featured, quantity: String(car.quantity ?? 1),
@@ -387,7 +388,9 @@ export default function AdminCars() {
 
     const draft = {
       brand: form.brand, model: form.model, year: Number(form.year),
-      pricePerDay: Number(form.pricePerDay), category: form.category,
+      pricePerDay: Number(form.pricePerDay),
+      displayPrice: form.displayPrice.trim() ? Number(form.displayPrice) : null,
+      category: form.category,
       status: form.status, transmission: form.transmission, fuel: form.fuel,
       seats: Number(form.seats), luggage: Number(form.luggage),
       image: form.image || "/placeholder-car.svg",
@@ -696,6 +699,23 @@ export default function AdminCars() {
                   </div>
                 );
               })}
+              {/* Promotional display price — purely visual, does NOT affect billing */}
+              <div>
+                <label htmlFor="drawer-displayprice" className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Çmim promocional (vetëm vizual)
+                </label>
+                <input
+                  id="drawer-displayprice"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.displayPrice}
+                  onChange={(e) => setForm(prev => ({ ...prev, displayPrice: e.target.value }))}
+                  placeholder="p.sh. 20 (lëre bosh për pa promocion)"
+                  className="w-full px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                />
+                <p className="mt-1 text-xs text-neutral-500">Zëvendëson çmimin e shfaqur kudo, por NUK ndikon në llogaritjen e rezervimit.</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="drawer-seats" className="block text-sm font-medium text-neutral-700 mb-1.5">Vendesh</label>

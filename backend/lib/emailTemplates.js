@@ -135,7 +135,7 @@ function adminBookingNotification({
   carName, carCategory, pickupLocation, dropoffLocation,
   startDate, startTime, endDate, endTime, days,
   totalPrice, locationFee, insurance, extrasList, source,
-  adminPanelUrl,
+  flightNumber, adminPanelUrl,
 }) {
   const extrasHtml = Array.isArray(extrasList) && extrasList.length > 0
     ? `<tr>
@@ -167,6 +167,7 @@ function adminBookingNotification({
       ${row('Kthimi', dropoffLocation)}
       ${row('Nisja', `${startDate} ${startTime || ''}`)}
       ${row('Kthimi', `${endDate} ${endTime || ''}`)}
+      ${flightNumber ? row('Numri i fluturimit', flightNumber) : ''}
       ${days ? row('Numri i ditëve', `${days} ditë`) : ''}
       ${insurance ? row('Sigurim', insurance) : ''}
       ${extrasHtml}

@@ -9,7 +9,7 @@ import { useQuery, useMutation, useLazyQuery } from "../../hooks/useApi";
 
 type InvoiceStatus = "Paguar" | "Pa paguar" | "Vonuar" | "Anuluar";
 type DepositStatus = "Mbajtur" | "Kthyer" | "Pjesërisht";
-type Tab = "invoice" | "deposits" | "latefees" | "reports" | "vat";
+type Tab = "invoice" | "deposits" | "latefees" | "reports";
 
 interface LocalInvoice {
   id: string;
@@ -41,9 +41,6 @@ interface LateFee {
   feeAmount: number;
   paid: boolean;
 }
-
-const VAT_RATE = 0.2;
-
 
 function fmt(n: number) {
   return n.toLocaleString("sq-AL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -102,9 +99,10 @@ export default function AdminFinance() {
   // Build invoices from SDK reservations
   const invoices: LocalInvoice[] = useMemo(() => {
     return (reservations ?? []).map((r, i) => {
+      // Biznes pa TVSH: totali = çmimi i rezervimit, asnjë taksë e shtuar.
       const subtotal = Number(r.totalPrice || 0);
-      const vatAmount = Math.round(subtotal * VAT_RATE * 100) / 100;
-      const total = subtotal + vatAmount;
+      const vatAmount = 0;
+      const total = subtotal;
       const statusMap: Record<string, InvoiceStatus> = { Completed: "Paguar", Active: "Paguar", Confirmed: "Pa paguar", Pending: "Pa paguar", Cancelled: "Anuluar" };
       const status: InvoiceStatus = statusMap[r.status] ?? "Pa paguar";
       const customer = (sdkCustomers ?? []).find(c => c.id === r.customerId);
@@ -119,7 +117,7 @@ export default function AdminFinance() {
         issueDate: new Date(r.createdAt).toLocaleDateString("sq-AL"),
         dueDate: new Date(r.startDate).toLocaleDateString("sq-AL"),
         days: Math.max(1, Math.ceil((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / (1000 * 60 * 60 * 24))),
-        subtotal, vatRate: VAT_RATE, vatAmount, total, status, notes: r.notes ?? "",
+        subtotal, vatRate: 0, vatAmount, total, status, notes: r.notes ?? "",
       };
     });
   }, [reservations, sdkCustomers, sdkCars]);
@@ -161,7 +159,6 @@ export default function AdminFinance() {
   }, [reservations, sdkCustomers, sdkCars, paidFeeIds]);
 
   const totalRevenue = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
-  const totalVat = useMemo(() => allInvoices.filter(i => i.status === "Paguar").reduce((a, b) => a + b.vatAmount, 0), [allInvoices]);
   const pendingAmount = useMemo(() => allInvoices.filter(i => i.status === "Pa paguar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
   const overdueAmount = useMemo(() => allInvoices.filter(i => i.status === "Vonuar").reduce((a, b) => a + Number(b.total || 0), 0), [allInvoices]);
   const heldDeposits = useMemo(() => (sdkDeposits ?? []).filter(d => d.status === "Mbajtur").reduce((a, b) => a + b.amount, 0), [sdkDeposits]);
@@ -183,8 +180,8 @@ export default function AdminFinance() {
 
   const exportCSV = () => {
     const rows = [
-      ["Nr. Faturës","Klienti","Makina","Data lëshimit","Data maturimit","Ditë","Nëntotali (€)","TVSH 20% (€)","Totali (€)","Statusi"],
-      ...allInvoices.map(i => [i.invoiceNo, i.customerName, i.carName, i.issueDate, i.dueDate, String(i.days), fmt(i.subtotal), fmt(i.vatAmount), fmt(i.total), i.status]),
+      ["Nr. Faturës","Klienti","Makina","Data lëshimit","Data maturimit","Ditë","Totali (€)","Statusi"],
+      ...allInvoices.map(i => [i.invoiceNo, i.customerName, i.carName, i.issueDate, i.dueDate, String(i.days), fmt(i.total), i.status]),
     ];
     const csv = "\uFEFF" + rows.map(r => r.map(cell => `"${cell}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -201,7 +198,6 @@ export default function AdminFinance() {
     { id: "deposits", label: "Depozitat", count: (sdkDeposits ?? []).length },
     { id: "latefees", label: "Vonesa", count: dynamicLateFees.filter(l => !l.paid).length },
     { id: "reports", label: "Raportet" },
-    { id: "vat", label: "TVSH / Taksa" },
   ];
 
   return (
@@ -209,7 +205,7 @@ export default function AdminFinance() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Financat</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Faturat, depozitat, vonesat, raportet dhe TVSH</p>
+          <p className="text-sm text-neutral-500 mt-0.5">Faturat, depozitat, vonesat dhe raportet</p>
         </div>
         <button onClick={exportCSV} className="flex items-center gap-2 bg-success text-white text-sm px-4 py-2.5 rounded-xl hover:bg-success/90 transition-colors cursor-pointer font-medium shadow-sm">
           <FileXls size={16} weight="bold" />Eksporto Excel
@@ -217,7 +213,7 @@ export default function AdminFinance() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<CurrencyDollar size={20} weight="bold" className="text-success" />} label="Të ardhura totale" value={`€${fmt(totalRevenue)}`} sub={`TVSH: €${fmt(totalVat)}`} color="bg-success/10" trend={{ pct: 12, positive: true }} />
+        <StatCard icon={<CurrencyDollar size={20} weight="bold" className="text-success" />} label="Të ardhura totale" value={`€${fmt(totalRevenue)}`} color="bg-success/10" trend={{ pct: 12, positive: true }} />
         <StatCard icon={<Receipt size={20} weight="bold" className="text-warning" />} label="Pa paguar" value={`€${fmt(pendingAmount)}`} sub={`${allInvoices.filter(i => i.status === "Pa paguar").length} fatura`} color="bg-warning/10" />
           <StatCard icon={<Warning size={20} weight="bold" className="text-error" />} label="Vonuar / Gjoba" value={`€${fmt(overdueAmount + lateFeeUnpaid)}`} sub={`${allInvoices.filter(i => i.status === "Vonuar").length} fatura + ${dynamicLateFees.filter(l => !l.paid).length} vonesa`} color="bg-error/10" />
         <StatCard icon={<Coins size={20} weight="bold" className="text-primary" />} label="Depozita mbajtura" value={`€${fmt(heldDeposits)}`} sub={`${(sdkDeposits ?? []).filter(d => d.status === "Mbajtur").length} aktive`} color="bg-primary/10" />
@@ -390,9 +386,7 @@ export default function AdminFinance() {
           <h3 className="font-semibold text-neutral-800 mb-4">Pasqyra financiare</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Bruto total", value: `€${fmt(totalRevenue)}` },
-              { label: "Neto (pa TVSH)", value: `€${fmt(totalRevenue - totalVat)}` },
-              { label: "TVSH 20%", value: `€${fmt(totalVat)}` },
+              { label: "Të ardhura totale", value: `€${fmt(totalRevenue)}` },
               { label: "Gjoba vonesa (aktive)", value: `€${fmt(lateFeeTotal)}` },
             ].map(k => (
               <div key={k.label} className="bg-neutral-50 rounded-xl border border-border p-4">
@@ -403,116 +397,6 @@ export default function AdminFinance() {
           </div>
         </div>
       )}
-
-      {activeTab === "vat" && (() => {
-        // Group paid invoices by YYYY-MM for monthly VAT breakdown.
-        const paidInvoices = allInvoices.filter((i) => i.status === "Paguar");
-        const monthly = new Map<string, { gross: number; base: number; vat: number; count: number }>();
-        for (const inv of paidInvoices) {
-          const month = String(inv.issueDate || "").slice(0, 7); // YYYY-MM
-          if (!month) continue;
-          const cur = monthly.get(month) ?? { gross: 0, base: 0, vat: 0, count: 0 };
-          cur.gross += Number(inv.total || 0);
-          cur.vat += Number(inv.vatAmount || 0);
-          cur.base += Number(inv.subtotal || 0);
-          cur.count += 1;
-          monthly.set(month, cur);
-        }
-        const monthlyRows = Array.from(monthly.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-
-        const exportVatCSV = () => {
-          const csv = [
-            ["Muaji", "Numri i faturave", "Qira bruto (€)", "Baza tatimore (€)", "TVSH 20% (€)"].join(","),
-            ...monthlyRows.map(([month, v]) => [month, v.count, v.gross.toFixed(2), v.base.toFixed(2), v.vat.toFixed(2)].join(",")),
-            ["TOTAL", paidInvoices.length, totalRevenue.toFixed(2), (totalRevenue - totalVat).toFixed(2), totalVat.toFixed(2)].join(","),
-          ].join("\n");
-          const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `tvsh_${new Date().toISOString().slice(0, 7)}.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-
-        return (
-          <div className="space-y-4">
-            <div className="bg-gradient-primary text-white rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <div>
-                  <p className="text-xs opacity-70 uppercase tracking-widest">Pasqyra TVSH</p>
-                  <p className="text-xs opacity-60 mt-0.5">Bazuar te {paidInvoices.length} fatura "Paguar"</p>
-                </div>
-                <button
-                  onClick={exportVatCSV}
-                  disabled={!monthlyRows.length}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <DownloadSimple size={14} weight="bold" />Export CSV
-                </button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[
-                  { label: "Qira bruto (me TVSH)", value: totalRevenue },
-                  { label: "Baza tatimore (pa TVSH)", value: totalRevenue - totalVat },
-                  { label: "TVSH 20% e detyrueshme", value: totalVat },
-                  { label: "Neto pas TVSH", value: totalRevenue - totalVat },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <p className="text-xs opacity-60 mb-0.5">{item.label}</p>
-                    <p className="text-xl font-bold">€{fmt(item.value)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Monthly breakdown */}
-            <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-border">
-                <h3 className="font-semibold text-neutral-800 text-sm">Ndarja mujore</h3>
-                <p className="text-xs text-neutral-500 mt-0.5">Vetëm fatura të paguara. Renditja: më e re sipër.</p>
-              </div>
-              {monthlyRows.length === 0 ? (
-                <div className="px-4 py-10 text-center text-sm text-neutral-400">Nuk ka fatura të paguara për të raportuar TVSH-në.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 text-neutral-500 text-xs uppercase tracking-wide">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium">Muaji</th>
-                        <th className="text-right px-4 py-3 font-medium">Fatura</th>
-                        <th className="text-right px-4 py-3 font-medium">Bruto</th>
-                        <th className="text-right px-4 py-3 font-medium">Baza (pa TVSH)</th>
-                        <th className="text-right px-4 py-3 font-medium text-primary">TVSH 20%</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {monthlyRows.map(([month, v]) => (
-                        <tr key={month} className="hover:bg-neutral-50">
-                          <td className="px-4 py-3 font-mono text-neutral-800">{month}</td>
-                          <td className="px-4 py-3 text-right text-neutral-600">{v.count}</td>
-                          <td className="px-4 py-3 text-right font-medium">€{fmt(v.gross)}</td>
-                          <td className="px-4 py-3 text-right text-neutral-600">€{fmt(v.base)}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-primary">€{fmt(v.vat)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-neutral-50 font-semibold">
-                      <tr>
-                        <td className="px-4 py-3 text-neutral-800">TOTAL</td>
-                        <td className="px-4 py-3 text-right text-neutral-700">{paidInvoices.length}</td>
-                        <td className="px-4 py-3 text-right text-neutral-900">€{fmt(totalRevenue)}</td>
-                        <td className="px-4 py-3 text-right text-neutral-700">€{fmt(totalRevenue - totalVat)}</td>
-                        <td className="px-4 py-3 text-right text-primary">€{fmt(totalVat)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
 
       {selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 print:bg-white print:p-0 print:relative print:inset-auto" onClick={() => setSelectedInvoice(null)}>
@@ -553,9 +437,7 @@ export default function AdminFinance() {
               </div>
               <div className="border-t border-dashed border-border pt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-neutral-600"><span>Ditë qiraje</span><span>{selectedInvoice.days}</span></div>
-                <div className="flex justify-between text-neutral-600"><span>Nëntotali</span><span>€{fmt(selectedInvoice.subtotal)}</span></div>
-                <div className="flex justify-between text-neutral-600"><span>TVSH 20%</span><span>€{fmt(selectedInvoice.vatAmount)}</span></div>
-                <div className="flex justify-between font-bold text-neutral-900 text-base border-t border-border pt-2 mt-2"><span>TOTALI FINAL</span><span>€{fmt(selectedInvoice.total)}</span></div>
+                <div className="flex justify-between font-bold text-neutral-900 text-base border-t border-border pt-2 mt-2"><span>TOTALI</span><span>€{fmt(selectedInvoice.total)}</span></div>
               </div>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor(selectedInvoice.status)}`}>{selectedInvoice.status}</span>

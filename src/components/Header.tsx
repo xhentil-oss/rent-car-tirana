@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useAuth } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
+import { trackEvent } from "../lib/track";
 import { useLocale } from "../hooks/useLocale";
 import LLink from "./LLink";
 
@@ -97,7 +98,7 @@ function GoogleSignInButton({ onCredential, onError }: { onCredential: (c: strin
   return <div ref={divRef} className="flex justify-center" />;
 }
 
-function LanguageSwitcher() {
+function LanguageSwitcher({ onAfterSelect }: { onAfterSelect?: () => void }) {
   const { lang, switchLang } = useLocale();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -143,7 +144,7 @@ function LanguageSwitcher() {
             return (
               <button
                 key={l}
-                onClick={() => { switchLang(l); setOpen(false); }}
+                onClick={() => { switchLang(l); setOpen(false); onAfterSelect?.(); }}
                 className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors cursor-pointer ${
                   active ? "bg-primary/10 text-primary font-semibold" : "text-neutral-700 hover:bg-neutral-50"
                 }`}
@@ -701,6 +702,7 @@ export default function Header() {
         {/* Logo */}
         <LLink
           to="/"
+          onClick={() => window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })}
           className="flex items-center gap-2 no-underline"
           aria-label="Rent Car Tirana - Kryefaqja"
         >
@@ -753,6 +755,7 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           <a
             href="tel:+355697562951"
+            onClick={() => trackEvent("phone_click")}
             className="flex items-center gap-2 text-sm text-neutral-700 hover:text-primary transition-colors duration-200 no-underline px-3 py-2"
           >
             <Phone size={16} weight="regular" />
@@ -840,13 +843,14 @@ export default function Header() {
             <div className="pt-3 border-t border-border mt-2 flex flex-col gap-2">
               <a
                 href="tel:+355697562951"
+                onClick={() => trackEvent("phone_click")}
                 className="flex items-center gap-2 text-sm text-neutral-700 px-4 py-3 no-underline"
               >
                 <Phone size={16} weight="regular" />
                 <span>{t("header.phone")}</span>
               </a>
               <div className="px-1">
-                <LanguageSwitcher />
+                <LanguageSwitcher onAfterSelect={() => setMobileOpen(false)} />
               </div>
               <MobileUserMenu onClose={() => setMobileOpen(false)} />
               <LLink

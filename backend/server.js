@@ -31,11 +31,32 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: [
+        "'self'", "'unsafe-inline'", "https://unpkg.com",
+        // Google Analytics 4 + Google Ads (gtag.js) and Google Sign-In
+        "https://www.googletagmanager.com",
+        "https://www.google-analytics.com",
+        "https://googleads.g.doubleclick.net",
+        "https://www.googleadservices.com",
+        "https://accounts.google.com",
+        "https://apis.google.com",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:", "https://lh3.googleusercontent.com"],
-      connectSrc: ["'self'", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"], // "https:" already covers Google/Ads tracking pixels
+      connectSrc: [
+        "'self'", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com",
+        "https://www.googletagmanager.com",
+        "https://www.google-analytics.com",
+        "https://*.google-analytics.com",
+        "https://*.analytics.google.com",
+        "https://*.doubleclick.net",
+        "https://*.googleadservices.com",
+        "https://www.google.com",
+        "https://pagead2.googlesyndication.com",
+        "https://accounts.google.com",
+      ],
+      frameSrc: ["'self'", "https://accounts.google.com", "https://td.doubleclick.net", "https://www.googletagmanager.com"],
     },
   },
 }));
@@ -122,6 +143,7 @@ app.use('/api/users',         apiLimiter,  require('./routes/users'));
 app.use('/api/activity-logs', apiLimiter,  require('./routes/activityLogs'));
 app.use('/api/chat',          apiLimiter,  require('./routes/chat'));
 app.use('/api/settings',      apiLimiter,  require('./routes/settings'));
+app.use('/api/analytics',                  require('./routes/analytics'));
 app.use('/api/blog',          apiLimiter,  require('./routes/blog'));
 app.use('/api/deposits',      apiLimiter,  require('./routes/deposits'));
 app.use('/api/customer-documents', apiLimiter, require('./routes/customerDocuments'));
@@ -152,28 +174,34 @@ app.get('/sitemap.xml', async (req, res) => {
     const escXml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fmtDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : today;
 
+    const LANGS = ['sq', 'en', 'fr', 'es', 'it'];
+
+    // Per-page localized slugs (must mirror src/lib/routes.ts SLUGS).
     const staticUrls = [
-      { sq: '/',                          en: '/en',                       pri: '1.0',  freq: 'weekly' },
-      { sq: '/makina-me-qira-tirane',     en: '/en/car-rental-tirana',     pri: '0.95', freq: 'weekly' },
-      { sq: '/flota',                     en: '/en/fleet',                 pri: '0.9',  freq: 'weekly' },
-      { sq: '/makine-me-qira-aeroport',   en: '/en/airport-car-rental',    pri: '0.9',  freq: 'monthly' },
-      { sq: '/makina-suv-me-qira',        en: '/en/suv-car-rental',        pri: '0.85', freq: 'monthly' },
-      { sq: '/makina-automatike-me-qira', en: '/en/automatic-car-rental',  pri: '0.85', freq: 'monthly' },
-      { sq: '/makina-luksoze-me-qira',    en: '/en/luxury-car-rental',     pri: '0.85', freq: 'monthly' },
-      { sq: '/rezervo',                   en: '/en/book',                  pri: '0.8',  freq: 'monthly' },
-      { sq: '/blog',                      en: '/en/blog',                  pri: '0.8',  freq: 'weekly' },
-      { sq: '/vleresime',                 en: '/en/reviews',               pri: '0.7',  freq: 'weekly' },
-      { sq: '/kontakt',                   en: '/en/contact',               pri: '0.6',  freq: 'monthly' },
-      { sq: '/termat-e-sherbimit',        en: '/en/terms',                 pri: '0.3',  freq: 'yearly' },
-      { sq: '/privatesie',                en: '/en/privacy',               pri: '0.3',  freq: 'yearly' },
+      { slugs: { sq: '/',                          en: '/en',                      fr: '/fr',                         es: '/es',                         it: '/it' },                      pri: '1.0',  freq: 'weekly' },
+      { slugs: { sq: '/makina-me-qira-tirane',     en: '/en/car-rental-tirana',    fr: '/fr/location-voiture-tirana', es: '/es/alquiler-coches-tirana',  it: '/it/noleggio-auto-tirana' }, pri: '0.95', freq: 'weekly' },
+      { slugs: { sq: '/flota',                     en: '/en/fleet',                fr: '/fr/flotte',                  es: '/es/flota',                   it: '/it/flotta' },               pri: '0.9',  freq: 'weekly' },
+      { slugs: { sq: '/makine-me-qira-aeroport',   en: '/en/airport-car-rental',   fr: '/fr/location-aeroport',       es: '/es/alquiler-aeropuerto',     it: '/it/noleggio-aeroporto' },   pri: '0.9',  freq: 'monthly' },
+      { slugs: { sq: '/makina-suv-me-qira',        en: '/en/suv-car-rental',       fr: '/fr/location-suv',            es: '/es/alquiler-suv',            it: '/it/noleggio-suv' },         pri: '0.85', freq: 'monthly' },
+      { slugs: { sq: '/makina-automatike-me-qira', en: '/en/automatic-car-rental', fr: '/fr/location-automatique',    es: '/es/alquiler-automatico',     it: '/it/noleggio-automatico' },  pri: '0.85', freq: 'monthly' },
+      { slugs: { sq: '/makina-luksoze-me-qira',    en: '/en/luxury-car-rental',    fr: '/fr/location-luxe',           es: '/es/alquiler-lujo',           it: '/it/noleggio-lusso' },       pri: '0.85', freq: 'monthly' },
+      { slugs: { sq: '/rezervo',                   en: '/en/book',                 fr: '/fr/reserver',                es: '/es/reservar',                it: '/it/prenota' },              pri: '0.8',  freq: 'monthly' },
+      { slugs: { sq: '/blog',                      en: '/en/blog',                 fr: '/fr/blog',                    es: '/es/blog',                    it: '/it/blog' },                 pri: '0.8',  freq: 'weekly' },
+      { slugs: { sq: '/vleresime',                 en: '/en/reviews',              fr: '/fr/avis',                    es: '/es/opiniones',               it: '/it/recensioni' },           pri: '0.7',  freq: 'weekly' },
+      { slugs: { sq: '/kontakt',                   en: '/en/contact',              fr: '/fr/contact',                 es: '/es/contacto',                it: '/it/contatti' },             pri: '0.6',  freq: 'monthly' },
+      { slugs: { sq: '/zyrat',                     en: '/en/offices',              fr: '/fr/bureaux',                 es: '/es/oficinas',                it: '/it/uffici' },               pri: '0.6',  freq: 'monthly' },
+      { slugs: { sq: '/termat-e-sherbimit',        en: '/en/terms',                fr: '/fr/conditions',              es: '/es/terminos',                it: '/it/termini' },              pri: '0.3',  freq: 'yearly' },
+      { slugs: { sq: '/privatesie',                en: '/en/privacy',              fr: '/fr/confidentialite',         es: '/es/privacidad',              it: '/it/privacy' },              pri: '0.3',  freq: 'yearly' },
     ];
 
-    const urlEntry = ({ loc, alt_sq, alt_en, lastmod, freq, pri }) => `
+    const hreflangLinks = (slugs) =>
+      LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(BASE + slugs[l])}" />`).join('\n') +
+      `\n    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(BASE + slugs.sq)}" />`;
+
+    const urlEntry = ({ loc, slugs, lastmod, freq, pri }) => `
   <url>
     <loc>${escXml(BASE + loc)}</loc>
-    <xhtml:link rel="alternate" hreflang="sq" href="${escXml(BASE + alt_sq)}" />
-    <xhtml:link rel="alternate" hreflang="en" href="${escXml(BASE + alt_en)}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(BASE + alt_sq)}" />
+${hreflangLinks(slugs)}
     <lastmod>${lastmod}</lastmod>
     <changefreq>${freq}</changefreq>
     <priority>${pri}</priority>
@@ -181,28 +209,25 @@ app.get('/sitemap.xml', async (req, res) => {
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`;
 
-    // Static pages
-    for (const { sq, en, pri, freq } of staticUrls) {
-      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod: today, freq, pri });
-      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod: today, freq, pri });
+    // Static pages — one <url> per language
+    for (const { slugs, pri, freq } of staticUrls) {
+      for (const l of LANGS) xml += urlEntry({ loc: slugs[l], slugs, lastmod: today, freq, pri });
     }
 
-    // Car detail pages
+    // Car detail pages (slug shared across languages; only the prefix differs)
     for (const car of cars) {
-      const sq = `/makina/${escXml(car.slug)}`;
-      const en = `/en/car/${escXml(car.slug)}`;
+      const s = escXml(car.slug);
+      const slugs = { sq: `/makina/${s}`, en: `/en/car/${s}`, fr: `/fr/voiture/${s}`, es: `/es/coche/${s}`, it: `/it/auto/${s}` };
       const lastmod = fmtDate(car.updated_at);
-      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod, freq: 'weekly', pri: '0.8' });
-      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod, freq: 'weekly', pri: '0.8' });
+      for (const l of LANGS) xml += urlEntry({ loc: slugs[l], slugs, lastmod, freq: 'weekly', pri: '0.8' });
     }
 
     // Blog posts
     for (const post of posts) {
-      const sq = `/blog/${escXml(post.slug)}`;
-      const en = `/en/blog/${escXml(post.slug)}`;
+      const s = escXml(post.slug);
+      const slugs = { sq: `/blog/${s}`, en: `/en/blog/${s}`, fr: `/fr/blog/${s}`, es: `/es/blog/${s}`, it: `/it/blog/${s}` };
       const lastmod = fmtDate(post.updated_at);
-      xml += urlEntry({ loc: sq, alt_sq: sq, alt_en: en, lastmod, freq: 'monthly', pri: '0.7' });
-      xml += urlEntry({ loc: en, alt_sq: sq, alt_en: en, lastmod, freq: 'monthly', pri: '0.7' });
+      for (const l of LANGS) xml += urlEntry({ loc: slugs[l], slugs, lastmod, freq: 'monthly', pri: '0.7' });
     }
 
     xml += `\n</urlset>`;

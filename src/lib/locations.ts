@@ -78,6 +78,11 @@ export function formatLocationOption(opt: LocationOption): string {
   return `${opt.icon} ${opt.label}${opt.fee > 0 ? ` (+€${opt.fee})` : ""}`;
 }
 
+/** Location label WITHOUT the fee — used in the homepage search form. */
+export function formatLocationName(opt: LocationOption): string {
+  return `${opt.icon} ${opt.label}`;
+}
+
 // Compute the fee charged for a given (pickup, dropoff) pair. Matches backend
 // `getLocationFee` semantics: BOTH fees are always charged, even when pickup
 // and dropoff are the same paid city (Sarandë → Sarandë = 2×€20).

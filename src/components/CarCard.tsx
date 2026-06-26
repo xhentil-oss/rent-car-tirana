@@ -2,6 +2,7 @@ import React from "react";
 import LLink from "./LLink";
 import { Users, Briefcase, GasPump, Gear, Star, Fire } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
+import { categoryLabel, transmissionLabel, fuelLabel, statusLabel } from "../i18n/dataLabels";
 interface Car {
   id: string;
   brand: string;
@@ -15,6 +16,7 @@ interface Car {
   seats: number;
   luggage: number;
   pricePerDay: number;
+  displayPrice?: number | null;
   status: string;
   featured?: boolean;
 }
@@ -34,7 +36,10 @@ function CarCard({ car, className = "" }: CarCardProps) {
         ? "bg-warning text-warning-foreground"
         : "bg-neutral-400 text-white";
 
-  const weeklyPrice = Math.round(car.pricePerDay * 7 * 0.88);
+  // Visual price shown to the customer — promo (displayPrice) overrides the real
+  // price when set. The real price is still used for booking calculations.
+  const shownPrice = car.displayPrice ?? car.pricePerDay;
+  const weeklyPrice = Math.round(shownPrice * 7 * 0.88);
 
   return (
     <article
@@ -53,7 +58,7 @@ function CarCard({ car, className = "" }: CarCardProps) {
         />
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}`}>
-            {car.status}
+            {statusLabel(t, car.status)}
           </span>
           {car.featured && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
@@ -73,7 +78,7 @@ function CarCard({ car, className = "" }: CarCardProps) {
       <div className="p-6">
         <div className="mb-3">
           <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-            {car.category}
+            {categoryLabel(t, car.category)}
           </span>
           <LLink to={`/makina/${car.slug}`} className="block no-underline group">
             <h3 className="text-lg font-medium text-neutral-900 mt-0.5 group-hover:text-primary transition-colors duration-200">
@@ -86,11 +91,11 @@ function CarCard({ car, className = "" }: CarCardProps) {
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="flex items-center gap-1.5 text-sm text-neutral-600">
             <Gear size={16} weight="regular" />
-            <span>{car.transmission}</span>
+            <span>{transmissionLabel(t, car.transmission)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-neutral-600">
             <GasPump size={16} weight="regular" />
-            <span>{car.fuel}</span>
+            <span>{fuelLabel(t, car.fuel)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-neutral-600">
             <Users size={16} weight="regular" />
@@ -116,9 +121,10 @@ function CarCard({ car, className = "" }: CarCardProps) {
 
         <div className="flex items-center justify-between pt-0 border-t-0">
           <div>
+            <span className="text-[11px] text-neutral-400 block leading-none mb-0.5">{t("carCard.startingFrom")}</span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-semibold text-neutral-900">
-                €{car.pricePerDay}
+                €{shownPrice}
               </span>
               <span className="text-sm text-neutral-500">{t("carCard.perDay")}</span>
             </div>

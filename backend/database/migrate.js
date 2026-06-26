@@ -61,6 +61,7 @@ const TABLES = [
     seats           TINYINT NOT NULL DEFAULT 5,
     luggage         TINYINT NOT NULL DEFAULT 2,
     price_per_day   DECIMAL(10,2) NOT NULL,
+    display_price   DECIMAL(10,2) DEFAULT NULL,
     status          VARCHAR(30) NOT NULL DEFAULT 'Available',
     image           TEXT,
     slug            VARCHAR(255) UNIQUE NOT NULL,
@@ -101,6 +102,7 @@ const TABLES = [
     start_time        VARCHAR(10) NOT NULL,
     end_date          DATE NOT NULL,
     end_time          VARCHAR(10) NOT NULL,
+    flight_number     VARCHAR(30) DEFAULT NULL,
     notes             TEXT,
     source            VARCHAR(30) DEFAULT 'Web',
     status            VARCHAR(30) DEFAULT 'Pending',
@@ -378,6 +380,7 @@ const TABLES = [
     type                  VARCHAR(30) NOT NULL,
     discount_type         VARCHAR(20) NOT NULL,
     discount_value        DECIMAL(8,2) NOT NULL,
+    direction             VARCHAR(20) DEFAULT 'discount',
     start_date            DATE DEFAULT NULL,
     end_date              DATE DEFAULT NULL,
     min_days              INT,
@@ -465,6 +468,27 @@ const TABLES = [
     KEY idx_re_extra (extra_id),
     CONSTRAINT fk_re_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+  // FIRST-PARTY ANALYTICS — page views + key events (privacy-friendly: stores
+  // only country + an anonymous session id, never the raw IP).
+  `CREATE TABLE IF NOT EXISTS analytics_events (
+    id          CHAR(36) NOT NULL,
+    type        VARCHAR(20) NOT NULL DEFAULT 'pageview',
+    name        VARCHAR(100) DEFAULT NULL,
+    path        VARCHAR(512) DEFAULT NULL,
+    data        TEXT DEFAULT NULL,
+    country     VARCHAR(2) DEFAULT NULL,
+    lang        VARCHAR(5) DEFAULT NULL,
+    session_id  VARCHAR(64) DEFAULT NULL,
+    referrer    VARCHAR(512) DEFAULT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_ae_created (created_at),
+    KEY idx_ae_type (type),
+    KEY idx_ae_name (name),
+    KEY idx_ae_country (country),
+    KEY idx_ae_session (session_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
 // ── Default extras catalog seed (inserted only if `extras` table is empty) ──
@@ -508,7 +532,9 @@ const ALTERS = [
   // Add quantity and description to cars
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS quantity SMALLINT NOT NULL DEFAULT 1`,
   `ALTER TABLE cars ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL`,
+  `ALTER TABLE cars ADD COLUMN IF NOT EXISTS display_price DECIMAL(10,2) DEFAULT NULL`,
   // ── pricing_rules: make dates nullable and add missing columns ──
+  `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS direction VARCHAR(20) DEFAULT 'discount'`,
   `ALTER TABLE pricing_rules MODIFY COLUMN start_date DATE DEFAULT NULL`,
   `ALTER TABLE pricing_rules MODIFY COLUMN end_date DATE DEFAULT NULL`,
   `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS advance_booking_days INT DEFAULT NULL`,
@@ -523,6 +549,7 @@ const ALTERS = [
   `ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS created_by CHAR(36) DEFAULT NULL`,
   // ── reservations: add location_fee column ──
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS location_fee DECIMAL(10,2) DEFAULT 0`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS flight_number VARCHAR(30) DEFAULT NULL`,
   // ── Performance indexes ──
   'CREATE INDEX idx_res_overlap ON reservations (car_id, status, start_date, end_date)',
   'CREATE INDEX idx_res_status ON reservations (status)',

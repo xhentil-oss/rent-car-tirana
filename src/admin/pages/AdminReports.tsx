@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useMemo } from "react";
-import { FileCsv, FilePdf } from "@phosphor-icons/react";
+import React, { lazy, Suspense, useMemo, useState, useEffect } from "react";
+import { FileCsv, FilePdf, Users, Eye, Globe } from "@phosphor-icons/react";
 import { revenueData, bookingsBySource, topCars } from "../../data/mockData";
 import { useQuery } from "../../hooks/useApi";
 import { formatLocalDate } from "../../lib/dateHelpers";
@@ -31,11 +31,61 @@ function printReport() {
   window.print();
 }
 
+// Analytics helpers
+const EVENT_LABELS: Record<string, string> = {
+  select_pickup: "Zgjedhje vendi (marrje)",
+  select_dropoff: "Zgjedhje vendi (kthim)",
+  view_car: "Hapje makine",
+  begin_checkout: "Fillim rezervimi",
+  whatsapp_click: "Klik WhatsApp",
+  phone_click: "Klik telefon",
+  reservation: "Rezervim i përfunduar",
+};
+const eventLabel = (name: string) => EVENT_LABELS[name] || name;
+// ISO country code → flag emoji (AL → 🇦🇱)
+const countryFlag = (cc: string) =>
+  /^[A-Za-z]{2}$/.test(cc)
+    ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+    : "🏳️";
+
+const COUNTRY_NAMES: Record<string, string> = {
+  AL: "Shqipëri", XK: "Kosovë", MK: "Maqedoni", IT: "Itali", DE: "Gjermani",
+  GB: "Britani", US: "SHBA", FR: "Francë", ES: "Spanjë", GR: "Greqi",
+  CH: "Zvicër", AT: "Austri", NL: "Holandë", BE: "Belgjikë", SE: "Suedi",
+  TR: "Turqi", ME: "Mali i Zi", RS: "Serbi", PL: "Poloni", CZ: "Çeki",
+};
+const countryName = (cc: string) => COUNTRY_NAMES[cc?.toUpperCase()] || cc;
+
 export default function AdminReports() {
   const { data: reservations } = useQuery("Reservation");
   const { data: customers } = useQuery("Customer");
   const { data: cars } = useQuery("Car");
   const { data: invoices } = useQuery("Invoice");
+
+  // ── First-party visitor analytics ──────────────────────────────────────────
+  type AnalyticsSummary = {
+    days: number;
+    pageviews: number;
+    visitors: number;
+    byCountry: { country: string; visitors: number }[];
+    byEvent: { name: string; count: number }[];
+    topPages: { path: string; views: number }[];
+  };
+  const [analyticsRange, setAnalyticsRange] = useState<string>("30");
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    setAnalyticsLoading(true);
+    const qs = analyticsRange === "today" ? "range=today" : `days=${analyticsRange}`;
+    fetch(`/api/analytics/summary?${qs}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled) setAnalytics(j); })
+      .catch(() => { if (!cancelled) setAnalytics(null); })
+      .finally(() => { if (!cancelled) setAnalyticsLoading(false); });
+    return () => { cancelled = true; };
+  }, [analyticsRange]);
+  const maxCountry = Math.max(...(analytics?.byCountry ?? []).map((c) => c.visitors), 1);
 
   // Live revenue grouped by month
   const liveRevenueData = useMemo(() => {
@@ -138,6 +188,125 @@ export default function AdminReports() {
             <FilePdf size={16} weight="regular" />Printo / PDF
           </button>
         </div>
+      </div>
+
+      {/* ── Visitors (first-party analytics) ───────────────────────────── */}
+      <div className="bg-white rounded-lg border border-border p-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+          <h2 className="text-base font-medium text-neutral-900 flex items-center gap-2">
+            <Users size={18} weight="duotone" className="text-primary" />
+            Vizitorët
+          </h2>
+          <div className="flex gap-1 print:hidden">
+            {[
+              { key: "today", label: "Sot" },
+              { key: "7", label: "7 ditë" },
+              { key: "30", label: "30 ditë" },
+              { key: "90", label: "90 ditë" },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setAnalyticsRange(opt.key)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer border-0 ${
+                  analyticsRange === opt.key ? "bg-primary/10 text-primary" : "text-neutral-500 hover:bg-neutral-100 bg-transparent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {analyticsLoading ? (
+          <ChartSkeleton height={120} />
+        ) : !analytics || (analytics.pageviews === 0 && analytics.visitors === 0) ? (
+          <p className="text-sm text-neutral-400 italic py-6 text-center">
+            Ende nuk ka të dhëna vizitash. Të dhënat fillojnë të mblidhen pasi të publikohet ky version.
+          </p>
+        ) : (
+          <>
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1"><Users size={14} weight="regular" />Vizitorë</div>
+                <p className="text-2xl font-semibold text-neutral-900">{analytics.visitors.toLocaleString()}</p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1"><Eye size={14} weight="regular" />Shikime faqesh</div>
+                <p className="text-2xl font-semibold text-neutral-900">{analytics.pageviews.toLocaleString()}</p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1"><Globe size={14} weight="regular" />Shtete</div>
+                <p className="text-2xl font-semibold text-neutral-900">{analytics.byCountry.length}</p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">Rezervime (event)</div>
+                <p className="text-2xl font-semibold text-neutral-900">{analytics.byEvent.find((e) => e.name === "reservation")?.count ?? 0}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Countries */}
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-700 mb-3">Sipas shtetit</h3>
+                {analytics.byCountry.length === 0 ? (
+                  <p className="text-xs text-neutral-400 italic">Pa të dhëna geolocation ende.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {analytics.byCountry.map((c) => (
+                      <div key={c.country} className="flex items-center gap-2">
+                        <span className="text-base leading-none">{countryFlag(c.country)}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between mb-0.5">
+                            <span className="text-xs font-medium text-neutral-700 truncate">{countryName(c.country)}</span>
+                            <span className="text-xs text-neutral-500">{c.visitors}</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-primary rounded-full" style={{ width: `${(c.visitors / maxCountry) * 100}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Events / actions */}
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-700 mb-3">Veprimet</h3>
+                {analytics.byEvent.length === 0 ? (
+                  <p className="text-xs text-neutral-400 italic">Asnjë veprim i regjistruar.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {analytics.byEvent.map((e) => (
+                      <div key={e.name} className="flex items-center justify-between text-sm">
+                        <span className="text-neutral-700">{eventLabel(e.name)}</span>
+                        <span className="font-semibold text-neutral-900">{e.count.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Top pages */}
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-700 mb-3">Faqet më të vizituara</h3>
+                {analytics.topPages.length === 0 ? (
+                  <p className="text-xs text-neutral-400 italic">Pa të dhëna.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {analytics.topPages.map((p) => (
+                      <div key={p.path} className="flex items-center justify-between text-sm gap-2">
+                        <span className="text-neutral-700 truncate" title={p.path}>{p.path}</span>
+                        <span className="font-semibold text-neutral-900 shrink-0">{p.views.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

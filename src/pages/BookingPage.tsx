@@ -17,11 +17,14 @@ import {
   FileText,
   WarningCircle,
   DownloadSimple,
+  Airplane,
 } from "@phosphor-icons/react";
 import { downloadContractPdf } from "../lib/generateContractPdf";
 import SignaturePad from "../components/SignaturePad";
 import { useQuery, useMutation } from "../hooks/useApi";
 import { trackBeginCheckout } from "../lib/analytics";
+import { trackEvent } from "../lib/track";
+import { categoryLabel, transmissionLabel } from "../i18n/dataLabels";
 import Footer from "../components/Footer";
 import { useSEO } from "../hooks/useSEO";
 import {
@@ -54,6 +57,7 @@ interface BookingForm {
   lastName: string;
   phone: string;
   email: string;
+  flightNumber: string;
   /** Map of extra.id → quantity. Includes the single chosen insurance and any other extras. */
   selectedExtras: Record<string, number>;
   discountCode: string;
@@ -197,6 +201,7 @@ export default function BookingPage() {
     if (!car || beginCheckoutTracked.current) return;
     beginCheckoutTracked.current = true;
     trackBeginCheckout({ carName: `${car.brand} ${car.model}`, pricePerDay: car.pricePerDay, category: car.category });
+    trackEvent("begin_checkout", { car: `${car.brand} ${car.model}`, category: car.category });
   }, [car?.id]);
 
   const [form, setForm] = useState<BookingForm>({
@@ -210,6 +215,7 @@ export default function BookingPage() {
     lastName: "",
     phone: "",
     email: "",
+    flightNumber: "",
     selectedExtras: {},
     discountCode: "",
   });
@@ -264,6 +270,24 @@ export default function BookingPage() {
   const startDateObj = React.useMemo(() => (form.startDate ? parseLocalDate(form.startDate) : null), [form.startDate]);
   const endDateObj = React.useMemo(() => (form.endDate ? parseLocalDate(form.endDate) : null), [form.endDate]);
 
+  // Pickup/return use real <input type="time">. `min` is the current time when
+  // the date is today, so you can't pick the past. Helpers below.
+  const toHM = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const nowTimeValue = toHM(new Date());
+  const nowPlus = (mins: number) => { const d = new Date(); d.setMinutes(d.getMinutes() + mins); return toHM(d); };
+
+  // Selecting today auto-fills the pickup time with "now + 10 min".
+  React.useEffect(() => {
+    if (form.startDate !== todayInputValue) return;
+    setForm((f) => ({ ...f, startTime: nowPlus(10) }));
+  }, [form.startDate, todayInputValue]);
+  // For a same-day return, bump it forward only if it landed in the past.
+  React.useEffect(() => {
+    if (form.endDate !== todayInputValue) return;
+    const nowHM = toHM(new Date());
+    setForm((f) => (f.endTime < nowHM ? { ...f, endTime: nowPlus(10) } : f));
+  }, [form.endDate, todayInputValue]);
+
   // Check if car is available (status + date conflict)
   const carStatusBlocked = car
     ? car.status === "I rezervuar" || car.status === "Në mirëmbajtje"
@@ -308,6 +332,8 @@ export default function BookingPage() {
     companyEmail?: string;
     companyAddress?: string;
   }>({});
+  // Digital contract section can be toggled off from admin Settings.
+  const [contractEnabled, setContractEnabled] = useState(true);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/settings/public")
@@ -320,6 +346,7 @@ export default function BookingPage() {
           companyEmail: j.company_email || undefined,
           companyAddress: j.company_address || undefined,
         });
+        setContractEnabled(j.booking_contract_enabled !== "false");
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -473,7 +500,9 @@ export default function BookingPage() {
       if (!start || !end) {
         newErrors.endDate = t("booking.validation.endDateAfter");
       } else {
-        if (start < new Date()) newErrors.startDate = t("booking.validation.startDatePast");
+        const nowFloor = new Date();
+        nowFloor.setMinutes(0, 0, 0); // allow booking the current hour, not earlier
+        if (start < nowFloor) newErrors.startDate = t("booking.validation.startDatePast");
         if (end <= start) newErrors.endDate = t("booking.validation.endDateAfter");
         if (minDaysRequired > 0 && days < minDaysRequired) newErrors.endDate = t("booking.validation.minDays", { count: minDaysRequired });
       }
@@ -490,17 +519,19 @@ export default function BookingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let valid = validate();
-    if (!signatureData) {
-      setSignatureError(true);
-      valid = false;
-    } else {
-      setSignatureError(false);
-    }
-    if (!termsAccepted) {
-      setTermsError(true);
-      valid = false;
-    } else {
-      setTermsError(false);
+    if (contractEnabled) {
+      if (!signatureData) {
+        setSignatureError(true);
+        valid = false;
+      } else {
+        setSignatureError(false);
+      }
+      if (!termsAccepted) {
+        setTermsError(true);
+        valid = false;
+      } else {
+        setTermsError(false);
+      }
     }
     if (!valid) return;
     if (!car) return;
@@ -526,6 +557,7 @@ export default function BookingPage() {
         startTime: form.startTime,
         endDate: form.endDate,
         endTime: form.endTime,
+        flightNumber: form.flightNumber.trim() || undefined,
         notes: "",
         source: "Web",
         status: "Pending",
@@ -537,8 +569,10 @@ export default function BookingPage() {
         discountCode: form.discountCode || undefined,
       });
       setSubmitted(true);
-      // Redirect to thank-you page with booking summary via state (no PII in URL)
-      navigate(localePath('/faleminderit'), {
+      // Always redirect to the single English thank-you URL (/en/thank-you) so
+      // there is ONE conversion page for Google Ads / analytics, regardless of
+      // the site language. Booking summary passed via state (no PII in URL).
+      navigate('/en/thank-you', {
         state: {
           rid: reservation.id,
           name: `${form.firstName.trim()} ${form.lastName.trim()}`,
@@ -777,20 +811,15 @@ export default function BookingPage() {
                         weight="regular"
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                       />
-                      <select
+                      <input
+                        type="time"
                         value={form.startTime}
+                        min={form.startDate === todayInputValue ? nowTimeValue : undefined}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, startTime: e.target.value }))
                         }
-                        className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
-                      >
-                        {Array.from({ length: 24 }, (_, i) => {
-                          const h = String(i).padStart(2, "0");
-                          return (
-                            <option key={h} value={`${h}:00`}>{`${h}:00`}</option>
-                          );
-                        })}
-                      </select>
+                        className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      />
                     </div>
                   </div>
                   {errors.startDate && (
@@ -827,20 +856,15 @@ export default function BookingPage() {
                         weight="regular"
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                       />
-                      <select
+                      <input
+                        type="time"
                         value={form.endTime}
+                        min={form.endDate === todayInputValue ? nowTimeValue : undefined}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, endTime: e.target.value }))
                         }
-                        className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
-                      >
-                        {Array.from({ length: 24 }, (_, i) => {
-                          const h = String(i).padStart(2, "0");
-                          return (
-                            <option key={h} value={`${h}:00`}>{`${h}:00`}</option>
-                          );
-                        })}
-                      </select>
+                        className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      />
                     </div>
                   </div>
                   {minDaysViolation && !errors.endDate && (
@@ -978,6 +1002,32 @@ export default function BookingPage() {
                   {errors.email && (
                     <p className="text-xs text-error mt-1">{errors.email}</p>
                   )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="b-flight"
+                    className="block text-sm font-medium text-neutral-700 mb-1.5"
+                  >
+                    {t("booking.flightNumber")}
+                  </label>
+                  <div className="relative">
+                    <Airplane
+                      size={16}
+                      weight="regular"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                    />
+                    <input
+                      id="b-flight"
+                      type="text"
+                      value={form.flightNumber}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, flightNumber: e.target.value }))
+                      }
+                      placeholder={t("booking.flightNumberPlaceholder")}
+                      className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-neutral-400"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1132,11 +1182,6 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* Seasonal Price Table (always visible, collapsed by default) */}
-            {car && (
-              <SeasonalPriceTable basePrice={car.pricePerDay} />
-            )}
-
             {/* Discount */}
             <div className="bg-white rounded-lg border border-border p-6">
               <h2 className="text-lg font-medium text-neutral-900 mb-4">
@@ -1176,6 +1221,7 @@ export default function BookingPage() {
             </div>
 
             {/* Contract & Signature */}
+            {contractEnabled && (
             <div className="bg-white rounded-lg border border-border p-6">
               <div className="flex items-center gap-2 mb-1">
                 <FileText size={20} weight="regular" className="text-primary" />
@@ -1308,6 +1354,7 @@ export default function BookingPage() {
                 </div>
               )}
             </div>
+            )}
 
             {carStatusBlocked && (
               <div className="bg-error/10 border border-error/30 rounded-lg p-4 flex items-start gap-3">
@@ -1387,7 +1434,7 @@ export default function BookingPage() {
                       {car.brand} {car.model}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      {car.category} · {car.transmission}
+                      {categoryLabel(t, car.category)} · {transmissionLabel(t, car.transmission)}
                     </p>
                     <p className="text-xs text-neutral-500">
                       €{displayPricePerDay}/ditë

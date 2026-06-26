@@ -896,6 +896,7 @@ export default function AdminReservations() {
                 { label: "Makina", value: getCarName(selectedRes.carId) },
                 { label: "Tërhiqni nga", value: selectedRes.pickupLocation },
                 { label: "Ktheni në", value: selectedRes.dropoffLocation },
+                ...(selectedRes.flightNumber ? [{ label: "Numri i fluturimit", value: selectedRes.flightNumber }] : []),
                 { label: "Data e nisjes", value: new Date(selectedRes.startDate).toLocaleDateString("sq-AL") },
                 { label: "Data e kthimit", value: new Date(selectedRes.endDate).toLocaleDateString("sq-AL") },
                 { label: "Çmimi total", value: `€${selectedRes.totalPrice}` },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash, FileText, SortAscending } from "@phosphor-icons/react";
 import { invalidateLocationsCache } from "../../hooks/useLocations";
 
 const API_BASE = "/api";
@@ -426,6 +426,55 @@ export default function AdminSettings() {
                   Ndryshimet ende nuk janë ruajtur — klikoni <strong>Ruaj</strong>.
                 </p>
               )}
+
+              <div className="border-t border-border my-6" />
+
+              {/* Digital contract toggle */}
+              <div className="mb-2">
+                <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                  <FileText size={16} weight="duotone" className="text-primary" />
+                  Kontrata dixhitale
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5 mb-3">
+                  Aktivizo ose çaktivizo seksionin e kontratës dhe nënshkrimit në faqen e rezervimit.
+                </p>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings["booking_contract_enabled"] !== "false"}
+                    onChange={(e) => handleChange("booking_contract_enabled", e.target.checked ? "true" : "false")}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-sm text-neutral-700">
+                    {settings["booking_contract_enabled"] !== "false"
+                      ? "Kontrata është aktive (shfaqet te rezervimi)"
+                      : "Kontrata është çaktivizuar (nuk shfaqet)"}
+                  </span>
+                </label>
+              </div>
+
+              <div className="border-t border-border my-6" />
+
+              {/* Default fleet sort order */}
+              <div className="mb-2">
+                <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                  <SortAscending size={16} weight="duotone" className="text-primary" />
+                  Renditja e makinave (faqja Flota)
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5 mb-3">
+                  Si renditen makinat kur hapet faqja <strong>/flota</strong> (vlen për çdo gjuhë). Vizitori mund ta ndryshojë vetë me dropdown-in.
+                </p>
+                <select
+                  value={settings["fleet_default_sort"] || "default"}
+                  onChange={(e) => handleChange("fleet_default_sort", e.target.value)}
+                  className="w-full max-w-xs px-3 py-2.5 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="default">E parazgjedhur (të veçuarat para)</option>
+                  <option value="price_asc">Çmimi: nga më i ulëti tek më i larti</option>
+                  <option value="price_desc">Çmimi: nga më i larti tek më i ulëti</option>
+                  <option value="name_asc">Emri (A–Z)</option>
+                </select>
+              </div>
 
               <div className="border-t border-border my-6" />
             </div>

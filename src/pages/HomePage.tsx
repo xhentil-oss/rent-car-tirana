@@ -27,13 +27,14 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
+import { trackEvent } from "../lib/track";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import { getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
-import { formatLocationOption } from "../lib/locations";
+import { formatLocationName } from "../lib/locations";
 import DOMPurify from "dompurify";
 
 const whyUsIcons = [CurrencyDollar, Clock, ShieldCheck, MapPin];
@@ -154,9 +155,12 @@ export default function HomePage() {
   }, []);
 
   const featuredCars = allCars
-    ? featuredCarIds.length > 0
-      ? allCars.filter((c: any) => featuredCarIds.includes(String(c.id)))
-      : allCars
+    ? (featuredCarIds.length > 0
+        ? allCars.filter((c: any) => featuredCarIds.includes(String(c.id)))
+        : allCars
+      )
+        .slice()
+        .sort((a: any, b: any) => Number(a.pricePerDay) - Number(b.pricePerDay))
     : [];
 
   const { data: dbReviews } = useQuery("Review", {
@@ -272,13 +276,13 @@ export default function HomePage() {
                   <select
                     id="pickup"
                     value={pickup}
-                    onChange={(e) => setPickup(e.target.value)}
+                    onChange={(e) => { setPickup(e.target.value); if (e.target.value) trackEvent("select_pickup", { location: e.target.value }); }}
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                   >
                     <option value="">{t("home.hero.selectPlace")}</option>
                     {locationOptions.map((loc) => (
                       <option key={loc.value} value={loc.value}>
-                        {formatLocationOption(loc)}
+                        {formatLocationName(loc)}
                       </option>
                     ))}
                   </select>
@@ -294,13 +298,13 @@ export default function HomePage() {
                   <select
                     id="dropoff"
                     value={dropoff}
-                    onChange={(e) => setDropoff(e.target.value)}
+                    onChange={(e) => { setDropoff(e.target.value); if (e.target.value) trackEvent("select_dropoff", { location: e.target.value }); }}
                     className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none"
                   >
                     <option value="">{t("home.hero.selectPlace")}</option>
                     {locationOptions.map((loc) => (
                       <option key={loc.value} value={loc.value}>
-                        {formatLocationOption(loc)}
+                        {formatLocationName(loc)}
                       </option>
                     ))}
                   </select>
@@ -464,8 +468,11 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-6 md:hidden text-center">
-            <LLink to="/flota" className="inline-flex items-center gap-2 text-sm font-medium text-primary no-underline">
+          <div className="mt-10 text-center">
+            <LLink
+              to="/flota"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity no-underline"
+            >
               {t("home.featuredCars.viewAll")}
               <ArrowRight size={16} weight="regular" />
             </LLink>
@@ -777,9 +784,10 @@ export default function HomePage() {
           <p className="text-blue-100 mb-8">{t("home.cta.subtitle")}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href={`https://wa.me/355697562951?text=${t("home.cta.whatsappMsg")}`}
+              href={`https://wa.me/355697562951?text=${encodeURIComponent(t("home.cta.whatsappMsg"))}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent("whatsapp_click")}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-medium bg-success text-success-foreground hover:opacity-90 transition-opacity duration-200 no-underline"
             >
               <Phone size={18} weight="regular" />

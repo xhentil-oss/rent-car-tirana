@@ -41,6 +41,7 @@ import {
 } from "@phosphor-icons/react";
 import { useQuery } from "../hooks/useApi";
 import { trackViewItem } from "../lib/analytics";
+import { trackEvent } from "../lib/track";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
@@ -49,6 +50,7 @@ import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from
 import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
+import { categoryLabel, transmissionLabel, fuelLabel } from "../i18n/dataLabels";
 import { formatLocationOption } from "../lib/locations";
 import { parseLocalDate, buildLocalDateTime, formatDateInputValue } from "../lib/dateHelpers";
 
@@ -199,6 +201,7 @@ export default function CarDetailPage() {
     if (!car || viewItemTracked.current) return;
     viewItemTracked.current = true;
     trackViewItem({ carName: `${car.brand} ${car.model}`, pricePerDay: car.pricePerDay, category: car.category });
+    trackEvent("view_car", { car: `${car.brand} ${car.model}`, category: car.category });
   }, [car?.id]);
 
   // Gallery keyboard navigation + focus trap
@@ -368,12 +371,16 @@ export default function CarDetailPage() {
 
   // (seasonalPricePerDay and effectivePricePerDay are computed above useSEO)
 
-  // "List price" — always higher than actual to show discount visual
+  // Visual price shown as the "current" price — promo (displayPrice) overrides
+  // when set. The real seasonal price (effectivePricePerDay) still drives all
+  // booking calculations below.
+  const shownPrice = car?.displayPrice != null ? Math.round(car.displayPrice) : effectivePricePerDay;
+  // "List price" — struck-through visual; always a bit higher than what's shown.
   const listPrice = useMemo(
     () => car ? Math.max(Math.round(car.pricePerDay * 1.2), Math.round(effectivePricePerDay * 1.01)) : 0,
     [car?.pricePerDay, effectivePricePerDay]
   );
-  const discount = listPrice > effectivePricePerDay ? Math.round(((listPrice - effectivePricePerDay) / listPrice) * 100) : 0;
+  const discount = listPrice > shownPrice ? Math.round(((listPrice - shownPrice) / listPrice) * 100) : 0;
 
   // Is a monthly rate active for the selected start month?
   const monthlyRateActive = useMemo(() => {
@@ -506,11 +513,11 @@ export default function CarDetailPage() {
   const availableStatus = !carIsUnavailable && !dateConflict;
 
   const specs = [
-    { icon: Gear, label: t("carDetail.specs.transmission"), value: car.transmission },
-    { icon: GasPump, label: t("carDetail.specs.fuel"), value: car.fuel },
+    { icon: Gear, label: t("carDetail.specs.transmission"), value: transmissionLabel(t, car.transmission) },
+    { icon: GasPump, label: t("carDetail.specs.fuel"), value: fuelLabel(t, car.fuel) },
     { icon: Users, label: t("carDetail.specs.seats"), value: t("carDetail.hero.seats", { count: car.seats }) },
     { icon: Briefcase, label: t("carDetail.specs.luggage"), value: t("carDetail.hero.luggage", { count: car.luggage }) },
-    { icon: MapPin, label: t("carDetail.specs.category"), value: car.category },
+    { icon: MapPin, label: t("carDetail.specs.category"), value: categoryLabel(t, car.category) },
     { icon: ShieldCheck, label: t("carDetail.specs.insurance"), value: t("carDetail.specs.insuranceValue") },
   ];
 
@@ -740,7 +747,7 @@ export default function CarDetailPage() {
             </LLink>
             <CaretRight size={10} className="text-white/30" />
             <LLink to={`/flota?kategoria=${car.category}`} className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors no-underline uppercase tracking-widest">
-              {car.category}
+              {categoryLabel(t, car.category)}
             </LLink>
             <CaretRight size={10} className="text-white/30" />
             <span className="text-xs font-medium text-white/80 uppercase tracking-widest">{car.brand} {car.model}</span>
@@ -754,8 +761,8 @@ export default function CarDetailPage() {
           {/* Quick pills */}
           <div className="flex flex-wrap gap-2 mb-5">
             {[
-              { icon: Gear, text: car.transmission },
-              { icon: GasPump, text: car.fuel },
+              { icon: Gear, text: transmissionLabel(t, car.transmission) },
+              { icon: GasPump, text: fuelLabel(t, car.fuel) },
               { icon: Users, text: t("carDetail.hero.seats", { count: car.seats }) },
               { icon: Briefcase, text: t("carDetail.hero.luggage", { count: car.luggage }) },
             ].map(({ icon: Icon, text }) => (
@@ -771,7 +778,7 @@ export default function CarDetailPage() {
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.from")}</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-white">€{effectivePricePerDay}</span>
+                <span className="text-4xl font-bold text-white">€{shownPrice}</span>
                 <span className="text-white/50 text-sm">{t("carDetail.perDay")}</span>
                 <span className="text-white/40 text-base line-through decoration-red-400/70">€{listPrice}</span>
                 {discount > 0 && (
@@ -782,18 +789,13 @@ export default function CarDetailPage() {
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.weekly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{Math.round(effectivePricePerDay * 7)}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(shownPrice * 7)}</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <span className="text-xs text-white/50 uppercase tracking-wider block mb-0.5">{t("carDetail.monthly")}</span>
-              <span className="text-xl font-semibold text-white/80">€{Math.round(effectivePricePerDay * 28)}</span>
+              <span className="text-xl font-semibold text-white/80">€{Math.round(shownPrice * 28)}</span>
             </div>
-            <div className="h-8 w-px bg-white/20 hidden md:block" />
-            {/* Season badge */}
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm ${currentSeason.badgeColor}`}>
-              {currentSeason.emoji} {currentSeason.label}
-            </span>
             {/* Share button */}
             <button
               onClick={handleShare}
@@ -1157,11 +1159,11 @@ export default function CarDetailPage() {
                       <h2 className="text-white text-xl font-bold">
                         {car.brand} {car.model}
                       </h2>
-                      <p className="text-white/60 text-xs mt-0.5">{car.category} · {car.year}</p>
+                      <p className="text-white/60 text-xs mt-0.5">{categoryLabel(t, car.category)} · {car.year}</p>
                     </div>
                     <div className="text-right">
                       <span className="text-white/40 text-xs line-through decoration-red-400/70 block">€{listPrice}/{t("carDetail.bookingCard.perDayShort")}</span>
-                      <span className="text-3xl font-bold text-white">€{effectivePricePerDay}</span>
+                      <span className="text-3xl font-bold text-white">€{shownPrice}</span>
                       <span className="text-white/60 text-xs">{t("carDetail.bookingCard.perDayShort")}</span>
                       {discount > 0 && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/90 text-white text-[10px] font-bold">-{discount}%</span>

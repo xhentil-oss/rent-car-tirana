@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import CarCard from "../components/CarCard";
 import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
+import { categoryLabel, transmissionLabel, fuelLabel } from "../i18n/dataLabels";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -18,9 +19,38 @@ export default function FleetPage() {
   const [activeFuel, setActiveFuel] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>("default");
+  // Admin-configured default sort for the fleet page (Settings). Applied on load
+  // unless the visitor has already picked a different sort.
+  const [defaultSort, setDefaultSort] = useState<string>("default");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/settings/public")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        const ds = j.fleet_default_sort;
+        if (ds && ["default", "price_asc", "price_desc", "name_asc"].includes(ds)) {
+          setDefaultSort(ds);
+          setSortBy((prev) => (prev === "default" ? ds : prev));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const filterBarRef = useRef<HTMLDivElement>(null);
+
+  // When the page changes via pagination, scroll back up to the top of the list
+  // (skip the initial mount so the page doesn't jump on first load).
+  const pageMounted = useRef(false);
+  useEffect(() => {
+    if (!pageMounted.current) { pageMounted.current = true; return; }
+    const el = filterBarRef.current;
+    const y = el ? el.getBoundingClientRect().top + window.scrollY - 72 : 0;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  }, [page]);
 
   // Click outside to close mobile filter panel
   useEffect(() => {
@@ -99,19 +129,19 @@ export default function FleetPage() {
     setActiveTransmission("");
     setActiveFuel("");
     setMaxPrice(priceMax);
-    setSortBy("default");
+    setSortBy(defaultSort);
     setPage(1);
   };
 
   const hasFilters =
-    activeCategory || activeTransmission || activeFuel || effectiveMaxPrice < priceMax || sortBy !== "default";
+    activeCategory || activeTransmission || activeFuel || effectiveMaxPrice < priceMax || sortBy !== defaultSort;
 
   const activeFilterCount =
     (activeCategory ? 1 : 0) +
     (activeTransmission ? 1 : 0) +
     (activeFuel ? 1 : 0) +
     (effectiveMaxPrice < priceMax ? 1 : 0) +
-    (sortBy !== "default" ? 1 : 0);
+    (sortBy !== defaultSort ? 1 : 0);
 
   const FilterChip = ({
     label,
@@ -174,24 +204,24 @@ export default function FleetPage() {
             <div className="flex gap-2 overflow-x-auto px-4 pb-2 -mt-1 scrollbar-thin">
               {activeCategory && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
-                  {activeCategory}
-                  <button onClick={(e) => { e.stopPropagation(); setActiveCategory(""); }} aria-label={t("fleet.removeFilter", { label: activeCategory })}>
+                  {categoryLabel(t, activeCategory)}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveCategory(""); }} aria-label={t("fleet.removeFilter", { label: categoryLabel(t, activeCategory) })}>
                     <X size={11} weight="bold" />
                   </button>
                 </span>
               )}
               {activeTransmission && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
-                  {activeTransmission}
-                  <button onClick={(e) => { e.stopPropagation(); setActiveTransmission(""); }} aria-label={t("fleet.removeFilter", { label: activeTransmission })}>
+                  {transmissionLabel(t, activeTransmission)}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveTransmission(""); }} aria-label={t("fleet.removeFilter", { label: transmissionLabel(t, activeTransmission) })}>
                     <X size={11} weight="bold" />
                   </button>
                 </span>
               )}
               {activeFuel && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary text-primary-foreground whitespace-nowrap shrink-0">
-                  {activeFuel}
-                  <button onClick={(e) => { e.stopPropagation(); setActiveFuel(""); }} aria-label={t("fleet.removeFilter", { label: activeFuel })}>
+                  {fuelLabel(t, activeFuel)}
+                  <button onClick={(e) => { e.stopPropagation(); setActiveFuel(""); }} aria-label={t("fleet.removeFilter", { label: fuelLabel(t, activeFuel) })}>
                     <X size={11} weight="bold" />
                   </button>
                 </span>
@@ -222,7 +252,7 @@ export default function FleetPage() {
                       onClick={() => { setActiveCategory(activeCategory === cat ? "" : cat); setPage(1); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeCategory === cat ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
                     >
-                      {cat}
+                      {categoryLabel(t, cat)}
                     </button>
                   ))}
                 </div>
@@ -237,7 +267,7 @@ export default function FleetPage() {
                       onClick={() => { setActiveTransmission(activeTransmission === tr ? "" : tr); setPage(1); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeTransmission === tr ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
                     >
-                      {tr}
+                      {transmissionLabel(t, tr)}
                     </button>
                   ))}
                 </div>
@@ -252,7 +282,7 @@ export default function FleetPage() {
                       onClick={() => { setActiveFuel(activeFuel === f ? "" : f); setPage(1); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${activeFuel === f ? "bg-primary text-primary-foreground border-primary" : "bg-white text-neutral-700 border-border"}`}
                     >
-                      {f}
+                      {fuelLabel(t, f)}
                     </button>
                   ))}
                 </div>
@@ -334,7 +364,7 @@ export default function FleetPage() {
                       : "bg-white text-neutral-700 border-border hover:border-primary hover:text-primary"
                   }`}
                 >
-                  {cat}
+                  {categoryLabel(t, cat)}
                 </button>
               ))}
             </div>
@@ -353,7 +383,7 @@ export default function FleetPage() {
                       : "bg-white text-neutral-700 border-border hover:border-primary hover:text-primary"
                   }`}
                 >
-                  {tr}
+                  {transmissionLabel(t, tr)}
                 </button>
               ))}
             </div>
@@ -372,7 +402,7 @@ export default function FleetPage() {
                       : "bg-white text-neutral-700 border-border hover:border-primary hover:text-primary"
                   }`}
                 >
-                  {f}
+                  {fuelLabel(t, f)}
                 </button>
               ))}
             </div>
@@ -426,13 +456,13 @@ export default function FleetPage() {
           {hasFilters && (
             <div className="flex flex-wrap gap-2 mt-3">
               {activeCategory && (
-                <FilterChip label={activeCategory} onRemove={() => setActiveCategory("")} />
+                <FilterChip label={categoryLabel(t, activeCategory)} onRemove={() => setActiveCategory("")} />
               )}
               {activeTransmission && (
-                <FilterChip label={activeTransmission} onRemove={() => setActiveTransmission("")} />
+                <FilterChip label={transmissionLabel(t, activeTransmission)} onRemove={() => setActiveTransmission("")} />
               )}
               {activeFuel && (
-                <FilterChip label={activeFuel} onRemove={() => setActiveFuel("")} />
+                <FilterChip label={fuelLabel(t, activeFuel)} onRemove={() => setActiveFuel("")} />
               )}
               {effectiveMaxPrice < priceMax && (
                 <FilterChip

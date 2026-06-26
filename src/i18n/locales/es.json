@@ -83,19 +83,43 @@
     "categories": {
       "title": "Nuestras categorías",
       "subtitle": "Encuentra el coche ideal para cada necesidad",
-      "ekonomike": { "name": "Económico", "desc": "Ideal para la ciudad, bajo consumo" },
-      "suv": { "name": "SUV", "desc": "Amplio, apto para cualquier terreno" },
-      "luksoze": { "name": "Lujo", "desc": "Elegancia y máximo confort" },
-      "familjare": { "name": "Familiar", "desc": "Perfecto para familias y grupos" },
-      "automatike": { "name": "Automático", "desc": "Conducción fácil, tecnología moderna" }
+      "ekonomike": {
+        "name": "Económico",
+        "desc": "Ideal para la ciudad, bajo consumo"
+      },
+      "suv": {
+        "name": "SUV",
+        "desc": "Amplio, apto para cualquier terreno"
+      },
+      "luksoze": {
+        "name": "Lujo",
+        "desc": "Elegancia y máximo confort"
+      },
+      "familjare": {
+        "name": "Familiar",
+        "desc": "Perfecto para familias y grupos"
+      },
+      "automatike": {
+        "name": "Automático",
+        "desc": "Conducción fácil, tecnología moderna"
+      }
     },
     "howItWorks": {
       "title": "¿Cómo funciona?",
       "subtitle": "Reserva tu coche en 3 pasos simples",
       "steps": [
-        { "title": "Elige tu coche", "desc": "Explora nuestra flota completa y filtra por categoría (económico, SUV, lujo, automático), precio diario y disponibilidad. Cada página de coche muestra las especificaciones, equipamiento incluido, opciones de seguro y un precio todo incluido transparente — sin sorpresas." },
-        { "title": "Confirma la reserva", "desc": "Completa el formulario online con tus datos personales, lugar de recogida (aeropuerto de Tirana o centro), fechas y nivel de seguro preferido. Revisa el total, aplica un código de descuento y firma el contrato digital — todo en menos de 2 minutos." },
-        { "title": "Recibe tus llaves", "desc": "Al llegar al aeropuerto de Tirana, nuestro representante te esperará en la sala de llegadas con un cartel con tu nombre. La entrega es rápida — inspecciona el coche juntos, recoge las llaves y listo para conducir por toda Albania." }
+        {
+          "title": "Elige tu coche",
+          "desc": "Explora nuestra flota completa y filtra por categoría (económico, SUV, lujo, automático), precio diario y disponibilidad. Cada página de coche muestra las especificaciones, equipamiento incluido, opciones de seguro y un precio todo incluido transparente — sin sorpresas."
+        },
+        {
+          "title": "Confirma la reserva",
+          "desc": "Completa el formulario online con tus datos personales, lugar de recogida (aeropuerto de Tirana o centro), fechas y nivel de seguro preferido. Revisa el total, aplica un código de descuento y firma el contrato digital — todo en menos de 2 minutos."
+        },
+        {
+          "title": "Recibe tus llaves",
+          "desc": "Al llegar al aeropuerto de Tirana, nuestro representante te esperará en la sala de llegadas con un cartel con tu nombre. La entrega es rápida — inspecciona el coche juntos, recoge las llaves y listo para conducir por toda Albania."
+        }
       ],
       "cta": "Reservar — es rápido"
     },
@@ -103,16 +127,37 @@
       "title": "¿Por qué elegir Rent Car Tirana?",
       "subtitle": "Somos el servicio de alquiler más fiable de Albania, operando en el aeropuerto internacional de Tirana (TIA) y el centro desde 2018. Nuestra flota moderna, precios transparentes y equipo dedicado 24/7 nos han convertido en la primera opción para miles de viajeros cada año.",
       "items": [
-        { "title": "Precios claros", "desc": "Sin cargos ocultos. Cada presupuesto incluye IVA, seguro básico e impuestos viales. El precio online es el precio exacto que pagas al recoger. Sin recargo de aeropuerto, sin trampas de combustible, sin sorpresas en tu tarjeta." },
-        { "title": "Soporte 24/7", "desc": "Siempre estamos disponibles. Ya sea que necesites ayuda en una llegada nocturna al aeropuerto, tengas una pregunta sobre tu reserva o necesites asistencia en carretera en cualquier lugar de Albania — nuestro equipo está a una llamada." },
-        { "title": "Seguro incluido", "desc": "Todos los coches incluyen seguro CDW (Collision Damage Waiver) básico sin coste extra. Cubre los daños al vehículo por encima de la franquicia estándar. Durante la reserva puedes ampliar a Super CDW con franquicia cero — muy recomendado para rutas de montaña o costeras." },
-        { "title": "Flexibilidad", "desc": "Recoge en el aeropuerto y devuelve en el centro, o al revés — sin coste extra. Operamos 7 días/semana, 24 h/día. Alquileres de un solo trayecto, tarifas mensuales y reservas de último minuto disponibles." }
+        {
+          "title": "Precios claros",
+          "desc": "Sin cargos ocultos. Cada presupuesto incluye IVA, seguro básico e impuestos viales. El precio online es el precio exacto que pagas al recoger. Sin recargo de aeropuerto, sin trampas de combustible, sin sorpresas en tu tarjeta."
+        },
+        {
+          "title": "Soporte 24/7",
+          "desc": "Siempre estamos disponibles. Ya sea que necesites ayuda en una llegada nocturna al aeropuerto, tengas una pregunta sobre tu reserva o necesites asistencia en carretera en cualquier lugar de Albania — nuestro equipo está a una llamada."
+        },
+        {
+          "title": "Seguro incluido",
+          "desc": "Todos los coches incluyen seguro CDW (Collision Damage Waiver) básico sin coste extra. Cubre los daños al vehículo por encima de la franquicia estándar. Durante la reserva puedes ampliar a Super CDW con franquicia cero — muy recomendado para rutas de montaña o costeras."
+        },
+        {
+          "title": "Flexibilidad",
+          "desc": "Recoge en el aeropuerto y devuelve en el centro, o al revés — sin coste extra. Operamos 7 días/semana, 24 h/día. Alquileres de un solo trayecto, tarifas mensuales y reservas de último minuto disponibles."
+        }
       ]
     },
     "guarantees": [
-      { "title": "Garantía de precio", "desc": "Si encuentras un precio más bajo, lo igualamos sin condiciones." },
-      { "title": "Sin cargos ocultos", "desc": "El precio final incluye todo: impuestos, seguro básico y entrega." },
-      { "title": "Cancelación gratis", "desc": "Cancela gratis hasta 48 h antes de la recogida. Sin riesgos, sin penalizaciones." }
+      {
+        "title": "Garantía de precio",
+        "desc": "Si encuentras un precio más bajo, lo igualamos sin condiciones."
+      },
+      {
+        "title": "Sin cargos ocultos",
+        "desc": "El precio final incluye todo: impuestos, seguro básico y entrega."
+      },
+      {
+        "title": "Cancelación gratis",
+        "desc": "Cancela gratis hasta 48 h antes de la recogida. Sin riesgos, sin penalizaciones."
+      }
     ],
     "airportSection": {
       "title": "Alquiler de coches en el aeropuerto de Tirana — recogida gratuita incluida",
@@ -131,21 +176,48 @@
       "subtitle": "Desde el aeropuerto Madre Teresa (TIA), toda Albania está a tu alcance",
       "intro": "Tu alquiler de coche en el aeropuerto de Tirana abre la puerta a uno de los países más bellos y menos descubiertos de Europa. Albania ofrece playas vírgenes del Adriático y Jónico, ciudades patrimonio UNESCO, ruinas ilirias antiguas y paisajes montañosos espectaculares — todo a pocas horas del aeropuerto. Aquí están los destinos más populares:",
       "places": [
-        { "name": "Durrës — 35 km · 30 min", "desc": "La principal ciudad costera de Albania y el destino playero más popular. Conduce por las amplias playas de arena del Adriático, explora uno de los anfiteatros romanos más grandes de los Balcanes y disfruta del paseo marítimo." },
-        { "name": "Berat — 120 km · 1 h 30", "desc": "Patrimonio mundial de la UNESCO, conocida como la 'ciudad de las mil ventanas'. El casco antiguo otomano se extiende junto al río Osum, dominado por un castillo medieval con vistas panorámicas." },
-        { "name": "Vlorë — 150 km · 2 h", "desc": "Puerta de la Riviera albanesa y cuna de la independencia albanesa en 1912. Rodeada de aguas cristalinas, Vlorë es la base ideal para explorar el puerto de Llogara, la península de Karaburun y los pueblos costeros del sur." },
-        { "name": "Shkodër — 110 km · 1 h 20", "desc": "Capital cultural del norte y puerta de los Alpes albaneses. Visita el icónico castillo de Rozafa sobre el lago Shkodër, explora el bazar histórico y úsala como base para aventuras en los Alpes albaneses — la última naturaleza salvaje de Europa." },
-        { "name": "Sarandë — 280 km · 3 h 30", "desc": "La joya de la Riviera albanesa y uno de los secretos mejor guardados del Mediterráneo. Visita las ruinas antiguas de Butrint (UNESCO), nada en las aguas turquesas del Ojo Azul y relájate en las playas de arena blanca de Ksamil." }
+        {
+          "name": "Durrës — 35 km · 30 min",
+          "desc": "La principal ciudad costera de Albania y el destino playero más popular. Conduce por las amplias playas de arena del Adriático, explora uno de los anfiteatros romanos más grandes de los Balcanes y disfruta del paseo marítimo."
+        },
+        {
+          "name": "Berat — 120 km · 1 h 30",
+          "desc": "Patrimonio mundial de la UNESCO, conocida como la 'ciudad de las mil ventanas'. El casco antiguo otomano se extiende junto al río Osum, dominado por un castillo medieval con vistas panorámicas."
+        },
+        {
+          "name": "Vlorë — 150 km · 2 h",
+          "desc": "Puerta de la Riviera albanesa y cuna de la independencia albanesa en 1912. Rodeada de aguas cristalinas, Vlorë es la base ideal para explorar el puerto de Llogara, la península de Karaburun y los pueblos costeros del sur."
+        },
+        {
+          "name": "Shkodër — 110 km · 1 h 20",
+          "desc": "Capital cultural del norte y puerta de los Alpes albaneses. Visita el icónico castillo de Rozafa sobre el lago Shkodër, explora el bazar histórico y úsala como base para aventuras en los Alpes albaneses — la última naturaleza salvaje de Europa."
+        },
+        {
+          "name": "Sarandë — 280 km · 3 h 30",
+          "desc": "La joya de la Riviera albanesa y uno de los secretos mejor guardados del Mediterráneo. Visita las ruinas antiguas de Butrint (UNESCO), nada en las aguas turquesas del Ojo Azul y relájate en las playas de arena blanca de Ksamil."
+        }
       ]
     },
     "rentalGuide": {
       "title": "Guía completa para alquilar un coche en el aeropuerto de Tirana",
       "subtitle": "Todo lo que necesitas saber antes de recoger las llaves",
       "items": [
-        { "title": "Documentos requeridos", "desc": "Para alquilar un coche en el aeropuerto de Tirana necesitas tres cosas: permiso de conducir válido en posesión durante al menos un año, DNI o pasaporte válido, y una tarjeta de crédito/débito para el depósito reembolsable. Se aceptan permisos internacionales y de la UE de todos los países." },
-        { "title": "Requisitos de edad y política de conductor joven", "desc": "La edad mínima para alquilar es 21 años. Los conductores de 21-25 años pueden tener un recargo de conductor joven según la categoría. No hay límite máximo de edad. Todos los conductores deben presentar un permiso válido." },
-        { "title": "Seguro y cobertura", "desc": "Cada coche incluye seguro CDW (Collision Damage Waiver) básico sin coste extra. Durante la reserva online puedes ampliar a Super CDW para cobertura total sin franquicia — muy recomendado para explorar las carreteras de montaña y costeras de Albania." },
-        { "title": "Conducir en Albania", "desc": "Las carreteras principales son modernas y bien mantenidas. La autopista SH2 conecta el aeropuerto con el centro en unos 20 minutos. Las rutas costeras y de montaña son pintorescas pero pueden ser estrechas — se recomienda un SUV para rutas fuera de las habituales. Límites: 50 km/h en ciudad, 80 km/h en carreteras principales, 110 km/h en autopista." }
+        {
+          "title": "Documentos requeridos",
+          "desc": "Para alquilar un coche en el aeropuerto de Tirana necesitas tres cosas: permiso de conducir válido en posesión durante al menos un año, DNI o pasaporte válido, y una tarjeta de crédito/débito para el depósito reembolsable. Se aceptan permisos internacionales y de la UE de todos los países."
+        },
+        {
+          "title": "Requisitos de edad y política de conductor joven",
+          "desc": "La edad mínima para alquilar es 21 años. Los conductores de 21-25 años pueden tener un recargo de conductor joven según la categoría. No hay límite máximo de edad. Todos los conductores deben presentar un permiso válido."
+        },
+        {
+          "title": "Seguro y cobertura",
+          "desc": "Cada coche incluye seguro CDW (Collision Damage Waiver) básico sin coste extra. Durante la reserva online puedes ampliar a Super CDW para cobertura total sin franquicia — muy recomendado para explorar las carreteras de montaña y costeras de Albania."
+        },
+        {
+          "title": "Conducir en Albania",
+          "desc": "Las carreteras principales son modernas y bien mantenidas. La autopista SH2 conecta el aeropuerto con el centro en unos 20 minutos. Las rutas costeras y de montaña son pintorescas pero pueden ser estrechas — se recomienda un SUV para rutas fuera de las habituales. Límites: 50 km/h en ciudad, 80 km/h en carreteras principales, 110 km/h en autopista."
+        }
       ]
     },
     "reviews": {
@@ -155,17 +227,50 @@
     "seoText": "Rent Car Tirana es el servicio de alquiler de coches más fiable de Albania, operando directamente en el aeropuerto internacional de Tirana (Madre Teresa — TIA) y el centro de la ciudad. Tanto si buscas alquilar coche en Tirana para un viaje de negocios, vacaciones familiares en la Riviera albanesa o un road trip por los Balcanes — nuestra flota moderna, precios todo incluido transparentes y servicio meet & greet en el aeropuerto nos hacen la elección preferida de miles de viajeros internacionales cada año.",
     "faq": {
       "items": [
-        { "question": "¿Cómo funciona la reserva?", "answer": "Elige tu coche, rellena el formulario con las fechas y tus datos, y confirma. Recibirás un email de confirmación inmediatamente." },
-        { "question": "¿Qué documentos se requieren?", "answer": "Necesitas un permiso válido (mínimo 1 año), DNI o pasaporte, y una tarjeta de crédito/débito para el depósito." },
-        { "question": "¿Puedo recoger el coche en el aeropuerto?", "answer": "¡Sí! Ofrecemos recogida y devolución gratuitas en el aeropuerto internacional Madre Teresa (TIA). Nuestro equipo te espera en llegadas — sin cargo extra, sin esperas." },
-        { "question": "¿Hay algún cargo extra por recogida en el aeropuerto?", "answer": "No. La recogida y devolución en el aeropuerto de Tirana son totalmente gratuitas. El precio que ves al reservar es el precio total — nada extra en el aeropuerto." },
-        { "question": "¿Cómo encontraros en el aeropuerto?", "answer": "Tras aterrizar, dirígete a la sala de llegadas. Nuestro representante te esperará con un cartel con tu nombre. También puedes llamarnos 24/7 al +355 69 756 2951." },
-        { "question": "¿Qué pasa si el coche se avería?", "answer": "Tenemos asistencia 24/7. Te enviamos ayuda inmediatamente o un coche de sustitución sin coste extra." },
-        { "question": "¿Puedo cancelar mi reserva?", "answer": "Sí, puedes cancelar gratis hasta 24 horas antes de la fecha de recogida. Después, se aplica una tarifa de cancelación." },
-        { "question": "¿Qué tipos de coches hay disponibles?", "answer": "Nuestra flota incluye económicos desde 25 €/día, SUV familiares, vehículos premium de lujo y modernos coches automáticos. Todos los vehículos se revisan regularmente, se limpian a fondo antes de cada alquiler y tienen menos de 4 años." },
-        { "question": "¿Puedo devolver el coche en el aeropuerto a cualquier hora?", "answer": "Sí, aceptamos devoluciones en el aeropuerto internacional de Tirana 24 h/día, 7 días/semana — incluidos festivos. Indícanos tu vuelo de vuelta al reservar. Sin cargo extra por devoluciones nocturnas, tempranas o de fin de semana." },
-        { "question": "¿Hay recargo de aeropuerto sobre el precio?", "answer": "No — no cobramos ningún recargo de aeropuerto. Nuestros precios son idénticos tanto si recoges en el aeropuerto como en el centro. Esto nos hace una de las pocas empresas de alquiler de coches en el aeropuerto de Tirana que ofrece precios verdaderamente transparentes." },
-        { "question": "¿A qué distancia está el aeropuerto del centro?", "answer": "El aeropuerto internacional Madre Teresa (TIA) está aproximadamente a 17 km al noroeste del centro de Tirana. En coche por la autopista SH2 son 20-25 minutos con tráfico normal. Con nuestro servicio evitas taxis caros y autobuses llenos." }
+        {
+          "question": "¿Cómo funciona la reserva?",
+          "answer": "Elige tu coche, rellena el formulario con las fechas y tus datos, y confirma. Recibirás un email de confirmación inmediatamente."
+        },
+        {
+          "question": "¿Qué documentos se requieren?",
+          "answer": "Necesitas un permiso válido (mínimo 1 año), DNI o pasaporte, y una tarjeta de crédito/débito para el depósito."
+        },
+        {
+          "question": "¿Puedo recoger el coche en el aeropuerto?",
+          "answer": "¡Sí! Ofrecemos recogida y devolución gratuitas en el aeropuerto internacional Madre Teresa (TIA). Nuestro equipo te espera en llegadas — sin cargo extra, sin esperas."
+        },
+        {
+          "question": "¿Hay algún cargo extra por recogida en el aeropuerto?",
+          "answer": "No. La recogida y devolución en el aeropuerto de Tirana son totalmente gratuitas. El precio que ves al reservar es el precio total — nada extra en el aeropuerto."
+        },
+        {
+          "question": "¿Cómo encontraros en el aeropuerto?",
+          "answer": "Tras aterrizar, dirígete a la sala de llegadas. Nuestro representante te esperará con un cartel con tu nombre. También puedes llamarnos 24/7 al +355 69 756 2951."
+        },
+        {
+          "question": "¿Qué pasa si el coche se avería?",
+          "answer": "Tenemos asistencia 24/7. Te enviamos ayuda inmediatamente o un coche de sustitución sin coste extra."
+        },
+        {
+          "question": "¿Puedo cancelar mi reserva?",
+          "answer": "Sí, puedes cancelar gratis hasta 24 horas antes de la fecha de recogida. Después, se aplica una tarifa de cancelación."
+        },
+        {
+          "question": "¿Qué tipos de coches hay disponibles?",
+          "answer": "Nuestra flota incluye económicos desde 25 €/día, SUV familiares, vehículos premium de lujo y modernos coches automáticos. Todos los vehículos se revisan regularmente, se limpian a fondo antes de cada alquiler y tienen menos de 4 años."
+        },
+        {
+          "question": "¿Puedo devolver el coche en el aeropuerto a cualquier hora?",
+          "answer": "Sí, aceptamos devoluciones en el aeropuerto internacional de Tirana 24 h/día, 7 días/semana — incluidos festivos. Indícanos tu vuelo de vuelta al reservar. Sin cargo extra por devoluciones nocturnas, tempranas o de fin de semana."
+        },
+        {
+          "question": "¿Hay recargo de aeropuerto sobre el precio?",
+          "answer": "No — no cobramos ningún recargo de aeropuerto. Nuestros precios son idénticos tanto si recoges en el aeropuerto como en el centro. Esto nos hace una de las pocas empresas de alquiler de coches en el aeropuerto de Tirana que ofrece precios verdaderamente transparentes."
+        },
+        {
+          "question": "¿A qué distancia está el aeropuerto del centro?",
+          "answer": "El aeropuerto internacional Madre Teresa (TIA) está aproximadamente a 17 km al noroeste del centro de Tirana. En coche por la autopista SH2 son 20-25 minutos con tráfico normal. Con nuestro servicio evitas taxis caros y autobuses llenos."
+        }
       ]
     },
     "registerCta": {
@@ -204,9 +309,18 @@
     "next": "Siguiente",
     "faqTitle": "FAQ sobre la flota",
     "faqItems": [
-      { "question": "¿Cómo filtro los coches?", "answer": "Usa los filtros sobre la lista para elegir categoría, transmisión, combustible y precio." },
-      { "question": "¿Puedo reservar online?", "answer": "Sí, cada coche tiene un botón 'Reservar' que te lleva directo al formulario." },
-      { "question": "¿Qué significa 'Reservado'?", "answer": "El coche no está disponible en las fechas seleccionadas. Puedes contactarnos para otras fechas." }
+      {
+        "question": "¿Cómo filtro los coches?",
+        "answer": "Usa los filtros sobre la lista para elegir categoría, transmisión, combustible y precio."
+      },
+      {
+        "question": "¿Puedo reservar online?",
+        "answer": "Sí, cada coche tiene un botón 'Reservar' que te lleva directo al formulario."
+      },
+      {
+        "question": "¿Qué significa 'Reservado'?",
+        "answer": "El coche no está disponible en las fechas seleccionadas. Puedes contactarnos para otras fechas."
+      }
     ],
     "removeFilter": "Quitar filtro {{label}}"
   },
@@ -220,7 +334,8 @@
     "perDay": "/día",
     "perWeek": "/semana",
     "details": "Detalles",
-    "book": "Reservar"
+    "book": "Reservar",
+    "startingFrom": "Desde"
   },
   "carDetail": {
     "back": "Flota",
@@ -255,11 +370,26 @@
       "extrasNote": "Los extras se seleccionan durante la reserva"
     },
     "policy": {
-      "age": { "title": "Edad requerida", "text": "Mínimo 21 años. Los conductores de 21-25 pueden tener un recargo." },
-      "license": { "title": "Permiso de conducir", "text": "Permiso en posesión al menos 1 año. Permisos internacionales aceptados." },
-      "fuel": { "title": "Combustible", "text": "El coche se entrega con el depósito lleno. Debe devolverse lleno o se cobra el rellenado." },
-      "mileage": { "title": "Kilometraje", "text": "Kilometraje ilimitado para alquileres de más de 3 días. 1-2 días: 300 km/día." },
-      "cancellation": { "title": "Cancelación", "text": "Cancelación gratis hasta 48 h antes. Después se aplica 30 %." }
+      "age": {
+        "title": "Edad requerida",
+        "text": "Mínimo 21 años. Los conductores de 21-25 pueden tener un recargo."
+      },
+      "license": {
+        "title": "Permiso de conducir",
+        "text": "Permiso en posesión al menos 1 año. Permisos internacionales aceptados."
+      },
+      "fuel": {
+        "title": "Combustible",
+        "text": "El coche se entrega con el depósito lleno. Debe devolverse lleno o se cobra el rellenado."
+      },
+      "mileage": {
+        "title": "Kilometraje",
+        "text": "Kilometraje ilimitado para alquileres de más de 3 días. 1-2 días: 300 km/día."
+      },
+      "cancellation": {
+        "title": "Cancelación",
+        "text": "Cancelación gratis hasta 48 h antes. Después se aplica 30 %."
+      }
     },
     "about": {
       "title": "Sobre este coche",
@@ -318,9 +448,18 @@
     },
     "faqTitle": "FAQ sobre este coche",
     "faqItems": [
-      { "question": "¿Está incluido el seguro?", "answer": "Sí, todos nuestros coches incluyen seguro básico. Puedes añadir seguro adicional durante la reserva." },
-      { "question": "¿Qué pasa con los daños?", "answer": "Cada coche tiene una fianza. Los daños menores los cubre el seguro. Recomendamos cobertura completa." },
-      { "question": "¿Puedo recoger en el aeropuerto?", "answer": "Sí, ofrecemos recogida gratuita en el aeropuerto internacional de Tirana. Reserva en la página." }
+      {
+        "question": "¿Está incluido el seguro?",
+        "answer": "Sí, todos nuestros coches incluyen seguro básico. Puedes añadir seguro adicional durante la reserva."
+      },
+      {
+        "question": "¿Qué pasa con los daños?",
+        "answer": "Cada coche tiene una fianza. Los daños menores los cubre el seguro. Recomendamos cobertura completa."
+      },
+      {
+        "question": "¿Puedo recoger en el aeropuerto?",
+        "answer": "Sí, ofrecemos recogida gratuita en el aeropuerto internacional de Tirana. Reserva en la página."
+      }
     ],
     "trust": {
       "verified": "Verificado y limpio",
@@ -383,17 +522,56 @@
       "parking": "Sensor aparcamiento"
     },
     "pickupLocations": [
-      { "value": "Tiranë - Qendër", "label": "Tirana - Centro", "icon": "🏙️" },
-      { "value": "Aeroporti Ndërkombëtar", "label": "Aeropuerto internacional", "icon": "✈️" },
-      { "value": "Tiranë - Bulevardi Zogu I", "label": "Tirana - Bd Zogu I", "icon": "📍" },
-      { "value": "Durrës - Plazh", "label": "Durrës - Playa", "icon": "🏖️" },
-      { "value": "Shkodër", "label": "Shkodër", "icon": "🏔️" },
-      { "value": "Vlorë", "label": "Vlorë", "icon": "⛵" }
+      {
+        "value": "Tiranë - Qendër",
+        "label": "Tirana - Centro",
+        "icon": "🏙️"
+      },
+      {
+        "value": "Aeroporti Ndërkombëtar",
+        "label": "Aeropuerto internacional",
+        "icon": "✈️"
+      },
+      {
+        "value": "Tiranë - Bulevardi Zogu I",
+        "label": "Tirana - Bd Zogu I",
+        "icon": "📍"
+      },
+      {
+        "value": "Durrës - Plazh",
+        "label": "Durrës - Playa",
+        "icon": "🏖️"
+      },
+      {
+        "value": "Shkodër",
+        "label": "Shkodër",
+        "icon": "🏔️"
+      },
+      {
+        "value": "Vlorë",
+        "label": "Vlorë",
+        "icon": "⛵"
+      }
     ],
     "staticReviews": [
-      { "authorName": "Endri Muka", "rating": 5, "text": "¡Excelente servicio! El coche estaba limpio y el equipo fue muy amable. Lo recomendaría sin duda.", "date": "hace 2 semanas" },
-      { "authorName": "Sara Hoxha", "rating": 5, "text": "Reservé online y todo fue perfecto. La recogida en el aeropuerto fue muy sencilla.", "date": "hace 1 mes" },
-      { "authorName": "Arben Daci", "rating": 5, "text": "Precios razonables y coche en excelente estado. ¡El kilometraje ilimitado fue un gran plus!", "date": "hace 3 semanas" }
+      {
+        "authorName": "Endri Muka",
+        "rating": 5,
+        "text": "¡Excelente servicio! El coche estaba limpio y el equipo fue muy amable. Lo recomendaría sin duda.",
+        "date": "hace 2 semanas"
+      },
+      {
+        "authorName": "Sara Hoxha",
+        "rating": 5,
+        "text": "Reservé online y todo fue perfecto. La recogida en el aeropuerto fue muy sencilla.",
+        "date": "hace 1 mes"
+      },
+      {
+        "authorName": "Arben Daci",
+        "rating": 5,
+        "text": "Precios razonables y coche en excelente estado. ¡El kilometraje ilimitado fue un gran plus!",
+        "date": "hace 3 semanas"
+      }
     ]
   },
   "booking": {
@@ -458,7 +636,32 @@
     "summaryTitle": "Resumen",
     "days": "días",
     "hours": "horas en total · se aplica tarifa diaria",
-    "extras": "Extras",
+    "extras": {
+      "perDay": "/día",
+      "perRental": "/alquiler",
+      "oneTime": "Una vez",
+      "seasonalPrices": "Precios por temporada",
+      "seasonalInfo": "Los precios varían por temporada. Precio base: {{price}} €/día.",
+      "currentSeason": "Actual",
+      "pickupFee": "Tarifa de recogida",
+      "dropoffFee": "Tarifa de devolución",
+      "locationFee": "Tarifa de ubicación",
+      "pickupAndDropoff": "recogida + devolución",
+      "monthsShort": [
+        "ene",
+        "feb",
+        "mar",
+        "abr",
+        "may",
+        "jun",
+        "jul",
+        "ago",
+        "sep",
+        "oct",
+        "nov",
+        "dic"
+      ]
+    },
     "insurance2": "Seguro",
     "discount": "Descuento (10 %)",
     "total": "Total",
@@ -476,19 +679,8 @@
       "email": "Email no válido",
       "minDays": "Reserva mínima: {{count}} día(s)."
     },
-    "extras": {
-      "perDay": "/día",
-      "perRental": "/alquiler",
-      "oneTime": "Una vez",
-      "seasonalPrices": "Precios por temporada",
-      "seasonalInfo": "Los precios varían por temporada. Precio base: {{price}} €/día.",
-      "currentSeason": "Actual",
-      "pickupFee": "Tarifa de recogida",
-      "dropoffFee": "Tarifa de devolución",
-      "locationFee": "Tarifa de ubicación",
-      "pickupAndDropoff": "recogida + devolución",
-      "monthsShort": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
-    }
+    "flightNumber": "Número de vuelo (opcional)",
+    "flightNumberPlaceholder": "ej. W6 3015"
   },
   "contactPage": {
     "badge": "CONTÁCTANOS",
@@ -619,5 +811,29 @@
     "bookingFailed": "Error al reservar. Inténtalo de nuevo.",
     "loginFailed": "Email o contraseña incorrectos",
     "generic": "Ha ocurrido un error"
+  },
+  "data": {
+    "category": {
+      "Ekonomike": "Económico",
+      "SUV": "SUV",
+      "Luksoze": "Lujo",
+      "Familjare": "Familiar",
+      "Automatike": "Automático"
+    },
+    "transmission": {
+      "Automatike": "Automático",
+      "Manuale": "Manual"
+    },
+    "fuel": {
+      "Benzinë": "Gasolina",
+      "Naftë": "Diésel",
+      "Hibrid": "Híbrido",
+      "Elektrik": "Eléctrico"
+    },
+    "status": {
+      "Në dispozicion": "Disponible",
+      "I rezervuar": "Reservado",
+      "Në mirëmbajtje": "En mantenimiento"
+    }
   }
 }

@@ -74,6 +74,7 @@ const fmt = (r) => ({
   pickupLocation: r.pickup_location, dropoffLocation: r.dropoff_location,
   startDate: toDateOnly(r.start_date), startTime: r.start_time,
   endDate: toDateOnly(r.end_date), endTime: r.end_time,
+  flightNumber: r.flight_number || null,
   notes: r.notes, source: r.source, status: r.status,
   totalPrice: r.total_price, locationFee: r.location_fee || 0,
   insurance: r.insurance, extras: r.extras,
@@ -161,7 +162,7 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, startDate, startTime, endDate, endTime, notes, source, insurance, extras, discountCode, website, customerEmail, selectedExtras } = req.body;
+    const { carId, customerId, startDate, startTime, endDate, endTime, flightNumber, notes, source, insurance, extras, discountCode, website, customerEmail, selectedExtras } = req.body;
     let { pickupLocation, dropoffLocation } = req.body;
     // Honeypot bot protection — real users never fill hidden 'website' field
     if (website) return res.status(400).json({ error: 'Gabim.' });
@@ -267,25 +268,37 @@ router.post('/', async (req, res) => {
       const carQuantity = Number(carRows[0].quantity) || 1;
       const carCategory = carRows[0].category;
 
-      // Check for monthly rate override (car-specific > category > all)
-      const [sdYear, sdMonth] = sd.split('-').map(Number);
-      const startMonth = sdMonth;
-      const startYear = sdYear;
-      const [monthlyRates] = await conn.query(
-        'SELECT applies_to, applies_to_value, price_per_day FROM monthly_rates WHERE month = ? AND (year = ? OR year IS NULL)',
-        [startMonth, startYear]
+      // Monthly rate override (car-specific > category > all), resolved PER DAY so
+      // a booking spanning two months is charged each month's own rate
+      // (e.g. 29 Jun–10 Jul = June rate × June days + July rate × July days).
+      const [allMonthlyRates] = await conn.query(
+        'SELECT applies_to, applies_to_value, price_per_day, month, year FROM monthly_rates'
       );
-      let pricePerDay = basePricePerDay;
-      const mrCar = monthlyRates.find(r => r.applies_to === 'car' && r.applies_to_value === carId);
-      const mrCat = monthlyRates.find(r => r.applies_to === 'category' && r.applies_to_value === carCategory);
-      const mrAll = monthlyRates.find(r => r.applies_to === 'all');
-      if (mrCar) pricePerDay = Number(mrCar.price_per_day);
-      else if (mrCat) pricePerDay = Number(mrCat.price_per_day);
-      else if (mrAll) pricePerDay = Number(mrAll.price_per_day);
+      const rateForDay = (month, year) => {
+        const matching = allMonthlyRates.filter(
+          (r) => Number(r.month) === month && (r.year === null || Number(r.year) === year)
+        );
+        const car = matching.find((r) => r.applies_to === 'car' && r.applies_to_value === carId);
+        if (car) return Number(car.price_per_day);
+        const cat = matching.find((r) => r.applies_to === 'category' && r.applies_to_value === carCategory);
+        if (cat) return Number(cat.price_per_day);
+        const all = matching.find((r) => r.applies_to === 'all');
+        if (all) return Number(all.price_per_day);
+        return basePricePerDay;
+      };
 
       const msPerDay = 86400000;
       // Daily rental: any partial day = full day (industry standard). 5h = 1 day, 25h = 2 days.
       const days = Math.max(1, Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / msPerDay));
+      // Sum each day at its own month's rate.
+      let rentalSubtotal = 0;
+      const dayCursor = new Date(startDateTime);
+      dayCursor.setHours(0, 0, 0, 0);
+      for (let i = 0; i < days; i += 1) {
+        rentalSubtotal += rateForDay(dayCursor.getMonth() + 1, dayCursor.getFullYear());
+        dayCursor.setDate(dayCursor.getDate() + 1);
+      }
+      rentalSubtotal = Math.round(rentalSubtotal * 100) / 100;
       const locationFee = await getLocationFee(pickupLocation, dropoffLocation);
 
       // ── Resolve selected extras server-side (never trust client prices) ──
@@ -323,7 +336,7 @@ router.post('/', async (req, res) => {
         }
       }
 
-      const totalPrice = +(pricePerDay * days + locationFee + extrasTotal).toFixed(2);
+      const totalPrice = +(rentalSubtotal + locationFee + extrasTotal).toFixed(2);
       // Build legacy comma-separated extras string for back-compat with old views
       const extrasLegacy = extrasResolved.length > 0
         ? extrasResolved.map((e) => e.quantity > 1 ? `${e.name} x${e.quantity}` : e.name).join(', ')
@@ -348,8 +361,8 @@ router.post('/', async (req, res) => {
 
       const id = uuidv4();
       await conn.query(
-        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extrasLegacy, discountCode || null, null]
+        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, flight_number, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, (flightNumber ? String(flightNumber).slice(0, 30) : null), notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extrasLegacy, discountCode || null, null]
       );
 
       // Persist selected extras with price snapshot
@@ -415,6 +428,7 @@ router.post('/', async (req, res) => {
             insurance: insurance || '',
             extrasList: extrasResolved.map((e) => ({ name: e.name, quantity: e.quantity, totalPrice: e.totalPrice })),
             source: source || 'Web',
+            flightNumber: flightNumber ? String(flightNumber).slice(0, 30) : null,
             adminPanelUrl: `${frontendUrl}/admin/rezervime`,
           })
         ).catch((e) => console.error('[Email] admin notification failed:', e));
@@ -544,6 +558,7 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
       start_time: st,
       end_date: ed,
       end_time: et,
+      flight_number: req.body.flightNumber !== undefined ? (req.body.flightNumber ? String(req.body.flightNumber).slice(0, 30) : null) : undefined,
       notes: req.body.notes,
       source: req.body.source,
       status: req.body.status,
@@ -640,29 +655,41 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
           return res.status(409).json({ error: 'Makina nuk është e disponueshme për këto data.' });
         }
         }
-        // Check monthly rate override for new dates
-        const [nSdYear, nSdMonth] = newSd.split('-').map(Number);
-        const startMonth = nSdMonth;
-        const startYear = nSdYear;
-        const [monthlyRates] = await conn.query(
-          'SELECT applies_to, applies_to_value, price_per_day FROM monthly_rates WHERE month = ? AND (year = ? OR year IS NULL)',
-          [startMonth, startYear]
+        // Monthly rate override for new dates — resolved PER DAY so a booking
+        // spanning two months charges each month's own rate.
+        const basePrice = Number(carRows[0].price_per_day);
+        const newCategory = carRows[0].category;
+        const [allMonthlyRates] = await conn.query(
+          'SELECT applies_to, applies_to_value, price_per_day, month, year FROM monthly_rates'
         );
-        let effectivePrice = Number(carRows[0].price_per_day);
-        const mrCar = monthlyRates.find(r => r.applies_to === 'car' && r.applies_to_value === newCarId);
-        const mrCat = monthlyRates.find(r => r.applies_to === 'category' && r.applies_to_value === carRows[0].category);
-        const mrAll = monthlyRates.find(r => r.applies_to === 'all');
-        if (mrCar) effectivePrice = Number(mrCar.price_per_day);
-        else if (mrCat) effectivePrice = Number(mrCat.price_per_day);
-        else if (mrAll) effectivePrice = Number(mrAll.price_per_day);
+        const rateForDay = (month, year) => {
+          const matching = allMonthlyRates.filter(
+            (r) => Number(r.month) === month && (r.year === null || Number(r.year) === year)
+          );
+          const car = matching.find((r) => r.applies_to === 'car' && r.applies_to_value === newCarId);
+          if (car) return Number(car.price_per_day);
+          const cat = matching.find((r) => r.applies_to === 'category' && r.applies_to_value === newCategory);
+          if (cat) return Number(cat.price_per_day);
+          const all = matching.find((r) => r.applies_to === 'all');
+          if (all) return Number(all.price_per_day);
+          return basePrice;
+        };
 
         const msPerDay = 86400000;
         const days = Math.max(1, Math.ceil((newEndDateTime.getTime() - newStartDateTime.getTime()) / msPerDay));
+        let rentalSubtotal = 0;
+        const dayCursor = new Date(newStartDateTime);
+        dayCursor.setHours(0, 0, 0, 0);
+        for (let i = 0; i < days; i += 1) {
+          rentalSubtotal += rateForDay(dayCursor.getMonth() + 1, dayCursor.getFullYear());
+          dayCursor.setDate(dayCursor.getDate() + 1);
+        }
+        rentalSubtotal = Math.round(rentalSubtotal * 100) / 100;
         const newPickup = fields.pickup_location || current.pickup_location;
         const newDropoff = fields.dropoff_location || current.dropoff_location;
         const newLocationFee = await getLocationFee(newPickup, newDropoff);
         fields.location_fee = newLocationFee;
-        fields.total_price = +(effectivePrice * days + newLocationFee).toFixed(2);
+        fields.total_price = +(rentalSubtotal + newLocationFee).toFixed(2);
       }
 
       const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
