@@ -6,6 +6,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import ScrollToTop from "./components/ScrollToTop";
 import CookieConsent from "./components/CookieConsent";
 import HomePage from "./pages/HomePage";
 import FleetPage from "./pages/FleetPage";
@@ -102,6 +103,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <LocaleProvider>
+        <ScrollToTop />
         <AnalyticsTracker />
         <Routes>
           {/* Public Routes — Albanian (default) + EN + FR + ES + IT */}
