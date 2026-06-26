@@ -33,20 +33,22 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'", "'unsafe-inline'", "https://unpkg.com",
-        // Google Analytics 4 + Google Ads (gtag.js) and Google Sign-In
+        // Google Tag Manager (container + Preview/debug) + GA4 + Google Ads (gtag.js) + Sign-In
         "https://www.googletagmanager.com",
+        "https://tagmanager.google.com",
         "https://www.google-analytics.com",
         "https://googleads.g.doubleclick.net",
         "https://www.googleadservices.com",
         "https://accounts.google.com",
         "https://apis.google.com",
       ],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com", "https://tagmanager.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"], // "https:" already covers Google/Ads tracking pixels
       connectSrc: [
         "'self'", "https://unpkg.com", "https://images.unsplash.com", "https://maps.googleapis.com",
         "https://www.googletagmanager.com",
+        "https://tagmanager.google.com",
         "https://www.google-analytics.com",
         "https://*.google-analytics.com",
         "https://*.analytics.google.com",
