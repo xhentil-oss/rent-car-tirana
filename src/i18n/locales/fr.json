@@ -760,7 +760,19 @@
       "hint": "Signez ici avec la souris ou le doigt",
       "clear": "Effacer et re-signer",
       "confirm": "Confirmer la signature"
-    }
+    },
+    "detailsBtn": "Détails",
+    "includedTitle": "Ce qui est inclus",
+    "pickupReturn": "Prise en charge et restitution",
+    "pickupLabel": "Prise en charge",
+    "returnLabel": "Restitution",
+    "included": [
+      "Kilométrage illimité inclus",
+      "Aucune caution requise",
+      "Payez en espèces ou par carte",
+      "Aucun frais caché – prix transparent"
+    ],
+    "close": "Fermer"
   },
   "contactPage": {
     "badge": "NOUS CONTACTER",

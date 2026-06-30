@@ -39,7 +39,7 @@ import type { PricingRule } from "../lib/pricingRules";
 import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
 import { useLocations } from "../hooks/useLocations";
-import { formatLocationOption } from "../lib/locations";
+import { formatLocationOption, formatLocationName } from "../lib/locations";
 import {
   parseLocalDate,
   buildLocalDateTime,
@@ -324,6 +324,8 @@ export default function BookingPage() {
   const [saving, setSaving] = useState(false);
   // Final confirmation gate so price-checkers don't book by accident.
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Mobile "Details" popup (pickup/return + what's included).
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [signatureError, setSignatureError] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -710,21 +712,31 @@ export default function BookingPage() {
             {/* Sticky mini car summary — keeps the car + price visible on mobile
                 while the visitor fills the form (desktop has the sidebar). */}
             <div className="lg:hidden sticky top-[60px] z-20">
-              <div className="flex items-center gap-3 bg-white rounded-lg border border-border shadow-sm p-3">
-                <img
-                  src={car.image}
-                  alt={`${car.brand} ${car.model}`}
-                  loading="lazy"
-                  className="w-16 h-12 rounded-md object-cover shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-neutral-900 truncate">{car.brand} {car.model}</p>
-                  <p className="text-xs text-neutral-500 truncate">{categoryLabel(t, car.category)} · {transmissionLabel(t, car.transmission)}</p>
+              <div className="bg-white rounded-lg border border-border shadow-sm">
+                <div className="flex items-center gap-3 p-3">
+                  <img
+                    src={car.image}
+                    alt={`${car.brand} ${car.model}`}
+                    loading="lazy"
+                    className="w-16 h-12 rounded-md object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-neutral-900 truncate">{car.brand} {car.model}</p>
+                    <p className="text-xs text-neutral-500 truncate">{categoryLabel(t, car.category)} · {transmissionLabel(t, car.transmission)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-base font-bold text-neutral-900">€{total > 0 ? total : displayPricePerDay}</p>
+                    <p className="text-[10px] text-neutral-500">{total > 0 ? t("booking.summaryTotal", "Totali") : t("carDetail.perDay", "/ditë")}</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-base font-bold text-neutral-900">€{total > 0 ? total : displayPricePerDay}</p>
-                  <p className="text-[10px] text-neutral-500">{total > 0 ? t("booking.summaryTotal", "Totali") : t("carDetail.perDay", "/ditë")}</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen(true)}
+                  className="w-full border-t border-border px-3 py-2 text-xs font-medium text-primary flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  {t("booking.detailsBtn", "Detajet")}
+                  <CaretDown size={12} weight="bold" />
+                </button>
               </div>
             </div>
 
@@ -1518,6 +1530,19 @@ export default function BookingPage() {
                   </div>
                 </div>
 
+                {/* What's included — always visible on desktop */}
+                <div className="mb-4 pb-4 border-b border-border">
+                  <p className="text-xs font-semibold text-neutral-700 uppercase tracking-wide mb-2">{t("booking.includedTitle", "Çfarë përfshihet")}</p>
+                  <ul className="space-y-1.5">
+                    {(t("booking.included", { returnObjects: true }) as string[]).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-neutral-600">
+                        <CheckCircle size={14} weight="fill" className="text-success shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 <div className="space-y-2 mb-4">
                   {/* Active pricing rule discounts */}
                   {pricingRuleResult && pricingRuleResult.appliedDiscounts
@@ -1550,11 +1575,6 @@ export default function BookingPage() {
                           : t("booking.discountCode")}
                       </span>
                       <span>€{basePrice}</span>
-                    </div>
-                  )}
-                  {days > 0 && hours > 0 && (
-                    <div className="text-xs text-neutral-400">
-                      {hours} {t("booking.hours")}
                     </div>
                   )}
                   {!monthlyRatesCalc?.usedMonthlyRate && dominantSeason.multiplier !== 1 && days > 0 && (
@@ -1616,6 +1636,57 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile "Details" popup — pickup/return + what's included */}
+      {detailsOpen && (
+        <div className="lg:hidden fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => setDetailsOpen(false)} />
+          <div className="relative bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <img src={car.image} alt={`${car.brand} ${car.model}`} loading="lazy" className="w-16 h-12 rounded-md object-cover shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-neutral-900 truncate">{car.brand} {car.model}</p>
+                <p className="text-xs text-neutral-500 truncate">{categoryLabel(t, car.category)} · {transmissionLabel(t, car.transmission)}</p>
+              </div>
+              <button onClick={() => setDetailsOpen(false)} className="p-1 text-neutral-400 hover:text-neutral-700 cursor-pointer text-lg leading-none" aria-label="Mbylle">✕</button>
+            </div>
+
+            <p className="text-xs font-semibold text-neutral-700 uppercase tracking-wide mb-2">{t("booking.pickupReturn", "Marrja dhe kthimi")}</p>
+            <div className="space-y-3 mb-5">
+              <div className="flex gap-2">
+                <MapPin size={16} weight="fill" className="text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[11px] text-neutral-400">{t("booking.pickupLabel", "Marrja")}</p>
+                  <p className="text-sm text-neutral-800">{(() => { const o = locationOptions.find((x) => x.value === form.pickup); return o ? formatLocationName(o) : (form.pickup || "—"); })()}</p>
+                  {form.startDate && <p className="text-xs text-neutral-500">{formatLocalDate(form.startDate)} · {form.startTime}</p>}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <MapPin size={16} weight="fill" className="text-neutral-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[11px] text-neutral-400">{t("booking.returnLabel", "Kthimi")}</p>
+                  <p className="text-sm text-neutral-800">{(() => { const o = locationOptions.find((x) => x.value === form.dropoff); return o ? formatLocationName(o) : (form.dropoff || "—"); })()}</p>
+                  {form.endDate && <p className="text-xs text-neutral-500">{formatLocalDate(form.endDate)} · {form.endTime}</p>}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs font-semibold text-neutral-700 uppercase tracking-wide mb-2 pt-4 border-t border-border">{t("booking.includedTitle", "Çfarë përfshihet")}</p>
+            <ul className="space-y-2">
+              {(t("booking.included", { returnObjects: true }) as string[]).map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
+                  <CheckCircle size={16} weight="fill" className="text-success shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button onClick={() => setDetailsOpen(false)} className="mt-5 w-full py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">
+              {t("booking.close", "Mbylle")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Final confirmation — makes clear this is a REAL reservation */}
       {confirmOpen && (

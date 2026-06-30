@@ -760,7 +760,19 @@
       "hint": "Firma qui con il mouse o il dito",
       "clear": "Cancella e rifirma",
       "confirm": "Conferma firma"
-    }
+    },
+    "detailsBtn": "Dettagli",
+    "includedTitle": "Cosa è incluso",
+    "pickupReturn": "Ritiro e riconsegna",
+    "pickupLabel": "Ritiro",
+    "returnLabel": "Riconsegna",
+    "included": [
+      "Chilometraggio illimitato incluso",
+      "Nessun deposito richiesto",
+      "Paga in contanti o con carta",
+      "Nessun costo nascosto – prezzo trasparente"
+    ],
+    "close": "Chiudi"
   },
   "contactPage": {
     "badge": "CONTATTACI",

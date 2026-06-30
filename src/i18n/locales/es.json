@@ -760,7 +760,19 @@
       "hint": "Firme aquí con el ratón o el dedo",
       "clear": "Borrar y volver a firmar",
       "confirm": "Confirmar firma"
-    }
+    },
+    "detailsBtn": "Detalles",
+    "includedTitle": "Qué incluye",
+    "pickupReturn": "Recogida y devolución",
+    "pickupLabel": "Recogida",
+    "returnLabel": "Devolución",
+    "included": [
+      "Kilometraje ilimitado incluido",
+      "Sin depósito requerido",
+      "Paga en efectivo o con tarjeta",
+      "Sin costes ocultos – precio transparente"
+    ],
+    "close": "Cerrar"
   },
   "contactPage": {
     "badge": "CONTÁCTANOS",

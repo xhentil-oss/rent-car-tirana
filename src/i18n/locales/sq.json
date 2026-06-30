@@ -756,7 +756,19 @@
       "hint": "Firmos këtu me mouse ose gisht",
       "clear": "Fshi dhe rifirmos",
       "confirm": "Konfirmo firmën"
-    }
+    },
+    "detailsBtn": "Detajet",
+    "includedTitle": "Çfarë përfshihet",
+    "pickupReturn": "Marrja dhe kthimi",
+    "pickupLabel": "Marrja",
+    "returnLabel": "Kthimi",
+    "included": [
+      "Kilometra të pakufizuara të përfshira",
+      "Pa depozitë (Zero depozitë)",
+      "Paguaj me para në dorë ose kartë",
+      "Pa kosto të fshehura – çmim transparent"
+    ],
+    "close": "Mbylle"
   },
   "contactPage": {
     "badge": "NA KONTAKTONI",

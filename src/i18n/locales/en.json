@@ -760,7 +760,19 @@
       "hint": "Sign here with your mouse or finger",
       "clear": "Clear and re-sign",
       "confirm": "Confirm signature"
-    }
+    },
+    "detailsBtn": "Details",
+    "includedTitle": "What’s included",
+    "pickupReturn": "Pickup and return",
+    "pickupLabel": "Pickup",
+    "returnLabel": "Return",
+    "included": [
+      "Unlimited mileage included",
+      "Zero deposit required",
+      "Pay cash or card",
+      "No hidden costs – transparent pricing"
+    ],
+    "close": "Close"
   },
   "contactPage": {
     "badge": "CONTACT US",
