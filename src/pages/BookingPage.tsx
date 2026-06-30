@@ -707,6 +707,27 @@ export default function BookingPage() {
             className="lg:col-span-2 space-y-6"
             noValidate
           >
+            {/* Sticky mini car summary — keeps the car + price visible on mobile
+                while the visitor fills the form (desktop has the sidebar). */}
+            <div className="lg:hidden sticky top-[60px] z-20">
+              <div className="flex items-center gap-3 bg-white rounded-lg border border-border shadow-sm p-3">
+                <img
+                  src={car.image}
+                  alt={`${car.brand} ${car.model}`}
+                  loading="lazy"
+                  className="w-16 h-12 rounded-md object-cover shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-neutral-900 truncate">{car.brand} {car.model}</p>
+                  <p className="text-xs text-neutral-500 truncate">{categoryLabel(t, car.category)} · {transmissionLabel(t, car.transmission)}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-base font-bold text-neutral-900">€{total > 0 ? total : displayPricePerDay}</p>
+                  <p className="text-[10px] text-neutral-500">{total > 0 ? t("booking.summaryTotal", "Totali") : t("carDetail.perDay", "/ditë")}</p>
+                </div>
+              </div>
+            </div>
+
             {/* Location & Dates */}
             <div className="bg-white rounded-lg border border-border p-6">
               <h2 className="text-lg font-medium text-neutral-900 mb-4">
