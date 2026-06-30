@@ -45,9 +45,12 @@ Të dhëna transaksionale:
 • Depozitat e sigurisë
 
 Të dhëna teknike (mbledhur automatikisht):
-• Adresa IP dhe lloji i shfletuesit
+• Adresa IP dhe vendndodhja e përafërt (shteti) e nxjerrë prej saj
+• Lloji i pajisjes, shfletuesit dhe sistemit operativ
 • Koha dhe data e vizitës
-• Faqet e vizituara (cookie analytics)`,
+• Faqet e vizituara (cookie analytics)
+
+Kur bëni një rezervim, ruajmë gjithashtu shtetin që zgjidhni në formular dhe të dhënat teknike të mësipërme (IP, shtet, pajisje) bashkë me rezervimin. Këto përdoren vetëm për siguri, parandalim mashtrimi dhe verifikim të rezervimit — jo për qëllime marketingu.`,
     },
     {
       title: "3. Baza Ligjore e Procesimit",
