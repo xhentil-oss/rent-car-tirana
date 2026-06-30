@@ -322,6 +322,8 @@ export default function BookingPage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Final confirmation gate so price-checkers don't book by accident.
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [signatureError, setSignatureError] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -540,6 +542,14 @@ export default function BookingPage() {
     }
     if (!valid) return;
     if (!car) return;
+    // Don't submit yet — ask for an explicit confirmation so visitors who are
+    // only checking prices don't place a real reservation by accident.
+    setConfirmOpen(true);
+  };
+
+  const doSubmit = async () => {
+    if (!car) return;
+    setConfirmOpen(false);
     setSaving(true);
     setBookingError(null);
     try {
@@ -1424,6 +1434,10 @@ export default function BookingPage() {
             >
               {saving ? t("booking.submitting") : !isCarAvailable ? t("booking.unavailableBtn") : t("booking.submit")}
             </button>
+            <p className="mt-2 text-center text-xs text-neutral-500">
+              {t("booking.realBookingHint", "Ky është një rezervim real, jo kontroll çmimi. Për të parë vetëm çmimet, shiko ")}
+              <a href="/flota" className="underline hover:text-primary">{t("header.fleet", "flotën")}</a>.
+            </p>
             {bookingError && (
               <div className="mt-3 p-3 rounded-md bg-error/10 border border-error/20">
                 <p className="text-sm text-error font-medium">{bookingError}</p>
@@ -1581,6 +1595,39 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* Final confirmation — makes clear this is a REAL reservation */}
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-neutral-900/60" onClick={() => setConfirmOpen(false)} />
+          <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle size={26} weight="fill" className="text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-1">
+              {t("booking.confirmTitle", "Po bën një rezervim real")}
+            </h3>
+            <p className="text-sm text-neutral-600 mb-5">
+              {t("booking.confirmBody", "Ky nuk është kontroll çmimi — po dërgon një kërkesë rezervimi dhe ekipi do të të kontaktojë. Dëshiron të vazhdosh?")}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="flex-1 py-2.5 rounded-md text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer"
+              >
+                {t("booking.confirmCancel", "Jo, vetëm çmimet")}
+              </button>
+              <button
+                onClick={doSubmit}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-md text-sm font-medium bg-gradient-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60"
+              >
+                {saving ? t("booking.submitting") : t("booking.confirmOk", "Po, rezervo")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
