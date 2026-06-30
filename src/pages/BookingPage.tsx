@@ -25,6 +25,7 @@ import { useQuery, useMutation } from "../hooks/useApi";
 import { trackBeginCheckout } from "../lib/analytics";
 import { trackEvent } from "../lib/track";
 import { categoryLabel, transmissionLabel } from "../i18n/dataLabels";
+import { COUNTRY_CODES, flagEmoji } from "../lib/countryCodes";
 import Footer from "../components/Footer";
 import { useSEO } from "../hooks/useSEO";
 import {
@@ -55,6 +56,7 @@ interface BookingForm {
   endTime: string;
   firstName: string;
   lastName: string;
+  phonePrefix: string;
   phone: string;
   email: string;
   flightNumber: string;
@@ -213,6 +215,7 @@ export default function BookingPage() {
     endTime: searchParams.get("endTime") || "10:00",
     firstName: "",
     lastName: "",
+    phonePrefix: "+355",
     phone: "",
     email: "",
     flightNumber: "",
@@ -544,7 +547,7 @@ export default function BookingPage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim(),
-        phone: form.phone.trim(),
+        phone: `${form.phonePrefix} ${form.phone.trim()}`.trim(),
         type: "Standard",
       });
       // 2. Krijo rezervimin
@@ -953,22 +956,36 @@ export default function BookingPage() {
                   >
                     {t("booking.phone")}
                   </label>
-                  <div className="relative">
-                    <Phone
-                      size={16}
-                      weight="regular"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
-                    />
-                    <input
-                      id="b-phone"
-                      type="tel"
-                      value={form.phone}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, phone: e.target.value }))
-                      }
-                      placeholder={t("booking.phonePlaceholder")}
-                      className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-neutral-400"
-                    />
+                  <div className="flex gap-2">
+                    <select
+                      value={form.phonePrefix}
+                      onChange={(e) => setForm((f) => ({ ...f, phonePrefix: e.target.value }))}
+                      aria-label="Prefiksi i shtetit"
+                      className="shrink-0 w-28 px-2 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <option key={`${c.iso2}${c.dial}`} value={c.dial}>
+                          {flagEmoji(c.iso2)} {c.dial}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="relative flex-1">
+                      <Phone
+                        size={16}
+                        weight="regular"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                      />
+                      <input
+                        id="b-phone"
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, phone: e.target.value }))
+                        }
+                        placeholder={t("booking.phonePlaceholder")}
+                        className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-neutral-400"
+                      />
+                    </div>
                   </div>
                   {errors.phone && (
                     <p className="text-xs text-error mt-1">{errors.phone}</p>
@@ -1311,7 +1328,7 @@ export default function BookingPage() {
                         downloadContractPdf({
                           clientName: `${form.firstName.trim()} ${form.lastName.trim()}`.trim() || "Klient",
                           clientEmail: form.email.trim() || "—",
-                          clientPhone: form.phone.trim() || "—",
+                          clientPhone: form.phone.trim() ? `${form.phonePrefix} ${form.phone.trim()}` : "—",
                           carName: `${car.brand} ${car.model}`,
                           carCategory: car.category,
                           carTransmission: car.transmission,

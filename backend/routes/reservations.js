@@ -718,35 +718,20 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
   } catch (err) { console.error(err); res.status(500).json({ error: 'Gabim i brendshëm.' }); }
 });
 
+// Soft-cancel only: reservations are NEVER physically deleted. The DELETE verb
+// is kept for backward compatibility with the admin UI, but it just sets the
+// status to 'Cancelled' so history/invoices/deposits stay intact.
 router.delete('/:id', authenticate, requireRole('admin', 'manager'), async (req, res) => {
-  const conn = await pool.getConnection();
   try {
-    await conn.beginTransaction();
-    // Remove dependent rows first (extras, deposits, invoices) so FK constraints don't 500.
-    await conn.query('DELETE FROM reservation_extras WHERE reservation_id = ?', [req.params.id]);
-    const [[{ invCount }]] = await conn.query('SELECT COUNT(*) AS invCount FROM invoices WHERE reservation_id = ?', [req.params.id]);
-    const [[{ depCount }]] = await conn.query('SELECT COUNT(*) AS depCount FROM deposits WHERE reservation_id = ?', [req.params.id]);
-    if (invCount > 0 || depCount > 0) {
-      await conn.rollback();
-      conn.release();
-      return res.status(409).json({
-        error: `Rezervimi ka ${invCount} faturë${invCount === 1 ? '' : 'a'}${depCount > 0 ? ` dhe ${depCount} depozitë` : ''} të lidhura. Fshini ato më parë.`,
-        code: 'HAS_REFERENCES',
-        invCount, depCount,
-      });
-    }
-    await conn.query('DELETE FROM reservations WHERE id = ?', [req.params.id]);
-    await conn.commit();
-    conn.release();
-    await logActivity({ userId: req.user.id, action: 'DELETE', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u fshi: ${req.params.id}`, ipAddress: req.ip });
-    res.json({ error: null, message: 'Rezervimi u fshi.' });
+    const [result] = await pool.query(
+      "UPDATE reservations SET status = 'Cancelled' WHERE id = ?",
+      [req.params.id]
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'Rezervimi nuk u gjet.' });
+    await logActivity({ userId: req.user.id, action: 'CANCEL', entity: 'Reservation', entityId: req.params.id, description: `Rezervim u anulua: ${req.params.id}`, ipAddress: req.ip });
+    res.json({ error: null, message: 'Rezervimi u anulua.' });
   } catch (err) {
-    try { await conn.rollback(); } catch {}
-    conn.release();
     console.error(err);
-    if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(409).json({ error: 'Rezervimi ka të dhëna të lidhura (fatura/depozita). Fshini ato më parë.', code: 'HAS_REFERENCES' });
-    }
     res.status(500).json({ error: 'Gabim i brendshëm.' });
   }
 });

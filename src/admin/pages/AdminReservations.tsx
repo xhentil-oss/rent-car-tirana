@@ -84,6 +84,9 @@ export default function AdminReservations() {
   const [editResId, setEditResId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ status: string; pickupLocation: string; dropoffLocation: string; startDate: string; endDate: string; startTime: string; endTime: string; notes: string; totalPrice: string }>({ status: "", pickupLocation: "", dropoffLocation: "", startDate: "", endDate: "", startTime: "09:00", endTime: "09:00", notes: "", totalPrice: "" });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  // Date-range filter on the reservation (pickup) date.
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const todayInputValue = formatDateInputValue();
 
   const selectedRes = (reservations ?? []).find(r => r.id === selectedResId) ?? null;
@@ -105,6 +108,12 @@ export default function AdminReservations() {
       const endDay = String(r.endDate || "").slice(0, 10);
       if (endDay >= today) return false;
       if (r.status !== "Active" && r.status !== "Confirmed") return false;
+    }
+    // Date-range filter on the reservation (pickup) date.
+    if (dateFrom || dateTo) {
+      const day = String(r.startDate || "").slice(0, 10);
+      if (dateFrom && day < dateFrom) return false;
+      if (dateTo && day > dateTo) return false;
     }
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -366,7 +375,7 @@ export default function AdminReservations() {
       const res = (reservations ?? []).find((r) => r.id === id);
       const customerName = res ? getCustomerName(res.customerId) : id;
       await removeReservation(id);
-      await log("DELETE", "Reservation", id, `Rezervim u fshi: ${customerName}`);
+      await log("CANCEL", "Reservation", id, `Rezervim u anulua: ${customerName}`);
       setDeleteConfirmId(null);
       if (selectedResId === id) setSelectedResId(null);
       await refetchReservations();
@@ -418,7 +427,36 @@ export default function AdminReservations() {
             </button>
           ))}
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Date-range filter on the reservation (pickup) date */}
+          <div className="flex items-center gap-1.5">
+            <Calendar size={15} className="text-neutral-400 shrink-0" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="Nga data"
+              className="px-2.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            <span className="text-neutral-400 text-sm">→</span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              aria-label="Deri më"
+              className="px-2.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer"
+                aria-label="Pastro filtrin e datave"
+              >
+                <X size={15} weight="bold" />
+              </button>
+            )}
+          </div>
           <div className="relative">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
             <input type="text" placeholder="Kërko rezervim..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-full sm:w-64" />
@@ -475,15 +513,6 @@ export default function AdminReservations() {
             <button onClick={() => bulkUpdateStatus("Cancelled")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error border border-error/20 hover:bg-error/20 transition-colors cursor-pointer">
               <X size={13} weight="bold" /> Anulo
             </button>
-            <button
-              onClick={async () => {
-                for (const id of selectedIds) await handleDeleteReservation(id);
-                setSelectedIds(new Set());
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error border border-error/20 hover:bg-error/20 transition-colors cursor-pointer"
-            >
-              <Trash size={13} weight="bold" /> Fshi
-            </button>
             <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-500 hover:bg-neutral-100 transition-colors cursor-pointer">
               Hiq zgjedhjen
             </button>
@@ -518,6 +547,9 @@ export default function AdminReservations() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-neutral-900 truncate">{getCustomerName(res.customerId)}</p>
                     <p className="text-xs text-neutral-500 truncate">{getCarName(res.carId)}</p>
+                    {res.createdAt && (
+                      <p className="text-[11px] text-neutral-400">Rezervuar më {new Date(res.createdAt).toLocaleDateString("sq-AL")}</p>
+                    )}
                   </div>
                 </div>
                 <StatusBadge status={res.status} />
@@ -534,8 +566,8 @@ export default function AdminReservations() {
                   <button onClick={() => openEdit(res.id)} className="p-2 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer" aria-label="Modifiko">
                     <PencilSimple size={16} />
                   </button>
-                  <button onClick={() => setDeleteConfirmId(res.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Fshi">
-                    <Trash size={16} />
+                  <button onClick={() => setDeleteConfirmId(res.id)} className="p-2 rounded text-neutral-400 hover:text-error hover:bg-error/10 cursor-pointer" aria-label="Anulo">
+                    <X size={16} />
                   </button>
                 </div>
               </div>
@@ -571,7 +603,12 @@ export default function AdminReservations() {
                       {selectedIds.has(res.id) ? <CheckSquare size={18} weight="fill" className="text-primary" /> : <Square size={18} />}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-800">{getCustomerName(res.customerId)}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-800">
+                    {getCustomerName(res.customerId)}
+                    {res.createdAt && (
+                      <span className="block text-[11px] font-normal text-neutral-400">Rezervuar më {new Date(res.createdAt).toLocaleDateString("sq-AL")}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-neutral-700">{getCarName(res.carId)}</td>
                   <td className="px-4 py-3 text-xs text-neutral-600">
                     {new Date(res.startDate).toLocaleDateString("sq-AL")} → {new Date(res.endDate).toLocaleDateString("sq-AL")}
@@ -609,8 +646,8 @@ export default function AdminReservations() {
                       <button onClick={() => openEdit(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-amber-600 hover:bg-amber-50 transition-colors duration-200 cursor-pointer" aria-label="Modifiko">
                         <PencilSimple size={16} weight="regular" />
                       </button>
-                      <button onClick={() => setDeleteConfirmId(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 transition-colors duration-200 cursor-pointer" aria-label="Fshi">
-                        <Trash size={16} weight="regular" />
+                      <button onClick={() => setDeleteConfirmId(res.id)} className="p-1.5 rounded text-neutral-400 hover:text-error hover:bg-error/10 transition-colors duration-200 cursor-pointer" aria-label="Anulo">
+                        <X size={16} weight="regular" />
                       </button>
                       {emailFeedback[res.id] === "confirmed" && (
                         <span className="flex items-center gap-1 text-xs text-success font-medium px-2 py-1 bg-success/10 rounded-full">
@@ -1036,28 +1073,28 @@ export default function AdminReservations() {
           <div className="relative bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center shrink-0">
-                <Trash size={20} className="text-error" />
+                <X size={20} className="text-error" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-neutral-900">Fshi rezervimin</h3>
-                <p className="text-xs text-neutral-500">Ky veprim është i pakthyeshëm</p>
+                <h3 className="text-base font-semibold text-neutral-900">Anulo rezervimin</h3>
+                <p className="text-xs text-neutral-500">Rezervimi nuk fshihet — vetëm anulohet</p>
               </div>
             </div>
             <p className="text-sm text-neutral-600 mb-5">
-              A jeni të sigurt që dëshironi të fshini rezervimin e{" "}
+              A jeni të sigurt që dëshironi të anuloni rezervimin e{" "}
               <span className="font-semibold">{getCustomerName((reservations ?? []).find(r => r.id === deleteConfirmId)?.customerId ?? "")}</span>?
-              Të gjitha të dhënat do të fshihen përgjithmonë.
+              Statusi bëhet «Anuluar», por të dhënat ruhen.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium border border-border text-neutral-700 hover:bg-secondary transition-colors cursor-pointer">
-                Anulo
+                Jo, mbaje
               </button>
               <button
                 onClick={() => handleDeleteReservation(deleteConfirmId)}
                 disabled={isMutating}
                 className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-error text-error-foreground hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
               >
-                Po, fshi
+                Po, anulo
               </button>
             </div>
           </div>
