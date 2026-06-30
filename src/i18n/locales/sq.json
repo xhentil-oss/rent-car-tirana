@@ -619,7 +619,46 @@
       "downloadSubtitle": "Gjenero PDF me të gjitha të dhënat dhe firmën tuaj dixhitale.",
       "downloadedTitle": "✅ Kontrata u shkarkua",
       "downloadedSubtitle": "Kontrata PDF është gati. Mund ta shkarkoni sërish.",
-      "downloadBtn": "Shkarko PDF"
+      "downloadBtn": "Shkarko PDF",
+      "clauses": [
+        {
+          "label": "Dorëzimi dhe kthimi",
+          "text": "Klienti merr përsipër të kthejë automjetin në gjendjen që e ka marrë, në vendin e dakordësuar dhe brenda orarit të caktuar."
+        },
+        {
+          "label": "Shoferi",
+          "text": "Automjeti mund të përdoret vetëm nga shoferi i regjistruar në kontratë, me leje drejtimi të vlefshme. Shoferi duhet të ketë mbushur 21 vjeç."
+        },
+        {
+          "label": "Sigurimi",
+          "text": "Automjeti është i mbuluar me sigurimin e zgjedhur gjatë rezervimit. Dëmet që nuk mbulohen nga sigurimi janë përgjegjësi e klientit."
+        },
+        {
+          "label": "Karburanti",
+          "text": "Automjeti dorëzohet me rezervuar të plotë dhe duhet kthyer me rezervuar të plotë, përndryshe aplikohet tarifë shtesë."
+        },
+        {
+          "label": "Trafiku dhe gjobat",
+          "text": "Klienti mban përgjegjësi për çdo gjobë trafiku të kryer gjatë periudhës së qirasë."
+        },
+        {
+          "label": "Ndotja dhe dëmtimi",
+          "text": "Dëmtimet e brendshme (ndotja e tepërt, dëme nga pirja e duhanit) tarifohen shtesë. Dëmtimet e jashtme raportohen menjëherë."
+        },
+        {
+          "label": "Depozita",
+          "text": "Një shumë garanci mund të bllokohet në kartën e klientit gjatë periudhës së qirasë dhe lirohet pa kushte pas kthimit të automjetit pa dëme."
+        },
+        {
+          "label": "Anulimi",
+          "text": "Anulimi 48+ orë para tërheqjes është falas. Anulimi me vonesë mund të tarifohet deri në 50% të vlerës totale."
+        },
+        {
+          "label": "Ligji",
+          "text": "Kjo kontratë rregullohet nga ligjet e Republikës së Shqipërisë. Çdo mosmarrëveshje i nënshtrohet Gjykatës së Tiranës."
+        }
+      ],
+      "clausesFooter": "Duke nënshkruar, klienti pranon të gjitha kushtet e mësipërme dhe konfirmon se i ka lexuar dhe kuptuar ato."
     },
     "carUnavailable": "Makina nuk është e disponueshme",
     "carUnavailableDetail": "Kjo makinë është aktualisht {{status}} dhe nuk mund të rezervohet. Shkoni te flota për alternativa.",
@@ -676,7 +715,42 @@
       "minDays": "Minimumi i rezervimit është {{count}} ditë."
     },
     "flightNumber": "Numri i fluturimit (opsional)",
-    "flightNumberPlaceholder": "p.sh. W6 3015"
+    "flightNumberPlaceholder": "p.sh. W6 3015",
+    "contractPdf": {
+      "contractTitle": "KONTRATË QIRAJE",
+      "serviceSubtitle": "Shërbim qiraje automjetesh",
+      "signedBadge": "E NËNSHKRUAR",
+      "dateLabel": "Datë",
+      "clientSection": "Të dhënat e klientit",
+      "fullName": "Emri i plotë",
+      "email": "Email",
+      "phone": "Telefon",
+      "carSection": "Automjeti",
+      "rentalSection": "Detaje rezervimi",
+      "pickupLoc": "Vendi i tërheqjes",
+      "dropoffLoc": "Vendi i kthimit",
+      "startDateTime": "Data & Ora e nisjes",
+      "endDateTime": "Data & Ora e kthimit",
+      "daysLabel": "Numri i ditëve",
+      "daysUnit": "ditë",
+      "extrasLabel": "Shtesa",
+      "noneLabel": "Asnjë",
+      "insuranceLabel": "Sigurimi",
+      "priceSection": "Çmimi",
+      "baseRent": "Qiraja bazë",
+      "extrasRow": "Shtesa",
+      "insuranceRow": "Sigurimi",
+      "discountRow": "Zbritje",
+      "totalRow": "TOTALI",
+      "termsSection": "Kushtet kryesore të qirasë",
+      "signaturesSection": "Nënshkrimet",
+      "clientSignature": "Nënshkrimi i klientit",
+      "companySignature": "Nënshkrimi i kompanisë",
+      "authorizedBy": "Autorizuar nga",
+      "footer1": "Ky dokument është gjeneruar automatikisht nga sistemi i rezervimeve të {company}.",
+      "footer2": "Kontratë e vlefshme ligjërisht sipas legjislacionit të Republikës së Shqipërisë · Gjykata kompetente: Tiranë",
+      "popupBlocked": "Lejo dritaret pop-up për të shkarkuar PDF-in."
+    }
   },
   "contactPage": {
     "badge": "NA KONTAKTONI",

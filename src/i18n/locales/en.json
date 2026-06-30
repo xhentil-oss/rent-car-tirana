@@ -623,7 +623,46 @@
       "downloadSubtitle": "Generate PDF with all your data and digital signature.",
       "downloadedTitle": "✅ Contract downloaded",
       "downloadedSubtitle": "The PDF contract is ready. You can download it again.",
-      "downloadBtn": "Download PDF"
+      "downloadBtn": "Download PDF",
+      "clauses": [
+        {
+          "label": "Handover and return",
+          "text": "The customer undertakes to return the vehicle in the condition received, at the agreed location and within the agreed time."
+        },
+        {
+          "label": "Driver",
+          "text": "The vehicle may only be driven by the driver registered in the contract, holding a valid driving licence. The driver must be at least 21 years old."
+        },
+        {
+          "label": "Insurance",
+          "text": "The vehicle is covered by the insurance selected during booking. Damage not covered by the insurance is the customer's responsibility."
+        },
+        {
+          "label": "Fuel",
+          "text": "The vehicle is delivered with a full tank and must be returned with a full tank, otherwise an additional charge applies."
+        },
+        {
+          "label": "Traffic and fines",
+          "text": "The customer is liable for any traffic fines incurred during the rental period."
+        },
+        {
+          "label": "Cleanliness and damage",
+          "text": "Interior damage (excessive dirt, smoking damage) is charged extra. Exterior damage must be reported immediately."
+        },
+        {
+          "label": "Deposit",
+          "text": "A security amount may be held on the customer's card during the rental period and is released unconditionally after the vehicle is returned undamaged."
+        },
+        {
+          "label": "Cancellation",
+          "text": "Cancellation 48+ hours before pickup is free. Late cancellation may be charged up to 50% of the total value."
+        },
+        {
+          "label": "Governing law",
+          "text": "This contract is governed by the laws of the Republic of Albania. Any dispute is subject to the Court of Tirana."
+        }
+      ],
+      "clausesFooter": "By signing, the customer accepts all the above terms and confirms having read and understood them."
     },
     "carUnavailable": "Car not available",
     "carUnavailableDetail": "This car is currently {{status}} and cannot be reserved. Go to fleet for alternatives.",
@@ -680,7 +719,42 @@
       "minDays": "Minimum booking is {{count}} day(s)."
     },
     "flightNumber": "Flight number (optional)",
-    "flightNumberPlaceholder": "e.g. W6 3015"
+    "flightNumberPlaceholder": "e.g. W6 3015",
+    "contractPdf": {
+      "contractTitle": "CAR RENTAL CONTRACT",
+      "serviceSubtitle": "Car rental service",
+      "signedBadge": "SIGNED",
+      "dateLabel": "Date",
+      "clientSection": "Customer details",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "carSection": "Vehicle",
+      "rentalSection": "Reservation details",
+      "pickupLoc": "Pickup location",
+      "dropoffLoc": "Return location",
+      "startDateTime": "Pickup date & time",
+      "endDateTime": "Return date & time",
+      "daysLabel": "Number of days",
+      "daysUnit": "days",
+      "extrasLabel": "Extras",
+      "noneLabel": "None",
+      "insuranceLabel": "Insurance",
+      "priceSection": "Price",
+      "baseRent": "Base rental",
+      "extrasRow": "Extras",
+      "insuranceRow": "Insurance",
+      "discountRow": "Discount",
+      "totalRow": "TOTAL",
+      "termsSection": "Main rental terms",
+      "signaturesSection": "Signatures",
+      "clientSignature": "Customer signature",
+      "companySignature": "Company signature",
+      "authorizedBy": "Authorized by",
+      "footer1": "This document was generated automatically by the reservation system of {company}.",
+      "footer2": "Legally valid contract under the legislation of the Republic of Albania · Competent court: Tirana",
+      "popupBlocked": "Please allow pop-up windows to download the PDF."
+    }
   },
   "contactPage": {
     "badge": "CONTACT US",

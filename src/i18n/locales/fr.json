@@ -623,7 +623,46 @@
       "downloadSubtitle": "Générer un PDF avec toutes vos données et la signature numérique.",
       "downloadedTitle": "✅ Contrat téléchargé",
       "downloadedSubtitle": "Le contrat PDF est prêt. Vous pouvez le télécharger à nouveau.",
-      "downloadBtn": "Télécharger le PDF"
+      "downloadBtn": "Télécharger le PDF",
+      "clauses": [
+        {
+          "label": "Remise et restitution",
+          "text": "Le client s'engage à restituer le véhicule dans l'état où il l'a reçu, au lieu convenu et dans les délais convenus."
+        },
+        {
+          "label": "Conducteur",
+          "text": "Le véhicule ne peut être conduit que par le conducteur enregistré au contrat, titulaire d'un permis valide. Le conducteur doit avoir au moins 21 ans."
+        },
+        {
+          "label": "Assurance",
+          "text": "Le véhicule est couvert par l'assurance choisie lors de la réservation. Les dommages non couverts par l'assurance sont à la charge du client."
+        },
+        {
+          "label": "Carburant",
+          "text": "Le véhicule est livré avec le plein et doit être restitué avec le plein, faute de quoi des frais supplémentaires s'appliquent."
+        },
+        {
+          "label": "Circulation et amendes",
+          "text": "Le client est responsable de toute amende de circulation encourue pendant la période de location."
+        },
+        {
+          "label": "Propreté et dommages",
+          "text": "Les dommages intérieurs (saleté excessive, dommages dus au tabac) sont facturés en supplément. Les dommages extérieurs doivent être signalés immédiatement."
+        },
+        {
+          "label": "Caution",
+          "text": "Un montant de garantie peut être bloqué sur la carte du client pendant la location et est libéré sans condition après la restitution du véhicule sans dommage."
+        },
+        {
+          "label": "Annulation",
+          "text": "L'annulation 48 h et plus avant la prise en charge est gratuite. Une annulation tardive peut être facturée jusqu'à 50 % du montant total."
+        },
+        {
+          "label": "Droit applicable",
+          "text": "Ce contrat est régi par les lois de la République d'Albanie. Tout litige relève du Tribunal de Tirana."
+        }
+      ],
+      "clausesFooter": "En signant, le client accepte toutes les conditions ci-dessus et confirme les avoir lues et comprises."
     },
     "carUnavailable": "Voiture non disponible",
     "carUnavailableDetail": "Cette voiture est actuellement {{status}} et ne peut pas être réservée. Allez à la flotte pour des alternatives.",
@@ -680,7 +719,42 @@
       "minDays": "Réservation minimale : {{count}} jour(s)."
     },
     "flightNumber": "Numéro de vol (optionnel)",
-    "flightNumberPlaceholder": "ex. W6 3015"
+    "flightNumberPlaceholder": "ex. W6 3015",
+    "contractPdf": {
+      "contractTitle": "CONTRAT DE LOCATION",
+      "serviceSubtitle": "Service de location de voitures",
+      "signedBadge": "SIGNÉ",
+      "dateLabel": "Date",
+      "clientSection": "Coordonnées du client",
+      "fullName": "Nom complet",
+      "email": "Email",
+      "phone": "Téléphone",
+      "carSection": "Véhicule",
+      "rentalSection": "Détails de la réservation",
+      "pickupLoc": "Lieu de prise en charge",
+      "dropoffLoc": "Lieu de restitution",
+      "startDateTime": "Date & heure de départ",
+      "endDateTime": "Date & heure de retour",
+      "daysLabel": "Nombre de jours",
+      "daysUnit": "jours",
+      "extrasLabel": "Suppléments",
+      "noneLabel": "Aucun",
+      "insuranceLabel": "Assurance",
+      "priceSection": "Prix",
+      "baseRent": "Location de base",
+      "extrasRow": "Suppléments",
+      "insuranceRow": "Assurance",
+      "discountRow": "Remise",
+      "totalRow": "TOTAL",
+      "termsSection": "Conditions principales de location",
+      "signaturesSection": "Signatures",
+      "clientSignature": "Signature du client",
+      "companySignature": "Signature de la société",
+      "authorizedBy": "Autorisé par",
+      "footer1": "Ce document a été généré automatiquement par le système de réservation de {company}.",
+      "footer2": "Contrat juridiquement valable selon la législation de la République d'Albanie · Tribunal compétent : Tirana",
+      "popupBlocked": "Veuillez autoriser les fenêtres pop-up pour télécharger le PDF."
+    }
   },
   "contactPage": {
     "badge": "NOUS CONTACTER",

@@ -623,7 +623,46 @@
       "downloadSubtitle": "Genera un PDF con todos tus datos y firma digital.",
       "downloadedTitle": "✅ Contrato descargado",
       "downloadedSubtitle": "El contrato PDF está listo. Puedes descargarlo de nuevo.",
-      "downloadBtn": "Descargar PDF"
+      "downloadBtn": "Descargar PDF",
+      "clauses": [
+        {
+          "label": "Entrega y devolución",
+          "text": "El cliente se compromete a devolver el vehículo en el estado en que lo recibió, en el lugar acordado y dentro del horario establecido."
+        },
+        {
+          "label": "Conductor",
+          "text": "El vehículo solo puede ser conducido por el conductor registrado en el contrato, con un permiso de conducir válido. El conductor debe tener al menos 21 años."
+        },
+        {
+          "label": "Seguro",
+          "text": "El vehículo está cubierto por el seguro seleccionado durante la reserva. Los daños no cubiertos por el seguro son responsabilidad del cliente."
+        },
+        {
+          "label": "Combustible",
+          "text": "El vehículo se entrega con el depósito lleno y debe devolverse con el depósito lleno, de lo contrario se aplicará un cargo adicional."
+        },
+        {
+          "label": "Tráfico y multas",
+          "text": "El cliente es responsable de cualquier multa de tráfico durante el período de alquiler."
+        },
+        {
+          "label": "Limpieza y daños",
+          "text": "Los daños interiores (suciedad excesiva, daños por fumar) se cobran aparte. Los daños exteriores deben comunicarse de inmediato."
+        },
+        {
+          "label": "Depósito",
+          "text": "Se puede bloquear un importe de garantía en la tarjeta del cliente durante el alquiler y se libera sin condiciones tras devolver el vehículo sin daños."
+        },
+        {
+          "label": "Cancelación",
+          "text": "La cancelación 48+ horas antes de la recogida es gratuita. La cancelación tardía puede cobrarse hasta el 50% del valor total."
+        },
+        {
+          "label": "Legislación aplicable",
+          "text": "Este contrato se rige por las leyes de la República de Albania. Cualquier disputa se somete al Tribunal de Tirana."
+        }
+      ],
+      "clausesFooter": "Al firmar, el cliente acepta todas las condiciones anteriores y confirma haberlas leído y entendido."
     },
     "carUnavailable": "Coche no disponible",
     "carUnavailableDetail": "Este coche está actualmente {{status}} y no se puede reservar. Ve a la flota para alternativas.",
@@ -680,7 +719,42 @@
       "minDays": "Reserva mínima: {{count}} día(s)."
     },
     "flightNumber": "Número de vuelo (opcional)",
-    "flightNumberPlaceholder": "ej. W6 3015"
+    "flightNumberPlaceholder": "ej. W6 3015",
+    "contractPdf": {
+      "contractTitle": "CONTRATO DE ALQUILER",
+      "serviceSubtitle": "Servicio de alquiler de coches",
+      "signedBadge": "FIRMADO",
+      "dateLabel": "Fecha",
+      "clientSection": "Datos del cliente",
+      "fullName": "Nombre completo",
+      "email": "Email",
+      "phone": "Teléfono",
+      "carSection": "Vehículo",
+      "rentalSection": "Detalles de la reserva",
+      "pickupLoc": "Lugar de recogida",
+      "dropoffLoc": "Lugar de devolución",
+      "startDateTime": "Fecha y hora de recogida",
+      "endDateTime": "Fecha y hora de devolución",
+      "daysLabel": "Número de días",
+      "daysUnit": "días",
+      "extrasLabel": "Extras",
+      "noneLabel": "Ninguno",
+      "insuranceLabel": "Seguro",
+      "priceSection": "Precio",
+      "baseRent": "Alquiler base",
+      "extrasRow": "Extras",
+      "insuranceRow": "Seguro",
+      "discountRow": "Descuento",
+      "totalRow": "TOTAL",
+      "termsSection": "Condiciones principales del alquiler",
+      "signaturesSection": "Firmas",
+      "clientSignature": "Firma del cliente",
+      "companySignature": "Firma de la empresa",
+      "authorizedBy": "Autorizado por",
+      "footer1": "Este documento se generó automáticamente por el sistema de reservas de {company}.",
+      "footer2": "Contrato legalmente válido según la legislación de la República de Albania · Tribunal competente: Tirana",
+      "popupBlocked": "Permite las ventanas emergentes para descargar el PDF."
+    }
   },
   "contactPage": {
     "badge": "CONTÁCTANOS",

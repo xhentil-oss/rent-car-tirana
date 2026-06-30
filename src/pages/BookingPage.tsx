@@ -1306,16 +1306,10 @@ export default function BookingPage() {
               {/* Contract Terms Box */}
               <div className="bg-neutral-50 border border-border rounded-lg p-4 mb-4 max-h-48 overflow-y-auto text-xs text-neutral-600 leading-relaxed space-y-2">
                 <p className="font-semibold text-neutral-800">{t("booking.contract.termsTitle")}</p>
-                <p><strong>1. Dorëzimi dhe kthimi:</strong> Klienti merr përsipër të kthejë automjetin në gjendjen që e ka marrë, në vendin e dakordësuar dhe brenda orarit të caktuar.</p>
-                <p><strong>2. Shoferi:</strong> Automjeti mund të përdoret vetëm nga shoferi i regjistruar në kontratë, me leje drejtimi të vlefshme. Shoferi duhet të ketë mbushur 21 vjeç.</p>
-                <p><strong>3. Sigurimi:</strong> Automjeti është i mbuluar me sigurimin e zgjedhur gjatë rezervimit. Dëmet që nuk mbulohen nga sigurimi janë përgjegjësi e klientit.</p>
-                <p><strong>4. Karburanti:</strong> Automjeti dorëzohet me rezervuar të plotë dhe duhet kthyer me rezervuar të plotë, ose tarifë shtesë do të aplikohet.</p>
-                <p><strong>5. Trafiku dhe gjobat:</strong> Klienti mban përgjegjësi për çdo gjobë trafiku të kryer gjatë periudhës së qirasë.</p>
-                <p><strong>6. Ndotja dhe dëmtimi:</strong> Dëmtimet e brendshme (ndotja e tepërt, dëme nga pirja e duhanit) tarifohen shtesë. Dëmitimet e jashtme raportohen menjëherë.</p>
-                <p><strong>7. Deposit:</strong> Një shumë garanci mund të bllokohet në kartën e klientit gjatë periudhës së qirasë dhe lirohet pa kushte pas kthimit të automjetit pa dëme.</p>
-                <p><strong>8. Anulimi:</strong> Anulimi 48+ orë para tërhieves është falas. Anulimi me vonesë mund të tarifohet deri në 50% të vlerës totale.</p>
-                <p><strong>9. Ligji:</strong> Ky kontrat rregullohet nga ligjet e Republikës së Shqipërisë. Çdo mosmarrëveshje i nënshtrohet Gjykatës së Tiranës.</p>
-                <p className="text-neutral-400 italic">Duke nënshkruar, klienti pranon të gjitha kushtet e mësipërme dhe konfirmon se i ka lexuar dhe kuptuar ato.</p>
+                {(t("booking.contract.clauses", { returnObjects: true }) as { label: string; text: string }[]).map((c, i) => (
+                  <p key={i}><strong>{i + 1}. {c.label}:</strong> {c.text}</p>
+                ))}
+                <p className="text-neutral-400 italic">{t("booking.contract.clausesFooter")}</p>
               </div>
 
               {/* Terms checkbox */}
@@ -1414,6 +1408,12 @@ export default function BookingPage() {
                           companyPhone: companyInfo.companyPhone,
                           companyEmail: companyInfo.companyEmail,
                           companyAddress: companyInfo.companyAddress,
+                          lang: i18n.language,
+                          i18n: {
+                            ...(t("booking.contractPdf", { returnObjects: true }) as Record<string, string>),
+                            clauses: t("booking.contract.clauses", { returnObjects: true }) as { label: string; text: string }[],
+                            clausesFooter: t("booking.contract.clausesFooter"),
+                          },
                         });
                         setContractDownloaded(true);
                       }}
