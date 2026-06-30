@@ -398,6 +398,105 @@ router.post('/login-2fa', async (req, res) => {
   }
 });
 
+// ─── Passwordless email-code login (admin/staff only) ────────────
+// Staff request a 6-digit code by email, then exchange it for a session — no
+// password needed. Customers cannot use this path. The code is stored hashed
+// (bcrypt), single-use, expires in 10 min, and reuses the OTP brute-force
+// counters (otp_failed_attempts / otp_locked_until).
+const LOGIN_CODE_TTL_MS = 10 * 60 * 1000;
+
+router.post('/login-code/request', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  // Generic response regardless of outcome → no account enumeration.
+  const generic = { ok: true, message: 'Nëse ekziston një llogari stafi me këtë email, kodi u dërgua.' };
+  if (!email) return res.status(400).json({ error: 'Email është i detyrueshëm.' });
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, email, name, role, is_active FROM users WHERE email = ?',
+      [email]
+    );
+    const user = rows[0];
+    if (!user || !user.is_active || !ADMIN_ROLES.includes(user.role)) {
+      return res.json(generic);
+    }
+    const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    const codeHash = await bcrypt.hash(code, BCRYPT_ROUNDS);
+    const expires = new Date(Date.now() + LOGIN_CODE_TTL_MS);
+    await pool.query(
+      'UPDATE users SET login_code_hash = ?, login_code_expires = ?, otp_failed_attempts = 0, otp_locked_until = NULL WHERE id = ?',
+      [codeHash, expires, user.id]
+    );
+    sendMail(
+      user.email,
+      'Kodi i hyrjes — RentCar Tirana',
+      `<div style="font-family:Arial,sans-serif;color:#1f2937">
+        <p>Përshëndetje ${escapeHtml(user.name)},</p>
+        <p>Kodi juaj i hyrjes në panel:</p>
+        <p style="font-size:30px;font-weight:bold;letter-spacing:6px;margin:16px 0">${code}</p>
+        <p style="color:#6b7280;font-size:14px">Kodi skadon për 10 minuta. Nëse nuk e kërkuat ju, injorojeni këtë email.</p>
+      </div>`
+    ).catch((e) => console.error('[Email] login code failed:', e?.message));
+    await logActivity({ userId: user.id, action: 'LOGIN_CODE_REQUEST', entity: 'User', entityId: user.id, description: `Kërkesë kod hyrjeje: ${email}`, ipAddress: req.ip });
+    return res.json(generic);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });
+  }
+});
+
+router.post('/login-code/verify', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const code = String(req.body.code || '').trim();
+  if (!email || !code) return res.status(400).json({ error: 'Email dhe kodi janë të detyrueshme.' });
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, email, name, role, permissions, is_active, login_code_hash, login_code_expires, otp_failed_attempts, otp_locked_until, email_verified FROM users WHERE email = ?',
+      [email]
+    );
+    const user = rows[0];
+    if (!user || !user.is_active || !ADMIN_ROLES.includes(user.role)) {
+      return res.status(401).json({ error: 'Email ose kod i gabuar.' });
+    }
+    if (user.otp_locked_until && new Date(user.otp_locked_until) > new Date()) {
+      const remaining = Math.ceil((new Date(user.otp_locked_until) - Date.now()) / 60000);
+      return res.status(429).json({ error: `Shumë përpjekje të gabuara. Provoni pas ${remaining} minutash.` });
+    }
+    if (!user.login_code_hash || !user.login_code_expires || new Date(user.login_code_expires) < new Date()) {
+      return res.status(401).json({ error: 'Kodi ka skaduar. Kërkoni një kod të ri.' });
+    }
+    const valid = await bcrypt.compare(code, user.login_code_hash);
+    if (!valid) {
+      const attempts = (user.otp_failed_attempts || 0) + 1;
+      if (attempts >= OTP_MAX_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + OTP_LOCK_MINUTES * 60 * 1000);
+        await pool.query('UPDATE users SET otp_failed_attempts = ?, otp_locked_until = ? WHERE id = ?', [attempts, lockedUntil, user.id]);
+        return res.status(429).json({ error: `Shumë përpjekje të gabuara. Llogaria u bllokua për ${OTP_LOCK_MINUTES} minuta.` });
+      }
+      await pool.query('UPDATE users SET otp_failed_attempts = ? WHERE id = ?', [attempts, user.id]);
+      return res.status(401).json({ error: `Kodi është i gabuar. (${OTP_MAX_ATTEMPTS - attempts} përpjekje të mbetura)` });
+    }
+    // Success — consume code, reset counters, issue a full session.
+    await pool.query(
+      'UPDATE users SET login_code_hash = NULL, login_code_expires = NULL, otp_failed_attempts = 0, otp_locked_until = NULL, last_login = NOW() WHERE id = ?',
+      [user.id]
+    );
+    const { access, refresh } = makeTokens(user.id);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
+    await pool.query(
+      'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
+      [uuidv4(), user.id, hashToken(refresh), expiresAt]
+    );
+    await logActivity({ userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id, description: `Login me kod email: ${email}`, ipAddress: req.ip });
+    setAuthCookies(res, access, refresh);
+    return res.json({
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, permissions: user.permissions, customerId: null, email_verified: user.email_verified },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Gabim i brendshëm i serverit.' });
+  }
+});
+
 // ─── POST /api/auth/refresh ───────────────────────────────────
 router.post('/refresh', async (req, res) => {
   const refreshToken = req.cookies?.rct_refresh_token;

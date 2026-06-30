@@ -363,6 +363,38 @@ export function useAuth() {
     return data.user;
   }, []);
 
+  // Passwordless email-code login (admin/staff). Step 1: request a code.
+  const requestLoginCode = useCallback(async (email: string) => {
+    const res = await fetch(`${API_BASE}/auth/login-code/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Dërgimi i kodit dështoi");
+    }
+    return res.json();
+  }, []);
+
+  // Step 2: exchange the email + code for a session.
+  const loginWithCode = useCallback(async (email: string, code: string) => {
+    const res = await fetch(`${API_BASE}/auth/login-code/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Kodi i pavlefshëm");
+    }
+    const data = await res.json();
+    publishAuthUser(data.user);
+    return data.user;
+  }, []);
+
   const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
     // Detect locale from URL so the verification email link redirects back to
     // the page in the user's language.
@@ -427,5 +459,5 @@ export function useAuth() {
     return res.json();
   }, []);
 
-  return { user, isPending, isAnonymous, login, loginWith2FA, register, googleLogin, logout, forgotPassword };
+  return { user, isPending, isAnonymous, login, loginWith2FA, requestLoginCode, loginWithCode, register, googleLogin, logout, forgotPassword };
 }

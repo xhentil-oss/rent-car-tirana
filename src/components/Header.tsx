@@ -163,7 +163,7 @@ function LanguageSwitcher({ onAfterSelect }: { onAfterSelect?: () => void }) {
 }
 
 function UserMenu() {
-  const { user, isPending, isAnonymous, login, loginWith2FA, register, googleLogin, logout, forgotPassword } = useAuth();
+  const { user, isPending, isAnonymous, login, loginWith2FA, requestLoginCode, loginWithCode, register, googleLogin, logout, forgotPassword } = useAuth();
   const { localePath } = useLocale();
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -190,6 +190,13 @@ function UserMenu() {
   const [otpCode, setOtpCode] = useState("");
   const [twoFAError, setTwoFAError] = useState("");
   const [twoFALoading, setTwoFALoading] = useState(false);
+  // Passwordless email-code login (admin/staff)
+  const [codeMode, setCodeMode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [loginCode, setLoginCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [codeInfo, setCodeInfo] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
   // Forgot password
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotError, setForgotError] = useState("");
@@ -262,6 +269,25 @@ function UserMenu() {
         .then(() => setForgotSent(true))
         .catch((err: Error) => setForgotError(err.message || "Kërkesa dështoi"))
         .finally(() => setForgotLoading(false));
+    };
+
+    const handleRequestCode = () => {
+      setCodeLoading(true);
+      setCodeError("");
+      setCodeInfo("");
+      requestLoginCode(loginEmail)
+        .then(() => { setCodeSent(true); setCodeInfo("Nëse ky email i përket stafit, kodi u dërgua. Kontrollo edhe Spam."); })
+        .catch((err: Error) => setCodeError(err.message || "Dërgimi i kodit dështoi"))
+        .finally(() => setCodeLoading(false));
+    };
+
+    const handleVerifyCode = () => {
+      setCodeLoading(true);
+      setCodeError("");
+      loginWithCode(loginEmail, loginCode)
+        .then(() => { setShowAuth(false); setCodeMode(false); setCodeSent(false); setLoginCode(""); })
+        .catch((err: Error) => setCodeError(err.message || "Kodi i pavlefshëm"))
+        .finally(() => setCodeLoading(false));
     };
 
     const handleRegister = () => {
@@ -393,6 +419,54 @@ function UserMenu() {
                     Kthehu te kyçja
                   </button>
                 </>
+              ) : authTab === "login" && codeMode ? (
+                /* ── Login me kod në email (vetëm staf) ── */
+                <>
+                  {codeError && <p className="text-xs text-error mb-2">{codeError}</p>}
+                  {codeInfo && <p className="text-xs text-success mb-2">{codeInfo}</p>}
+                  <input
+                    type="email"
+                    placeholder="Email i stafit"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    disabled={codeSent}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary disabled:bg-neutral-50 disabled:text-neutral-500"
+                  />
+                  {codeSent && (
+                    <input
+                      inputMode="numeric"
+                      autoFocus
+                      maxLength={6}
+                      placeholder="Kodi 6-shifror"
+                      value={loginCode}
+                      onChange={(e) => setLoginCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleVerifyCode(); }}
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md mb-2 outline-none focus:border-primary tracking-[0.4em] text-center"
+                    />
+                  )}
+                  <button
+                    disabled={codeLoading || !loginEmail || (codeSent && loginCode.length < 6)}
+                    onClick={codeSent ? handleVerifyCode : handleRequestCode}
+                    className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
+                  >
+                    {codeLoading ? "Duke punuar..." : codeSent ? "Hyr" : "Dërgo kodin"}
+                  </button>
+                  {codeSent && (
+                    <button
+                      onClick={handleRequestCode}
+                      disabled={codeLoading}
+                      className="mt-2 w-full text-xs text-neutral-400 hover:text-primary underline cursor-pointer bg-transparent border-0"
+                    >
+                      Dërgo përsëri kodin
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setCodeMode(false); setCodeSent(false); setLoginCode(""); setCodeError(""); setCodeInfo(""); }}
+                    className="mt-2 w-full text-xs text-neutral-400 hover:text-primary underline cursor-pointer bg-transparent border-0"
+                  >
+                    ← Hyr me fjalëkalim
+                  </button>
+                </>
               ) : authTab === "login" ? (
                 /* ── Login ── */
                 <>
@@ -426,6 +500,12 @@ function UserMenu() {
                     className="w-full py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer border-0"
                   >
                     {loginLoading ? "Duke hyrë..." : "Hyr"}
+                  </button>
+                  <button
+                    onClick={() => { setCodeMode(true); setCodeError(""); setCodeInfo(""); setLoginError(""); }}
+                    className="mt-2 w-full text-xs text-neutral-500 hover:text-primary underline cursor-pointer bg-transparent border-0"
+                  >
+                    Hyr me kod në email (staf)
                   </button>
                   {GOOGLE_CLIENT_ID && (
                     <>

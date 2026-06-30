@@ -570,6 +570,9 @@ const ALTERS = [
   // ── OTP / 2FA brute-force tracking persisted to DB ──
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_failed_attempts TINYINT DEFAULT 0`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_locked_until DATETIME NULL`,
+  // ── Passwordless email-code login (admin/staff) ──
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS login_code_hash VARCHAR(255) DEFAULT NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS login_code_expires DATETIME DEFAULT NULL`,
   // ── Google OAuth (sign-in with Google) ──
   // google_id is the 'sub' claim from Google's ID token — stable, unique per Google account.
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) NULL UNIQUE`,
