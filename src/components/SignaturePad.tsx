@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { ArrowCounterClockwise, CheckCircle, PenNib } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 interface SignaturePadProps {
   onSign: (dataUrl: string) => void;
@@ -8,6 +9,7 @@ interface SignaturePadProps {
 }
 
 export default function SignaturePad({ onSign, onClear, signed }: SignaturePadProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasStrokes, setHasStrokes] = useState(false);
@@ -121,14 +123,14 @@ export default function SignaturePad({ onSign, onClear, signed }: SignaturePadPr
           <div className="absolute inset-0 flex items-center justify-center bg-success/10 z-10 pointer-events-none">
             <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-success/30">
               <CheckCircle size={18} weight="fill" className="text-success" />
-              <span className="text-sm font-medium text-success">Kontrata u nënshkrua</span>
+              <span className="text-sm font-medium text-success">{t("booking.signature.signed", "Kontrata u nënshkrua")}</span>
             </div>
           </div>
         )}
         {!hasStrokes && !signed && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
             <PenNib size={28} weight="regular" className="text-neutral-300" />
-            <p className="text-xs text-neutral-400">Firmos këtu me mouse ose gisht</p>
+            <p className="text-xs text-neutral-400">{t("booking.signature.hint", "Firmos këtu me mouse ose gisht")}</p>
           </div>
         )}
         <canvas
@@ -147,7 +149,7 @@ export default function SignaturePad({ onSign, onClear, signed }: SignaturePadPr
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-md transition-colors"
         >
           <ArrowCounterClockwise size={14} weight="regular" />
-          Fshi dhe rifirmos
+          {t("booking.signature.clear", "Fshi dhe rifirmos")}
         </button>
         {!signed && (
           <button
@@ -157,7 +159,7 @@ export default function SignaturePad({ onSign, onClear, signed }: SignaturePadPr
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckCircle size={14} weight="regular" />
-            Konfirmo firmën
+            {t("booking.signature.confirm", "Konfirmo firmën")}
           </button>
         )}
       </div>

@@ -754,6 +754,12 @@
       "footer1": "This document was generated automatically by the reservation system of {company}.",
       "footer2": "Legally valid contract under the legislation of the Republic of Albania · Competent court: Tirana",
       "popupBlocked": "Please allow pop-up windows to download the PDF."
+    },
+    "signature": {
+      "signed": "Contract signed",
+      "hint": "Sign here with your mouse or finger",
+      "clear": "Clear and re-sign",
+      "confirm": "Confirm signature"
     }
   },
   "contactPage": {

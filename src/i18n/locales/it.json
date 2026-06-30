@@ -754,6 +754,12 @@
       "footer1": "Questo documento è stato generato automaticamente dal sistema di prenotazione di {company}.",
       "footer2": "Contratto legalmente valido secondo la legislazione della Repubblica d'Albania · Tribunale competente: Tirana",
       "popupBlocked": "Consenti le finestre pop-up per scaricare il PDF."
+    },
+    "signature": {
+      "signed": "Contratto firmato",
+      "hint": "Firma qui con il mouse o il dito",
+      "clear": "Cancella e rifirma",
+      "confirm": "Conferma firma"
     }
   },
   "contactPage": {

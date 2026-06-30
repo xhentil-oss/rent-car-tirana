@@ -1492,7 +1492,7 @@ export default function BookingPage() {
               )}
             </button>
 
-            <div className={`lg:block ${summaryOpen ? "block" : "hidden"}`}>
+            <div className={`lg:block lg:h-full ${summaryOpen ? "block" : "hidden"}`}>
               <div className="sticky top-24 bg-white rounded-lg border border-border p-6">
                 <h2 className="text-lg font-medium text-neutral-900 mb-4">
                   {t("booking.summaryTitle")}

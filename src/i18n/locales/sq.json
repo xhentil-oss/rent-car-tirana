@@ -750,6 +750,12 @@
       "footer1": "Ky dokument është gjeneruar automatikisht nga sistemi i rezervimeve të {company}.",
       "footer2": "Kontratë e vlefshme ligjërisht sipas legjislacionit të Republikës së Shqipërisë · Gjykata kompetente: Tiranë",
       "popupBlocked": "Lejo dritaret pop-up për të shkarkuar PDF-in."
+    },
+    "signature": {
+      "signed": "Kontrata u nënshkrua",
+      "hint": "Firmos këtu me mouse ose gisht",
+      "clear": "Fshi dhe rifirmos",
+      "confirm": "Konfirmo firmën"
     }
   },
   "contactPage": {
