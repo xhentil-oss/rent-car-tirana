@@ -957,18 +957,23 @@ export default function BookingPage() {
                     {t("booking.phone")}
                   </label>
                   <div className="flex gap-2">
-                    <select
+                    {/* Editable combobox: pick a prefix from the list OR type any custom one. */}
+                    <input
+                      type="text"
+                      list="phone-prefixes"
                       value={form.phonePrefix}
                       onChange={(e) => setForm((f) => ({ ...f, phonePrefix: e.target.value }))}
                       aria-label="Prefiksi i shtetit"
-                      className="shrink-0 w-28 px-2 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                    >
+                      placeholder="+355"
+                      className="shrink-0 w-24 px-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    />
+                    <datalist id="phone-prefixes">
                       {COUNTRY_CODES.map((c) => (
                         <option key={`${c.iso2}${c.dial}`} value={c.dial}>
-                          {flagEmoji(c.iso2)} {c.dial}
+                          {flagEmoji(c.iso2)} {c.name}
                         </option>
                       ))}
-                    </select>
+                    </datalist>
                     <div className="relative flex-1">
                       <Phone
                         size={16}
