@@ -461,11 +461,30 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {featuredCars.map((car, i) => (
-              <div key={car.id} className={`animate-fade-in stagger-${Math.min(i + 1, 4)}`}>
-                <CarCard car={car} />
-              </div>
-            ))}
+            {!allCars ? (
+              [0, 1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-border bg-white overflow-hidden animate-pulse">
+                  <div className="h-44 bg-neutral-200" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-3 w-1/3 bg-neutral-200 rounded" />
+                    <div className="h-5 w-2/3 bg-neutral-200 rounded" />
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="h-3 bg-neutral-100 rounded" />
+                      <div className="h-3 bg-neutral-100 rounded" />
+                      <div className="h-3 bg-neutral-100 rounded" />
+                      <div className="h-3 bg-neutral-100 rounded" />
+                    </div>
+                    <div className="h-9 w-full bg-neutral-100 rounded-md mt-2" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              featuredCars.map((car, i) => (
+                <div key={car.id} className={`animate-fade-in stagger-${Math.min(i + 1, 4)}`}>
+                  <CarCard car={car} />
+                </div>
+              ))
+            )}
           </div>
 
           <div className="mt-10 text-center">
