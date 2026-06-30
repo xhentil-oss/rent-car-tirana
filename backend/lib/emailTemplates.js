@@ -135,8 +135,18 @@ function adminBookingNotification({
   carName, carCategory, pickupLocation, dropoffLocation,
   startDate, startTime, endDate, endTime, days,
   totalPrice, locationFee, insurance, extrasList, source,
-  flightNumber, adminPanelUrl,
+  flightNumber, customerCountry, metaIp, metaCountry, metaDevice, adminPanelUrl,
 }) {
+  // Auto-captured connection/device metadata (like Elementor Forms), shown only
+  // when at least one value is present.
+  const metaHtml = (metaIp || metaCountry || metaDevice)
+    ? `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px">
+        <tr><td colspan="2" style="padding:0 0 8px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Pajisja & lidhja (auto)</td></tr>
+        ${metaCountry ? row('Shteti (IP)', esc(metaCountry)) : ''}
+        ${metaIp ? row('IP', esc(metaIp)) : ''}
+        ${metaDevice ? row('Pajisja', esc(metaDevice)) : ''}
+      </table>`
+    : '';
   const extrasHtml = Array.isArray(extrasList) && extrasList.length > 0
     ? `<tr>
         <td style="padding:7px 0;color:#666;font-size:14px;width:42%;vertical-align:top">Extras</td>
@@ -168,6 +178,7 @@ function adminBookingNotification({
       ${row('Nisja', `${startDate} ${startTime || ''}`)}
       ${row('Kthimi', `${endDate} ${endTime || ''}`)}
       ${flightNumber ? row('Numri i fluturimit', flightNumber) : ''}
+      ${customerCountry ? row('Shteti (klienti)', esc(customerCountry)) : ''}
       ${days ? row('Numri i ditëve', `${days} ditë`) : ''}
       ${insurance ? row('Sigurim', insurance) : ''}
       ${extrasHtml}
@@ -176,6 +187,8 @@ function adminBookingNotification({
       ${source ? row('Burimi', source) : ''}
       ${row('Nr. Rezervimit', String(reservationId).slice(0,8).toUpperCase())}
     </table>
+
+    ${metaHtml}
 
     ${adminPanelUrl ? `
     <p style="margin:0 0 16px">

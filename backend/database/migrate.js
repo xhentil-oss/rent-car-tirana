@@ -550,6 +550,12 @@ const ALTERS = [
   // ── reservations: add location_fee column ──
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS location_fee DECIMAL(10,2) DEFAULT 0`,
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS flight_number VARCHAR(30) DEFAULT NULL`,
+  // ── Customer-selected country + auto-captured request metadata (IP/country/device) ──
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS customer_country VARCHAR(100) DEFAULT NULL`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_ip VARCHAR(45) DEFAULT NULL`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_country VARCHAR(2) DEFAULT NULL`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_device VARCHAR(255) DEFAULT NULL`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_user_agent VARCHAR(500) DEFAULT NULL`,
   // ── Performance indexes ──
   'CREATE INDEX idx_res_overlap ON reservations (car_id, status, start_date, end_date)',
   'CREATE INDEX idx_res_status ON reservations (status)',

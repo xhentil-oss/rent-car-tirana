@@ -4,6 +4,7 @@ const pool = require('../database/db');
 const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../middleware/auth');
 const { safePagination } = require('../lib/helpers');
 const { sendMail } = require('../lib/mailer');
+const { getClientIp, countryFromHeaders, parseDevice, lookupCountry } = require('../lib/requestMeta');
 const tpl = require('../lib/emailTemplates');
 const {
   loadLocations,
@@ -75,6 +76,10 @@ const fmt = (r) => ({
   startDate: toDateOnly(r.start_date), startTime: r.start_time,
   endDate: toDateOnly(r.end_date), endTime: r.end_time,
   flightNumber: r.flight_number || null,
+  customerCountry: r.customer_country || null,
+  metaIp: r.meta_ip || null,
+  metaCountry: r.meta_country || null,
+  metaDevice: r.meta_device || null,
   notes: r.notes, source: r.source, status: r.status,
   totalPrice: r.total_price, locationFee: r.location_fee || 0,
   insurance: r.insurance, extras: r.extras,
@@ -162,8 +167,13 @@ router.get('/:id', authenticate, async (req, res) => {
 // Public endpoint — no authenticate middleware intentionally (web booking form)
 router.post('/', async (req, res) => {
   try {
-    const { carId, customerId, startDate, startTime, endDate, endTime, flightNumber, notes, source, insurance, extras, discountCode, website, customerEmail, selectedExtras } = req.body;
+    const { carId, customerId, startDate, startTime, endDate, endTime, flightNumber, country, notes, source, insurance, extras, discountCode, website, customerEmail, selectedExtras } = req.body;
     let { pickupLocation, dropoffLocation } = req.body;
+    // Auto-captured request metadata (like Elementor Forms): IP, device, country.
+    const metaIp = getClientIp(req);
+    const metaUserAgent = (req.headers['user-agent'] || '').slice(0, 500);
+    const metaDevice = parseDevice(metaUserAgent);
+    const customerCountry = country ? String(country).slice(0, 100) : null;
     // Honeypot bot protection — real users never fill hidden 'website' field
     if (website) return res.status(400).json({ error: 'Gabim.' });
     if (!carId || !customerId || !pickupLocation || !dropoffLocation || !startDate || !endDate) {
@@ -361,8 +371,8 @@ router.post('/', async (req, res) => {
 
       const id = uuidv4();
       await conn.query(
-        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, flight_number, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, (flightNumber ? String(flightNumber).slice(0, 30) : null), notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extrasLegacy, discountCode || null, null]
+        'INSERT INTO reservations (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time, flight_number, customer_country, meta_ip, meta_device, meta_user_agent, notes, source, total_price, location_fee, insurance, extras, discount_code, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, carId, customerId, pickupLocation, dropoffLocation, sd, st, ed, et, (flightNumber ? String(flightNumber).slice(0, 30) : null), customerCountry, metaIp || null, metaDevice || null, metaUserAgent || null, notes || null, source || 'Web', totalPrice, locationFee, insuranceNorm || null, extrasLegacy, discountCode || null, null]
       );
 
       // Persist selected extras with price snapshot
@@ -406,32 +416,45 @@ router.post('/', async (req, res) => {
       const adminEmail = process.env.ADMIN_EMAIL || process.env.MAIL_USER;
       if (adminEmail) {
         const frontendUrl = process.env.FRONTEND_URL || 'https://rentcartiranaairport.com';
-        sendMail(
-          adminEmail,
-          `🔔 Rezervim i ri — ${carName} — €${totalPrice}`,
-          tpl.adminBookingNotification({
-            reservationId: id,
-            customerName: custRows[0]?.name || 'Klient',
-            customerEmail: custRows[0]?.email || customerEmail || '',
-            customerPhone: custRows[0]?.phone || '',
-            carName,
-            carCategory: carRows[0].category || '',
-            pickupLocation,
-            dropoffLocation,
-            startDate: fmtLocale(sd),
-            startTime: st,
-            endDate: fmtLocale(ed),
-            endTime: et,
-            days,
-            totalPrice,
-            locationFee,
-            insurance: insurance || '',
-            extrasList: extrasResolved.map((e) => ({ name: e.name, quantity: e.quantity, totalPrice: e.totalPrice })),
-            source: source || 'Web',
-            flightNumber: flightNumber ? String(flightNumber).slice(0, 30) : null,
-            adminPanelUrl: `${frontendUrl}/admin/rezervime`,
-          })
-        ).catch((e) => console.error('[Email] admin notification failed:', e));
+        // Resolve the visitor's country from IP (best-effort, non-blocking) and
+        // persist it, then send the admin email with all device/connection meta.
+        (async () => {
+          let metaCountry = countryFromHeaders(req);
+          if (!metaCountry) metaCountry = await lookupCountry(metaIp);
+          if (metaCountry) {
+            try { await pool.query('UPDATE reservations SET meta_country = ? WHERE id = ?', [metaCountry, id]); } catch {}
+          }
+          await sendMail(
+            adminEmail,
+            `🔔 Rezervim i ri — ${carName} — €${totalPrice}`,
+            tpl.adminBookingNotification({
+              reservationId: id,
+              customerName: custRows[0]?.name || 'Klient',
+              customerEmail: custRows[0]?.email || customerEmail || '',
+              customerPhone: custRows[0]?.phone || '',
+              carName,
+              carCategory: carRows[0].category || '',
+              pickupLocation,
+              dropoffLocation,
+              startDate: fmtLocale(sd),
+              startTime: st,
+              endDate: fmtLocale(ed),
+              endTime: et,
+              days,
+              totalPrice,
+              locationFee,
+              insurance: insurance || '',
+              extrasList: extrasResolved.map((e) => ({ name: e.name, quantity: e.quantity, totalPrice: e.totalPrice })),
+              source: source || 'Web',
+              flightNumber: flightNumber ? String(flightNumber).slice(0, 30) : null,
+              customerCountry,
+              metaIp,
+              metaCountry,
+              metaDevice,
+              adminPanelUrl: `${frontendUrl}/admin/rezervime`,
+            })
+          );
+        })().catch((e) => console.error('[Email] admin notification failed:', e));
       }
 
       const outBody = fmt(rows[0]);

@@ -60,6 +60,7 @@ interface BookingForm {
   phone: string;
   email: string;
   flightNumber: string;
+  country: string;
   /** Map of extra.id → quantity. Includes the single chosen insurance and any other extras. */
   selectedExtras: Record<string, number>;
   discountCode: string;
@@ -219,6 +220,7 @@ export default function BookingPage() {
     phone: "",
     email: "",
     flightNumber: "",
+    country: "Shqipëri",
     selectedExtras: {},
     discountCode: "",
   });
@@ -561,6 +563,7 @@ export default function BookingPage() {
         endDate: form.endDate,
         endTime: form.endTime,
         flightNumber: form.flightNumber.trim() || undefined,
+        country: form.country || undefined,
         notes: "",
         source: "Web",
         status: "Pending",
@@ -1050,6 +1053,22 @@ export default function BookingPage() {
                       className="w-full pl-9 pr-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-neutral-400"
                     />
                   </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="b-country" className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    {t("booking.country", "Shteti")}
+                  </label>
+                  <select
+                    id="b-country"
+                    value={form.country}
+                    onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+                    className="w-full px-3 py-3 rounded-md border border-border text-sm text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.iso2} value={c.name}>{flagEmoji(c.iso2)} {c.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

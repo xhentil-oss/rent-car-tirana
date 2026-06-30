@@ -934,9 +934,13 @@ export default function AdminReservations() {
                 { label: "Tërhiqni nga", value: selectedRes.pickupLocation },
                 { label: "Ktheni në", value: selectedRes.dropoffLocation },
                 ...(selectedRes.flightNumber ? [{ label: "Numri i fluturimit", value: selectedRes.flightNumber }] : []),
+                ...((selectedRes as any).customerCountry ? [{ label: "Shteti (klienti)", value: (selectedRes as any).customerCountry }] : []),
                 { label: "Data e nisjes", value: new Date(selectedRes.startDate).toLocaleDateString("sq-AL") },
                 { label: "Data e kthimit", value: new Date(selectedRes.endDate).toLocaleDateString("sq-AL") },
                 { label: "Çmimi total", value: `€${selectedRes.totalPrice}` },
+                ...((selectedRes as any).metaCountry ? [{ label: "Shteti (IP)", value: (selectedRes as any).metaCountry }] : []),
+                ...((selectedRes as any).metaIp ? [{ label: "IP", value: (selectedRes as any).metaIp }] : []),
+                ...((selectedRes as any).metaDevice ? [{ label: "Pajisja", value: (selectedRes as any).metaDevice }] : []),
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between py-2 border-b border-border">
                   <span className="text-sm text-neutral-500">{label}</span>
