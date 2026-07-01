@@ -47,7 +47,7 @@ import FAQAccordion from "../components/FAQAccordion";
 import Footer from "../components/Footer";
 import StatusBadge from "../components/StatusBadge";
 import { getSeasonForDate, getSeasonalPricePerDay, calculateSeasonalTotal } from "../lib/seasonalPricing";
-import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../lib/pricingRules";
+import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement, doesRuleMatch } from "../lib/pricingRules";
 import type { PricingRule, PricingResult } from "../lib/pricingRules";
 import { useLocations } from "../hooks/useLocations";
 import { categoryLabel, transmissionLabel, fuelLabel } from "../i18n/dataLabels";
@@ -395,12 +395,31 @@ export default function CarDetailPage() {
   const smartPricing = useMemo<PricingResult | null>(() => {
     if (!car || !startDateObj || !endDateObj || invalidDateRange) return null;
     const rates = (monthlyRatesPublic ?? []) as MonthlyRate[];
-    const priceBase = rates.length > 0
+    const rawBase = rates.length > 0
       ? calcMonthlyTotal(rates, car.id, car.category, car.pricePerDay, startDateObj, endDateObj)
       : calculateSeasonalTotal(car.pricePerDay, startDateObj, endDateObj).total;
-    // Only discount rules (no surcharges) on top of base
-    const rules = ((pricingRulesRaw ?? []) as PricingRule[])
-      .filter(r => !r.direction || r.direction === "discount");
+    const ctx = {
+      carId: car.id,
+      carCategory: car.category,
+      startDate: startDateObj,
+      endDate: endDateObj,
+      days,
+      bookingDate: new Date(),
+    };
+    // Surcharge (e.g. short-rental price bump): fold the top-priority matching
+    // surcharge into the base so the shown total matches what the backend charges.
+    const allRules = (pricingRulesRaw ?? []) as PricingRule[];
+    const topSurcharge = allRules
+      .filter(r => r.direction === "surcharge" && r.type !== "promo_code" && doesRuleMatch(r, ctx))
+      .sort((a, b) => b.priority - a.priority)[0];
+    const surchargeAmount = topSurcharge
+      ? (topSurcharge.discountType === "percent"
+          ? Math.round(rawBase * (Number(topSurcharge.discountValue) || 0) / 100 * 100) / 100
+          : (Number(topSurcharge.discountValue) || 0))
+      : 0;
+    const priceBase = rawBase + surchargeAmount;
+    // Only discount rules (no surcharges) on top of the surcharged base
+    const rules = allRules.filter(r => !r.direction || r.direction === "discount");
     return applyPricingRules(rules, priceBase, {
       carId: car.id,
       carCategory: car.category,
@@ -1312,7 +1331,7 @@ export default function CarDetailPage() {
                           ))
                         ) : (
                           <div className="flex justify-between text-neutral-600">
-                            <span>{t("carDetail.booking.basePrice", { price: effectivePricePerDay, days })}</span>
+                            <span>{t("carDetail.booking.basePrice", { price: days > 0 ? Math.round(baseTotal / days) : effectivePricePerDay, days })}</span>
                             <span className="font-medium">€{baseTotal}</span>
                           </div>
                         )}
