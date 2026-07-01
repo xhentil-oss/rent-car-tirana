@@ -34,7 +34,7 @@ import {
   getDominantSeason,
   getAllSeasonPrices,
 } from "../lib/seasonalPricing";
-import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement } from "../lib/pricingRules";
+import { applyPricingRules, RULE_TYPE_LABELS, getMinDaysRequirement, doesRuleMatch } from "../lib/pricingRules";
 import type { PricingRule } from "../lib/pricingRules";
 import { calcTotalWithMonthlyRates, resolveMonthlyRate } from "../lib/monthlyRates";
 import type { MonthlyRate } from "../lib/monthlyRates";
@@ -431,10 +431,31 @@ export default function BookingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthlyRatesRaw, car, startDateObj, endDateObj, days]);
 
-  // Pre-discount base: monthly rates → seasonal → flat
-  const preDiscountBase = monthlyRatesCalc
+  // Raw base: monthly rates → seasonal → flat
+  const rawBase = monthlyRatesCalc
     ? monthlyRatesCalc.total
     : (seasonalData ? seasonalData.total : flatBasePrice);
+
+  // Admin SURCHARGE rules (e.g. short-rental / length_of_stay). Mirrors the
+  // backend (backend/lib/pricingRules.js) so the price shown == price charged.
+  // Top-priority matching surcharge wins; % of base or fixed amount.
+  const surchargeAmount = React.useMemo(() => {
+    if (!car || !startDateObj || !endDateObj || days === 0 || rawBase === 0) return 0;
+    const ctx = { carId: car.id, carCategory: car.category, startDate: startDateObj, endDate: endDateObj, days, bookingDate: new Date() };
+    const matching = ((pricingRules ?? []) as PricingRule[])
+      .filter((r) => r.direction === "surcharge" && r.type !== "promo_code" && doesRuleMatch(r, ctx))
+      .sort((a, b) => b.priority - a.priority);
+    if (!matching.length) return 0;
+    const top = matching[0];
+    const value = Number(top.discountValue) || 0;
+    return top.discountType === "percent"
+      ? Math.round(rawBase * (value / 100) * 100) / 100
+      : value;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricingRules, car, startDateObj, endDateObj, days, rawBase]);
+
+  // Pre-discount base includes any short-rental surcharge.
+  const preDiscountBase = rawBase + surchargeAmount;
 
   // Apply only DISCOUNT (not surcharge) pricing rules on top of pre-discount base
   const pricingRuleResult = React.useMemo(() => {
@@ -488,14 +509,17 @@ export default function BookingPage() {
   // Price per day shown as car info label (uses monthly rate for start month if available)
   const displayPricePerDay = React.useMemo(() => {
     if (!car) return 0;
+    let base = car.pricePerDay;
     const rates = (monthlyRatesRaw ?? []) as MonthlyRate[];
     if (rates.length > 0) {
       const ref = startDateObj ?? new Date();
       const monthly = resolveMonthlyRate(rates, car.id, car.category, ref.getMonth() + 1, ref.getFullYear());
-      if (monthly !== null) return monthly;
+      if (monthly !== null) base = monthly;
     }
-    return car.pricePerDay;
-  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay, startDateObj]);
+    // Reflect any active surcharge in the per-day label so it matches the total.
+    const perDaySurcharge = surchargeAmount > 0 && days > 0 ? surchargeAmount / days : 0;
+    return Math.round((base + perDaySurcharge) * 100) / 100;
+  }, [monthlyRatesRaw, car?.id, car?.category, car?.pricePerDay, startDateObj, surchargeAmount, days]);
 
   const validate = () => {
     const newErrors: Partial<BookingForm> = {};
