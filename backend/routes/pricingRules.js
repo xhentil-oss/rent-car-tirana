@@ -22,8 +22,10 @@ const fmt = (r) => ({
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM pricing_rules WHERE is_active = 1 ORDER BY priority DESC, created_at DESC');
-    // Hide promo codes and sensitive fields from public
-    res.set('Cache-Control', 'public, max-age=60');
+    // Hide promo codes and sensitive fields from public.
+    // No caching: admin toggles (activate/deactivate a rule) must take effect
+    // immediately on the public site — a shared/CDN cache would delay them.
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.json(rows.map(r => ({
       id: r.id, name: r.name, type: r.type, discountType: r.discount_type,
       discountValue: r.discount_value, direction: r.direction || 'discount',
