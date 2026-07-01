@@ -5,6 +5,7 @@ const { authenticate, requireRole, logActivity, ADMIN_ROLES } = require('../midd
 const { safePagination } = require('../lib/helpers');
 const { sendMail } = require('../lib/mailer');
 const { getClientIp, countryFromHeaders, parseDevice, lookupCountry } = require('../lib/requestMeta');
+const { surchargeForBooking } = require('../lib/pricingRules');
 const tpl = require('../lib/emailTemplates');
 const {
   loadLocations,
@@ -346,7 +347,13 @@ router.post('/', async (req, res) => {
         }
       }
 
-      const totalPrice = +(rentalSubtotal + locationFee + extrasTotal).toFixed(2);
+      // Admin-configured surcharge (e.g. short-rental / length-of-stay). Applied
+      // server-side so the higher price is actually charged, not just displayed.
+      const { amount: surchargeAmount } = await surchargeForBooking({
+        carId, carCategory, startDate: startDateTime, endDate: endDateTime,
+        days, bookingDate: new Date(), rentalSubtotal,
+      });
+      const totalPrice = +(rentalSubtotal + surchargeAmount + locationFee + extrasTotal).toFixed(2);
       // Build legacy comma-separated extras string for back-compat with old views
       const extrasLegacy = extrasResolved.length > 0
         ? extrasResolved.map((e) => e.quantity > 1 ? `${e.name} x${e.quantity}` : e.name).join(', ')
@@ -712,7 +719,11 @@ router.put('/:id', authenticate, requireRole('admin', 'manager'), async (req, re
         const newDropoff = fields.dropoff_location || current.dropoff_location;
         const newLocationFee = await getLocationFee(newPickup, newDropoff);
         fields.location_fee = newLocationFee;
-        fields.total_price = +(rentalSubtotal + newLocationFee).toFixed(2);
+        const { amount: surchargeAmount } = await surchargeForBooking({
+          carId: newCarId, carCategory: newCategory, startDate: newStartDateTime, endDate: newEndDateTime,
+          days, bookingDate: new Date(), rentalSubtotal,
+        });
+        fields.total_price = +(rentalSubtotal + surchargeAmount + newLocationFee).toFixed(2);
       }
 
       const entries = Object.entries(fields).filter(([, v]) => v !== undefined);
