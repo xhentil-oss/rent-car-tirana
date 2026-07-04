@@ -1061,15 +1061,6 @@ export default function CarDetailPage() {
                     </div>
                   </div>
                 </div>
-                <a
-                  href="https://www.google.com/maps/search/Rent+Car+Tirana"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#4285F4]/30 text-[#4285F4] text-xs font-medium hover:bg-[#4285F4]/5 transition-colors no-underline"
-                >
-                  <Star size={11} weight="fill" />
-                  Lër vlerësim
-                </a>
               </div>
 
               {/* Review cards */}
@@ -1115,22 +1106,6 @@ export default function CarDetailPage() {
                 ))}
               </div>
 
-              {/* Footer */}
-              <div
-                className="px-5 py-3 border-t border-border/60 bg-neutral-50/60"
-                style={{ opacity: reviewsInView ? 1 : 0, transition: "opacity 0.5s ease 0.5s" }}
-              >
-                <a
-                  href="https://www.google.com/maps/search/Rent+Car+Tirana"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4285F4] hover:underline no-underline"
-                >
-                  <GoogleLogo size={12} weight="bold" />
-                  Shiko të gjitha vlerësimet në Google Maps
-                  <CaretRight size={10} weight="bold" />
-                </a>
-              </div>
             </div>
 
             {/* Support CTA */}
