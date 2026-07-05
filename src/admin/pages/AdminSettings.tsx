@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash, FileText, SortAscending, ChartLineUp } from "@phosphor-icons/react";
+import { Gear, FloppyDisk, Envelope, Buildings, Globe, Phone, MapPin, InstagramLogo, FacebookLogo, TiktokLogo, CheckCircle, SpinnerGap, WarningCircle, House, Car, Image, UploadSimple, Link as LinkIcon, X as XIcon, FolderOpen, Plus, Trash, FileText, SortAscending, ChartLineUp, Tag } from "@phosphor-icons/react";
 import { invalidateLocationsCache } from "../../hooks/useLocations";
 
 const API_BASE = "/api";
@@ -460,6 +460,32 @@ export default function AdminSettings() {
                     {settings["booking_contract_enabled"] !== "false"
                       ? "Kontrata është aktive (shfaqet te rezervimi)"
                       : "Kontrata është çaktivizuar (nuk shfaqet)"}
+                  </span>
+                </label>
+              </div>
+
+              <div className="border-t border-border my-6" />
+
+              {/* Discount-code toggle */}
+              <div className="mb-2">
+                <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                  <Tag size={16} weight="duotone" className="text-primary" />
+                  Kodi i zbritjes
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5 mb-3">
+                  Aktivizo ose çaktivizo fushën e kodit të zbritjes në faqen e rezervimit.
+                </p>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings["booking_discount_code_enabled"] !== "false"}
+                    onChange={(e) => handleChange("booking_discount_code_enabled", e.target.checked ? "true" : "false")}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-sm text-neutral-700">
+                    {settings["booking_discount_code_enabled"] !== "false"
+                      ? "Kodi i zbritjes është aktiv (shfaqet te rezervimi)"
+                      : "Kodi i zbritjes është çaktivizuar (nuk shfaqet)"}
                   </span>
                 </label>
               </div>

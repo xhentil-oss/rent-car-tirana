@@ -343,6 +343,8 @@ export default function BookingPage() {
   }>({});
   // Digital contract section can be toggled off from admin Settings.
   const [contractEnabled, setContractEnabled] = useState(true);
+  // Discount-code section can be toggled off from admin Settings.
+  const [discountCodeEnabled, setDiscountCodeEnabled] = useState(true);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/settings/public")
@@ -356,6 +358,7 @@ export default function BookingPage() {
           companyAddress: j.company_address || undefined,
         });
         setContractEnabled(j.booking_contract_enabled !== "false");
+        setDiscountCodeEnabled(j.booking_discount_code_enabled !== "false");
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -494,7 +497,7 @@ export default function BookingPage() {
 
   // Legacy discount (old promo code fallback) — must be declared BEFORE total
   const legacyDiscount =
-    !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
+    discountCodeEnabled && !pricingRuleResult && form.discountCode.toUpperCase() === "TIRANA10"
       ? Math.round(basePrice * 0.1)
       : 0;
   const totalDiscount = Math.max(0, pricingRuleResult?.totalDiscount ?? 0) + legacyDiscount;
@@ -1291,6 +1294,7 @@ export default function BookingPage() {
             )}
 
             {/* Discount */}
+            {discountCodeEnabled && (
             <div className="bg-white rounded-lg border border-border p-6">
               <h2 className="text-lg font-medium text-neutral-900 mb-4">
                 {t("booking.discountCode")}
@@ -1327,6 +1331,7 @@ export default function BookingPage() {
                 </p>
               )}
             </div>
+            )}
 
             {/* Contract & Signature */}
             {contractEnabled && (
