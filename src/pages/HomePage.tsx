@@ -96,6 +96,8 @@ export default function HomePage() {
   const [endDate, setEndDate] = useState("");
   const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
   const [promoDismissed, setPromoDismissed] = useState(false);
+  // Promo banner (discount code) can be toggled off from admin Settings.
+  const [discountCodeEnabled, setDiscountCodeEnabled] = useState(true);
 
   const { data: allCars } = useQuery("Car");
   const { data: pricingRules } = useQuery("PricingRule");
@@ -150,6 +152,7 @@ export default function HomePage() {
           });
         }
         if (data.banner_about) setBannerAbout(data.banner_about);
+        setDiscountCodeEnabled(data.booking_discount_code_enabled !== "false");
       })
       .catch(() => {});
   }, []);
@@ -190,7 +193,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* ── Promo Banner ─────────────────────────────────────────── */}
-      {!promoDismissed && (
+      {discountCodeEnabled && !promoDismissed && (
         <div className="bg-gradient-to-r from-accent/90 to-primary text-white py-2.5 px-4 text-center relative">
           <p className="text-sm font-medium">
             <Tag size={14} weight="fill" className="inline mr-1.5 -mt-0.5" />
