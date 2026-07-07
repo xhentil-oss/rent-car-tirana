@@ -730,7 +730,7 @@ export default function BookingPage() {
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1.5 text-sm font-medium">
               <Car size={16} weight="fill" />
               {t("booking.youAreBooking")}:{" "}
-              <span className="font-semibold text-neutral-900">{car.brand} {car.model}</span>
+              <span className="font-semibold text-neutral-900">{`${car.brand} ${car.model}`.replace(/\b\p{L}/gu, (c) => c.toUpperCase())}</span>
             </p>
           )}
         </div>
