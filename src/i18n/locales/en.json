@@ -578,6 +578,7 @@
     "title": "Book your car",
     "subtitle": "Fill in the form to confirm your reservation",
     "youAreBooking": "You are booking the car",
+    "orSimilar": "or similar",
     "loading": "Loading...",
     "confirmed": {
       "title": "Booking confirmed!",

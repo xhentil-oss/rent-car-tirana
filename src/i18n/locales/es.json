@@ -578,6 +578,7 @@
     "title": "Reserva tu coche",
     "subtitle": "Rellena el formulario para confirmar tu reserva",
     "youAreBooking": "Estás reservando el coche",
+    "orSimilar": "o similar",
     "loading": "Cargando…",
     "confirmed": {
       "title": "¡Reserva confirmada!",

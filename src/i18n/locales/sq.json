@@ -574,6 +574,7 @@
     "title": "Rezervo makinën",
     "subtitle": "Plotësoni formularin për të konfirmuar rezervimin tuaj",
     "youAreBooking": "Po rezervoni makinën",
+    "orSimilar": "ose e ngjashme",
     "loading": "Duke ngarkuar...",
     "confirmed": {
       "title": "Rezervimi u konfirmua!",

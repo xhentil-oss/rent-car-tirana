@@ -731,6 +731,7 @@ export default function BookingPage() {
               <Car size={16} weight="fill" />
               {t("booking.youAreBooking")}:{" "}
               <span className="font-semibold text-neutral-900">{`${car.brand} ${car.model}`.replace(/\b\p{L}/gu, (c) => c.toUpperCase())}</span>
+              <span className="font-normal text-neutral-500">{" "}({t("booking.orSimilar")})</span>
             </p>
           )}
         </div>

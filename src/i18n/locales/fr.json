@@ -578,6 +578,7 @@
     "title": "Réservez votre voiture",
     "subtitle": "Remplissez le formulaire pour confirmer votre réservation",
     "youAreBooking": "Vous réservez la voiture",
+    "orSimilar": "ou similaire",
     "loading": "Chargement…",
     "confirmed": {
       "title": "Réservation confirmée !",
