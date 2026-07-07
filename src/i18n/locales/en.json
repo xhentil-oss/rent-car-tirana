@@ -577,7 +577,7 @@
   "booking": {
     "title": "Book your car",
     "subtitle": "Fill in the form to confirm your reservation",
-    "youAreBooking": "You are booking",
+    "youAreBooking": "You are booking the car",
     "loading": "Loading...",
     "confirmed": {
       "title": "Booking confirmed!",

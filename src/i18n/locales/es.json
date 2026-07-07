@@ -577,7 +577,7 @@
   "booking": {
     "title": "Reserva tu coche",
     "subtitle": "Rellena el formulario para confirmar tu reserva",
-    "youAreBooking": "Estás reservando",
+    "youAreBooking": "Estás reservando el coche",
     "loading": "Cargando…",
     "confirmed": {
       "title": "¡Reserva confirmada!",
