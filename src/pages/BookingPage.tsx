@@ -18,6 +18,7 @@ import {
   WarningCircle,
   DownloadSimple,
   Airplane,
+  Car,
 } from "@phosphor-icons/react";
 import { downloadContractPdf } from "../lib/generateContractPdf";
 import SignaturePad from "../components/SignaturePad";
@@ -725,6 +726,13 @@ export default function BookingPage() {
           <p className="text-neutral-500 text-sm mt-1">
             {t("booking.subtitle")}
           </p>
+          {car && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1.5 text-sm font-medium">
+              <Car size={16} weight="fill" />
+              {t("booking.youAreBooking")}:{" "}
+              <span className="font-semibold text-neutral-900">{car.brand} {car.model}</span>
+            </p>
+          )}
         </div>
       </div>
 

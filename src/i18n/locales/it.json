@@ -577,6 +577,7 @@
   "booking": {
     "title": "Prenota la tua auto",
     "subtitle": "Compila il modulo per confermare la prenotazione",
+    "youAreBooking": "Stai prenotando",
     "loading": "Caricamento…",
     "confirmed": {
       "title": "Prenotazione confermata!",
