@@ -37,7 +37,7 @@ export default function BlogPostPage() {
   useSEO({
     title: metaTitle || "Blog",
     description: metaDesc,
-    canonical: localePath(`/blog/${slug}`),
+    canonical: `/blog/${slug}`,
     ogImage: post?.coverImage,
     ogType: "article",
     structuredData: post ? {
