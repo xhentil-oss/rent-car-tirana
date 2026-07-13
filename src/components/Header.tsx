@@ -21,6 +21,7 @@ import { useAuth } from "../hooks/useApi";
 import { useTranslation } from "react-i18next";
 import { trackEvent } from "../lib/track";
 import { useLocale } from "../hooks/useLocale";
+import { useSiteLogo } from "../hooks/useSiteLogo";
 import LLink from "./LLink";
 
 // Google Identity Services — loaded lazily when the auth dropdown opens.
@@ -720,6 +721,7 @@ export default function Header() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { localePath } = useLocale();
+  const logoUrl = useSiteLogo();
 
   const navLinks = [
     { label: t("header.fleet"), href: "/flota" },
@@ -786,12 +788,18 @@ export default function Header() {
           className="flex items-center gap-2 no-underline"
           aria-label="Rent Car Tirana - Kryefaqja"
         >
-          <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center">
-            <Car size={20} weight="fill" className="text-white" />
-          </div>
-          <span className="font-semibold text-lg text-neutral-900 leading-tight">
-            Rent Car <span className="text-primary">Tirana</span>
-          </span>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Rent Car Tirana" className="h-10 w-auto max-w-[200px] object-contain" />
+          ) : (
+            <>
+              <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center">
+                <Car size={20} weight="fill" className="text-white" />
+              </div>
+              <span className="font-semibold text-lg text-neutral-900 leading-tight">
+                Rent Car <span className="text-primary">Tirana</span>
+              </span>
+            </>
+          )}
         </LLink>
 
         {/* Desktop Nav */}

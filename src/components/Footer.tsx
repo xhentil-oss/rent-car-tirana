@@ -2,9 +2,11 @@ import React from "react";
 import LLink from "./LLink";
 import { useTranslation } from "react-i18next";
 import { Car, FacebookLogo, InstagramLogo, MapPin, Phone, EnvelopeSimple } from "@phosphor-icons/react";
+import { useSiteLogo } from "../hooks/useSiteLogo";
 
 function Footer() {
   const { t } = useTranslation();
+  const logoUrl = useSiteLogo();
   const addresses = (t("footer.addresses", { returnObjects: true }) as string[] | string);
   const addressList = Array.isArray(addresses)
     ? addresses
@@ -17,10 +19,16 @@ function Footer() {
           {/* Brand */}
           <div>
             <LLink to="/" className="flex items-center gap-2 no-underline mb-4">
-              <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center shrink-0">
-                <Car size={20} weight="fill" className="text-white" />
-              </div>
-              <span className="font-semibold text-lg text-white">Rent Car <span className="text-accent">Tirana</span></span>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Rent Car Tirana" className="h-10 w-auto max-w-[200px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center shrink-0">
+                    <Car size={20} weight="fill" className="text-white" />
+                  </div>
+                  <span className="font-semibold text-lg text-white">Rent Car <span className="text-accent">Tirana</span></span>
+                </>
+              )}
             </LLink>
             <p className="text-neutral-400 text-sm leading-relaxed mb-4">
               {t("footer.tagline")}

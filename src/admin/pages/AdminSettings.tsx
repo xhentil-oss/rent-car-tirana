@@ -95,6 +95,15 @@ const SECTIONS: { id: string; title: string; icon: React.ElementType; descriptio
     ],
   },
   {
+    id: "logo",
+    title: "Logo",
+    icon: Image,
+    description: "Ngarko logon e biznesit. Shfaqet te header-i dhe footer-i. Nëse e lë bosh, përdoret logoja e parazgjedhur (ikonë + tekst). Rekomandohet PNG me sfond transparent ose SVG.",
+    fields: [
+      { key: "logo_url", label: "Logo (header & footer)", placeholder: "https://... ose ngarko një skedar" },
+    ],
+  },
+  {
     id: "homepage",
     title: "Faqja Kryesore",
     icon: House,
@@ -565,12 +574,15 @@ export default function AdminSettings() {
             </div>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeSection.fields.map((field) => (
-              <div key={field.key} className={field.type === "textarea" || field.key.startsWith("banner_") ? "md:col-span-2" : ""}>
+            {activeSection.fields.map((field) => {
+              const isImageField = field.key.startsWith("banner_") || field.key === "logo_url";
+              const isLogo = field.key === "logo_url";
+              return (
+              <div key={field.key} className={field.type === "textarea" || isImageField ? "md:col-span-2" : ""}>
                 <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1.5">
                   {field.label}
                 </label>
-                {field.key.startsWith("banner_") ? (
+                {isImageField ? (
                   <div>
                     <div className="flex gap-2">
                       <input
@@ -591,7 +603,7 @@ export default function AdminSettings() {
                     </div>
                     {settings[field.key] && (
                       <div className="mt-2 rounded-lg overflow-hidden border border-border relative group" style={{ maxHeight: 180 }}>
-                        <img src={settings[field.key]} alt={field.label} className="w-full h-full object-cover" style={{ maxHeight: 180 }} />
+                        <img src={settings[field.key]} alt={field.label} className={isLogo ? "w-auto max-h-24 object-contain p-3" : "w-full h-full object-cover"} style={isLogo ? { maxHeight: 96 } : { maxHeight: 180 }} />
                         <button
                           type="button"
                           onClick={() => handleChange(field.key, "")}
@@ -620,7 +632,8 @@ export default function AdminSettings() {
                   />
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
           )}
         </div>
