@@ -779,4 +779,103 @@ router.loadLocations = loadLocations;
 router.LOCATION_FEES = DEFAULT_LOCATION_FEES;
 router.FREE_LOCATIONS = DEFAULT_FREE_LOCATIONS;
 
+// ─── Bulk import (one-time migration, e.g. from VikRentCar) ───────────────
+// Admin/manager only. Accepts already-parsed + car-mapped rows from the admin
+// import UI and creates customers + reservations. Deduplicates by (source,
+// import_ref) so re-running the same file never double-imports. Each row is
+// isolated in its own try/catch so one bad row can't abort the batch.
+router.post('/import', authenticate, requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
+    if (!rows || !rows.length) return res.status(400).json({ error: 'Asnjë rresht për të importuar.' });
+    if (rows.length > 2000) return res.status(400).json({ error: 'Shumë rreshta njëherësh (maksimumi 2000).' });
+
+    const source = String(req.body?.source || 'VikRentCar').slice(0, 30);
+    const results = { created: 0, skipped: 0, errors: [] };
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || {};
+      const rowLabel = r.importRef ? `#${r.importRef}` : `rresht ${i + 1}`;
+      try {
+        if (!r.carId) { results.errors.push(`${rowLabel}: makina nuk është e mapuar.`); continue; }
+        if (!r.startDate || !r.endDate) { results.errors.push(`${rowLabel}: mungon data.`); continue; }
+
+        // Car must exist (FK is NOT NULL)
+        const [carRows] = await pool.query('SELECT id FROM cars WHERE id = ?', [r.carId]);
+        if (!carRows.length) { results.errors.push(`${rowLabel}: makina nuk u gjet.`); continue; }
+
+        // Dedupe by source + import_ref
+        if (r.importRef) {
+          const [dup] = await pool.query(
+            'SELECT id FROM reservations WHERE source = ? AND import_ref = ? LIMIT 1',
+            [source, String(r.importRef)]
+          );
+          if (dup.length) { results.skipped++; continue; }
+        }
+
+        // ── Find-or-create customer ──
+        const c = r.customer || {};
+        const email = (c.email || '').toString().trim().toLowerCase();
+        const phone = (c.phone || '').toString().trim().slice(0, 30);
+        const fullName = (c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim() || email || 'Klient').slice(0, 255);
+
+        let customerId = null;
+        if (email) {
+          const [byEmail] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
+          if (byEmail.length) customerId = byEmail[0].id;
+        }
+        if (!customerId && phone) {
+          const [byPhone] = await pool.query('SELECT id FROM customers WHERE phone = ?', [phone]);
+          if (byPhone.length) customerId = byPhone[0].id;
+        }
+        if (!customerId) {
+          customerId = uuidv4();
+          // email is required by schema — synthesize a stable placeholder when absent
+          const safeEmail = email || `import-${source.toLowerCase()}-${r.importRef || uuidv4().slice(0, 8)}@import.local`;
+          await pool.query(
+            'INSERT INTO customers (id, name, first_name, last_name, email, phone, type, created_by) VALUES (?,?,?,?,?,?,?,?)',
+            [customerId, fullName, (c.firstName || '').slice(0, 100), (c.lastName || '').slice(0, 100), safeEmail, phone, 'Standard', req.user.id]
+          );
+        }
+
+        // ── Insert reservation ──
+        const id = uuidv4();
+        const status = /cancel|anul/i.test(r.status || '') ? 'Cancelled'
+          : /pend|pritje/i.test(r.status || '') ? 'Pending'
+          : 'Confirmed';
+        const total = Number(r.total) || 0;
+        const paid = Number(r.totalPaid) || 0;
+        const paymentStatus = paid >= total && total > 0 ? 'Paid' : paid > 0 ? 'Partial' : 'Pending Payment';
+        const notes = [r.notes, r.dob ? `Data e lindjes: ${r.dob}` : '', c.address ? `Adresa: ${c.address}` : '', c.city ? `Qyteti: ${c.city}` : '', c.zip ? `Zip: ${c.zip}` : '']
+          .filter(Boolean).join(' · ').slice(0, 2000) || null;
+
+        await pool.query(
+          `INSERT INTO reservations
+            (id, car_id, customer_id, pickup_location, dropoff_location, start_date, start_time, end_date, end_time,
+             flight_number, notes, source, import_ref, status, total_price, payment_status, customer_country, created_by)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [
+            id, r.carId, customerId,
+            (r.pickup || '').slice(0, 255) || '—', (r.dropoff || '').slice(0, 255) || '—',
+            r.startDate, (r.startTime || '00:00').slice(0, 10), r.endDate, (r.endTime || '00:00').slice(0, 10),
+            (r.flightNumber || '').slice(0, 30) || null, notes,
+            source, r.importRef ? String(r.importRef).slice(0, 64) : null,
+            status, total, paymentStatus, (c.country || '').slice(0, 100) || null, req.user.id,
+          ]
+        );
+        results.created++;
+      } catch (rowErr) {
+        console.error('import row error', rowLabel, rowErr.message);
+        results.errors.push(`${rowLabel}: ${rowErr.code || rowErr.message}`);
+      }
+    }
+
+    await logActivity({ userId: req.user.id, action: 'IMPORT', entity: 'Reservation', entityId: null, description: `Import rezervimesh (${source}): ${results.created} të reja, ${results.skipped} kaluar, ${results.errors.length} gabime`, ipAddress: req.ip });
+    res.json(results);
+  } catch (err) {
+    console.error('POST /reservations/import error:', err.message, err.code);
+    res.status(500).json({ error: 'Gabim i brendshëm gjatë importit.' });
+  }
+});
+
 module.exports = router;

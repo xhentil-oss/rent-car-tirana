@@ -21,6 +21,7 @@ import {
   Gear,
   Article,
   Package,
+  UploadSimple,
 } from "@phosphor-icons/react";
 import { useAuth } from "../hooks/useApi";
 import NotificationPanel from "../components/NotificationPanel";
@@ -42,6 +43,7 @@ const navItems = [
   { label: "Përdoruesit", href: "/admin/perdoruesit", icon: UserGear, group: "system" },
   { label: "Cilësimet", href: "/admin/cilesimet", icon: Gear, group: "system" },
   { label: "Blog", href: "/admin/blog", icon: Article, group: "system" },
+  { label: "Importo", href: "/admin/importo", icon: UploadSimple, group: "system" },
 ];
 
 function AdminLoginForm({

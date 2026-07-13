@@ -556,6 +556,7 @@ const ALTERS = [
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_country VARCHAR(2) DEFAULT NULL`,
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_device VARCHAR(255) DEFAULT NULL`,
   `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS meta_user_agent VARCHAR(500) DEFAULT NULL`,
+  `ALTER TABLE reservations ADD COLUMN IF NOT EXISTS import_ref VARCHAR(64) DEFAULT NULL`,
   // ── Performance indexes ──
   'CREATE INDEX idx_res_overlap ON reservations (car_id, status, start_date, end_date)',
   'CREATE INDEX idx_res_status ON reservations (status)',

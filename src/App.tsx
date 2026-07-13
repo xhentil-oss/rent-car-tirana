@@ -33,6 +33,7 @@ const AdminCarEdit = React.lazy(() => import("./admin/pages/AdminCarEdit"));
 const AdminMedia = React.lazy(() => import("./admin/pages/AdminMedia"));
 const AdminSettings = React.lazy(() => import("./admin/pages/AdminSettings"));
 const AdminBlog = React.lazy(() => import("./admin/pages/AdminBlog"));
+const AdminImport = React.lazy(() => import("./admin/pages/AdminImport"));
 const ReviewsPage = React.lazy(() => import("./pages/ReviewsPage"));
 const MakinaQeraTirana = React.lazy(() => import("./pages/seo/MakinaQeraTirana"));
 const MakineAeroport = React.lazy(() => import("./pages/seo/MakineAeroport"));
@@ -136,6 +137,7 @@ export default function App() {
             <Route path="media" element={<AdminMedia />} />
             <Route path="cilesimet" element={<AdminSettings />} />
             <Route path="blog" element={<AdminBlog />} />
+            <Route path="importo" element={<AdminImport />} />
           </Route>
 
           {/* Fallback — Custom 404 */}
