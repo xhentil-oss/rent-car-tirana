@@ -1,0 +1,13 @@
+---
+deployment:
+  tasks:
+    # Frontend-i shërbehet nga ~/public_html (LiteSpeed), jo nga backend/public.
+    # Deploy = kopjo dist/ → $HOME/public_html/ (rrugë absolute, jashtë repo-s).
+    - /bin/rm -rf $HOME/public_html/assets
+    - /bin/cp -R dist/assets $HOME/public_html/assets
+    - /bin/cp dist/index.html $HOME/public_html/index.html
+    - /bin/cp dist/placeholder-car.svg $HOME/public_html/placeholder-car.svg
+    - /bin/cp dist/robots.txt $HOME/public_html/robots.txt
+    # Rinis app-in Passenger (API-ja) — restart.txt brenda repo-s
+    - /bin/mkdir -p backend/tmp
+    - /bin/touch backend/tmp/restart.txt

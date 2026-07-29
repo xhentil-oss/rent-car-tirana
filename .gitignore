@@ -29,3 +29,6 @@ backend/.env.*
 *.njsproj
 *.sln
 *.sw?
+
+# Deploy artifact — restart.txt krijohet nga .cpanel.yml
+backend/tmp/
