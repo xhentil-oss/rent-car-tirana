@@ -32,3 +32,16 @@ backend/.env.*
 
 # Deploy artifact — restart.txt krijohet nga .cpanel.yml
 backend/tmp/
+
+# Artefakte te gjeneruara ne server. cPanel Git nuk deploy-on nese working tree
+# e ka edhe nje skedar untracked, ndaj keta duhen injoruar — perndryshe butoni
+# "Deploy HEAD Commit" bllokohet pas cdo deploy-i.
+/tmp/
+/FETCH_HEAD
+# Frontend-i i kesaj marke sherbehet nga ~/public_html, por backend/server.js
+# e mban backend/public si static dir — kopjet e vjetra qendrojne atje.
+backend/public/assets/
+backend/public/index.html
+backend/public/placeholder-car.svg
+backend/public/robots.txt
+backend/public/.htaccess
